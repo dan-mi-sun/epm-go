@@ -1,4 +1,4 @@
-package lexer
+package parse
 
 // This is my first lexer
 // It is heavily inspired by Rob Pike's "Lexical Scanning in Go"
@@ -7,13 +7,15 @@ package lexer
 // I immediately started writing this
 
 import (
+	"fmt"
+	"log"
 	"strings"
 )
 
 // when in a state, do an action, which brings us to another state
 // so a state is really a state+action ie. stateFunc that returns the next
 // stateFunc. Done when it returns nil
-type stateFunc func(*lexer) stateFunc
+type lexStateFunc func(*lexer) lexStateFunc
 
 // the lexer object
 type lexer struct {
@@ -51,10 +53,18 @@ func Lex(input string) *lexer {
 		input:  input,
 		length: len(input),
 		pos:    0,
-		tokens: make(chan token),
+		tokens: make(chan token, 2),
 	}
 	go l.run()
 	return l
+}
+
+func (l *lexer) Error(s string) lexStateFunc {
+	return func(l *lexer) lexStateFunc {
+		// TODO: print location data too
+		log.Println(s)
+		return nil
+	}
 }
 
 // Return the tokens channel
@@ -65,7 +75,7 @@ func (l *lexer) Chan() chan token {
 // Run the lexer
 // This is the most beautiful function in the world
 func (l *lexer) run() {
-	for state := stateStart; state != nil; state = state(l) {
+	for state := lexStateStart; state != nil; state = state(l) {
 		// :D
 	}
 	close(l.tokens)
@@ -75,6 +85,7 @@ func (l *lexer) run() {
 // To hell with utf8 :p
 func (l *lexer) next() string {
 	if l.pos >= l.length {
+		log.Println("DONE")
 		return ""
 	}
 	b := l.input[l.pos : l.pos+1]
@@ -115,8 +126,212 @@ func (l *lexer) accept(options string) bool {
 	return false
 }
 
-func (l *lexer) acceptRun(options string) {
+func (l *lexer) acceptRun(options string) bool {
+	i := 0
 	for s := l.next(); strings.Contains(options, s); s = l.next() {
+		i += 1
 	}
 	l.backup()
+	return i > 0
+}
+
+// Starting state
+func lexStateStart(l *lexer) lexStateFunc {
+	// check the one character tokens
+	t := l.next()
+	switch t {
+	case "":
+		return nil
+	case tokenNewLine:
+		return lexStateNewLine
+	case tokenTab:
+		l.emit(tokenTabTy)
+		return lexStateStart
+	case tokenPound:
+		l.emit(tokenPoundTy)
+		return lexStateComment
+	case tokenColon:
+		l.emit(tokenColonTy)
+		return lexStateStart
+	case tokenQuote:
+		l.emit(tokenQuoteTy)
+		return lexStateQuote
+	case tokenBling:
+		l.emit(tokenBlingTy)
+		return lexStateString
+	}
+	l.backup()
+
+	remains := l.input[l.pos:]
+
+	// check for tabs (four spaces)
+	if strings.HasPrefix(remains, tokenFourSpaces) {
+		// if its more than four spaces, ignore it all
+		if isSpace(l.peek()) {
+			return lexStateSpace
+		}
+		return lexStateFourSpaces
+	}
+
+	// skip spaces
+	if isSpace(l.peek()) {
+		return lexStateSpace
+	}
+
+	// check for left brace
+	if strings.HasPrefix(remains, tokenLeftBraces) {
+		return lexStateLeftBraces
+	}
+
+	// check for right brace
+	if strings.HasPrefix(remains, tokenRightBraces) {
+		return lexStateRightBraces
+	}
+
+	// check for arrow
+	if strings.HasPrefix(remains, tokenArrow) {
+		return lexStateArrow
+	}
+
+	// check for command
+	for _, t := range tokenCmds {
+		if strings.HasPrefix(remains, t) {
+			l.temp = t
+			return lexStateCmd
+		}
+	}
+
+	return lexStateExpressions
+
+	return nil
+}
+
+func isSpace(s string) bool {
+	return s == " " || s == "\t"
+}
+
+func lexStateExpressions(l *lexer) lexStateFunc {
+	s := l.next()
+
+	// check for number
+	if strings.Contains(tokenNumbers, s) {
+		l.backup()
+		return lexStateNumber
+	}
+
+	// check for ops
+	if strings.Contains(tokenOps, s) {
+		l.emit(tokenOpTy)
+		return lexStateStart
+	}
+
+	// check for chars
+	if strings.Contains(tokenChars, s) {
+		l.backup()
+		return lexStateString
+	}
+
+	return l.Error(fmt.Sprintf("Invalid char: %s", s))
+}
+
+func lexStateNewLine(l *lexer) lexStateFunc {
+	//for s := tokenNewLine; s == tokenNewLine; s = l.next() {
+	//}
+	//l.backup()
+	l.emit(tokenNewLineTy)
+	l.line += 1
+	l.lastNewLine = l.pos
+	return lexStateStart
+}
+
+// Scan past spaces
+func lexStateSpace(l *lexer) lexStateFunc {
+	for s := l.next(); isSpace(s); s = l.next() {
+	}
+	l.backup()
+	l.start = l.pos
+	return lexStateStart
+}
+
+// At an opening quotes, parse until the closing quote
+func lexStateQuote(l *lexer) lexStateFunc {
+	// BUG: This could hang forever
+	for s := ""; s != tokenQuote; s = l.next() {
+	}
+	l.backup()
+	l.emit(tokenStringTy)
+	l.next()
+	l.emit(tokenQuoteTy)
+	return lexStateStart
+
+}
+
+// At a command
+func lexStateCmd(l *lexer) lexStateFunc {
+	l.pos += len(l.temp)
+	l.emit(tokenCmdTy)
+	return lexStateStart
+}
+
+// In a comment. Scan to new line
+func lexStateComment(l *lexer) lexStateFunc {
+	for r := ""; r != tokenNewLine; r = l.next() {
+	}
+	l.backup()
+	l.emit(tokenStringTy)
+	return lexStateStart
+}
+
+// At set of four spaces (alternative to a tab)
+func lexStateFourSpaces(l *lexer) lexStateFunc {
+	l.pos += len(tokenFourSpaces)
+	l.emit(tokenTabTy)
+	return lexStateStart
+}
+
+// At an arrow (=>)
+func lexStateArrow(l *lexer) lexStateFunc {
+	l.pos += len(tokenArrow)
+	l.emit(tokenArrowTy)
+	return lexStateStart
+}
+
+// On {{
+func lexStateLeftBraces(l *lexer) lexStateFunc {
+	l.pos += len(tokenLeftBraces)
+	l.emit(tokenLeftBracesTy)
+	return lexStateStart
+}
+
+// On }}
+func lexStateRightBraces(l *lexer) lexStateFunc {
+	l.pos += len(tokenRightBraces)
+	l.emit(tokenRightBracesTy)
+	return lexStateStart
+}
+
+// a number (decimal or hex)
+func lexStateNumber(l *lexer) lexStateFunc {
+	if l.accept("0") && l.accept("xX") {
+		l.acceptRun(tokenHex)
+	} else {
+		l.acceptRun(tokenNumbers)
+	}
+	l.emit(tokenNumberTy)
+	return lexStateStart
+}
+
+// a string
+func lexStateString(l *lexer) lexStateFunc {
+	if !l.acceptRun(tokenChars) {
+		return l.Error("Expected a string")
+	}
+	l.emit(tokenStringTy)
+	return lexStateStart
+}
+
+// error!
+func lexStateErr(l *lexer) lexStateFunc {
+	l.emit(tokenErrTy)
+	return nil
 }

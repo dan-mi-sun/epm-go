@@ -1,11 +1,11 @@
-package lexer
+package parse
 
 import (
 	"fmt"
 )
 
 func (t token) String() string {
-	s := fmt.Sprintf("Line %d, Col %d \t %-6s \t", t.loc.line, t.loc.col, t.typ.String())
+	s := fmt.Sprintf("Line %-2d, Col %-2d \t %-6s \t", t.loc.line, t.loc.col, t.typ.String())
 	switch t.typ {
 	case tokenEOFTy:
 		return s + "EOF"
@@ -39,6 +39,8 @@ func (t tokenType) String() string {
 		return "[Arrow]"
 	case tokenColonTy:
 		return "[Colon]"
+	case tokenBlingTy:
+		return "[Bling]"
 	case tokenStringTy:
 		return "[String]"
 	case tokenQuoteTy:
@@ -74,11 +76,44 @@ const (
 	tokenPoundTy                        // #
 	tokenOpTy                           // math ops (+, -, *, /, %)
 	tokenSpaceTy                        // debugging
+	tokenBlingTy                        // $
 )
+
+type command struct {
+	command string
+	args    []int // commands can take variable number of args
+}
+
+var Commands = []command{
+	command{
+		command: "deploy",
+		args:    []int{},
+	},
+	command{
+		command: "modify-deploy",
+		args:    []int{},
+	},
+	command{
+		command: "transact",
+		args:    []int{},
+	},
+	command{
+		command: "endow",
+		args:    []int{},
+	},
+}
+
+func commandList(cmds []command) []string {
+	cs := make([]string, len(cmds))
+	for i, c := range cmds {
+		cs[i] = c.command
+	}
+	return cs
+}
 
 // tokens and special chars
 var (
-	tokenCmds        = []string{"deploy", "modify-deploy", "transact", "endow", "deploy"}
+	tokenCmds        = commandList(Commands)
 	tokenLeftBraces  = "{{"
 	tokenRightBraces = "}}"
 	tokenArrow       = "=>"
@@ -89,6 +124,7 @@ var (
 	tokenNewLine     = "\n"
 	tokenPound       = "#"
 	tokenSpace       = " "
+	tokenBling       = "$"
 
 	tokenNumbers = "0123456789"
 	tokenHex     = "0123456789abcdef"
