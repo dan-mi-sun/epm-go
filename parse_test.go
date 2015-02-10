@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var text = `
+var text1 = `
 # this is a comment
 
 deploy:
@@ -16,9 +16,9 @@ deploy:
 # is this too?
 
 transact:
-	"ok" => "dokay" => {{ monkey }} 
+	"ok" => "dokay" => monkey
 
-	"nice" => {{ 0x43 }}
+	$monkey => "nice" => 0x43
 
 `
 
@@ -61,27 +61,26 @@ var tokens = []tokenType{
 	tokenStringTy,
 	tokenQuoteTy,
 	tokenArrowTy,
-	tokenLeftBracesTy,
 	tokenStringTy,
-	tokenRightBracesTy,
 	tokenNewLineTy,
 	tokenNewLineTy,
 	tokenTabTy,
+	tokenBlingTy,
+	tokenStringTy,
+	tokenArrowTy,
 	tokenQuoteTy,
 	tokenStringTy,
 	tokenQuoteTy,
 	tokenArrowTy,
-	tokenLeftBracesTy,
 	tokenNumberTy,
-	tokenRightBracesTy,
 	tokenNewLineTy,
 	tokenNewLineTy,
 	tokenNewLineTy,
 }
 
 func TestLexer(t *testing.T) {
-	fmt.Println([]byte(text))
-	l := Lex(text)
+	fmt.Println([]byte(text1))
+	l := Lex(text1)
 	i := 0
 	for tok := range l.Chan() {
 		fmt.Println(tok)
@@ -89,5 +88,19 @@ func TestLexer(t *testing.T) {
 			t.Fatal("Error", tok.typ, tokens[i])
 		}
 		i += 1
+	}
+}
+
+// TODO: proper test
+func TestParse(t *testing.T) {
+	p := Parse(text1)
+	p.run()
+	for _, j := range p.jobs {
+		fmt.Println("##########")
+		fmt.Println(j.cmd, len(j.args))
+		for _, a := range j.args {
+			fmt.Println(a[0].token.val)
+		}
+
 	}
 }

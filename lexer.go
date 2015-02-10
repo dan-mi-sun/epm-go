@@ -1,10 +1,6 @@
 package parse
 
-// This is my first lexer
-// It is heavily inspired by Rob Pike's "Lexical Scanning in Go"
-// https://www.youtube.com/watch?v=HxaD_trXwRE
-// In fact, I got so excited after watching that,
-// I immediately started writing this
+// This lexer is heavily inspired by Rob Pike's "Lexical Scanning in Go"
 
 import (
 	"fmt"

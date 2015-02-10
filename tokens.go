@@ -129,5 +129,5 @@ var (
 	tokenNumbers = "0123456789"
 	tokenHex     = "0123456789abcdef"
 	tokenOps     = "+-*/%"
-	tokenChars   = "abcdefghijklmnopqrstuvwqyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+	tokenChars   = "abcdefghijklmnopqrstuvwqyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-/_."
 )

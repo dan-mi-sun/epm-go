@@ -12,13 +12,15 @@ type parser struct {
 	last token
 	jobs []job // jobs to execute
 
-	lookahead token // hold the look ehad
-	peekCount int   // 1 if we've peeked
+	peekCount int // 1 if we've peeked
 
 	inJob bool // are we in a job
 
-	tree *tree // current tree
-	job  *job  //current job
+	arg []tree // current arg
+
+	tree  *tree // top of current tree
+	treeP *tree // a pointer into current tree
+	job   *job  // current job
 }
 
 type job struct {
@@ -27,9 +29,11 @@ type job struct {
 }
 
 type tree struct {
-	token    *token
-	parent   *token
-	children []*token
+	token    token
+	parent   token
+	children []token
+
+	identifier bool // is the token a variable reference
 }
 
 func Parse(input string) *parser {
@@ -40,14 +44,14 @@ func Parse(input string) *parser {
 		tree: new(tree),
 		job:  new(job),
 	}
-	go p.run()
+	//go p.run()
 	return p
 }
 
 func (p *parser) next() token {
 	if p.peekCount == 1 {
 		p.peekCount = 0
-		return p.lookahead
+		return p.last
 
 	}
 	p.last = <-p.l.Chan()
@@ -56,11 +60,15 @@ func (p *parser) next() token {
 
 func (p *parser) peek() token {
 	if p.peekCount == 1 {
-		return p.lookahead
+		return p.last
 	}
-	p.lookahead = p.next()
+	p.next()
 	p.peekCount = 1
-	return p.lookahead
+	return p.last
+}
+
+func (p *parser) backup() {
+	p.peekCount = 1
 }
 
 func (p *parser) run() {
@@ -97,15 +105,17 @@ func parseStateStart(p *parser) parseStateFunc {
 	case tokenPoundTy:
 		return parseStateComment
 	case tokenCmdTy:
+		cmd := t.val
 		t = p.next()
 		if t.typ != tokenColonTy {
 			return p.Error("Commands must be followed by a colon")
 		}
-		j := job{
-			cmd:  t.val,
+		j := &job{
+			cmd:  cmd,
 			args: [][]tree{},
 		}
-		p.jobs = append(p.jobs, j)
+		//p.jobs = append(p.jobs, j)
+		p.job = j
 		return parseStateCommand
 	}
 
@@ -122,27 +132,84 @@ func parseStateComment(p *parser) parseStateFunc {
 }
 
 func parseStateCommand(p *parser) parseStateFunc {
+	p.inJob = true
 	t := p.next()
 	switch t.typ {
 	case tokenErrTy:
+		p.jobs = append(p.jobs, *p.job)
 		return nil
+	case tokenPoundTy:
+		return parseStateComment
 	case tokenNewLineTy:
-		t = p.next()
-		if t.typ != tokenTabTy {
-			return p.Error("Command args must be indented")
-		}
 		return parseStateCommand
-	// a command is a list of args
-	// an arg is a list of trees
-	// usually just length one
-	// trees begin as variables, strings, or braces
-	case tokenStringTy:
-		return parseStateString
-	case tokenLeftBracesTy:
-		return parseStateBrace
+	case tokenTabTy, tokenArrowTy:
+		return parseStateArg
+	case tokenCmdTy:
+		p.jobs = append(p.jobs, *p.job)
+		p.backup()
+		return parseStateStart
 	}
 
-	return nil
+	return p.Error("Command args must be indented")
+}
+
+// An argument is a list of trees
+// Most will be length one and depth 0 (eg. a string, number, variable)
+// Others will be list of string/number/var/expression
+func parseStateArg(p *parser) parseStateFunc {
+	p.arg = []tree{}
+	var t = p.next()
+
+	// a single arg may have multiple elements, and is terminated by => or \n
+	for ; t.typ != tokenArrowTy && t.typ != tokenNewLineTy; t = p.next() {
+		switch t.typ {
+		case tokenNumberTy:
+			// numbers are easy
+			tr := tree{token: t}
+			p.arg = append(p.arg, tr)
+		case tokenQuoteTy:
+			// catch a quote delineated string
+			t2 := p.next()
+			if t2.typ != tokenStringTy {
+				return p.Error(fmt.Sprintf("Invalid token following quote: %s", t2.val))
+			}
+			q := p.next()
+			if q.typ != tokenQuoteTy {
+				return p.Error(fmt.Sprintf("Missing ending quote"))
+			}
+
+			tr := tree{token: t2}
+			p.arg = append(p.arg, tr)
+		case tokenStringTy:
+			// new variable (string without quotes)
+			tr := tree{token: t}
+			p.arg = append(p.arg, tr)
+		case tokenBlingTy:
+			// known variable
+			v := p.next()
+			if v.typ != tokenStringTy {
+				return p.Error(fmt.Sprintf("Invalid variable name: %s", v.val))
+			}
+			// setting identifier means epm will
+			// look it up in symbols table
+			tr := tree{
+				token:      v,
+				identifier: true,
+			}
+			p.arg = append(p.arg, tr)
+		case tokenLeftBracesTy:
+
+		case tokenNewLineTy:
+		}
+	}
+
+	// add the arg to the job
+	p.job.args = append(p.job.args, p.arg)
+
+	if t.typ == tokenArrowTy {
+		p.backup()
+	}
+	return parseStateCommand
 }
 
 func parseStateBrace(p *parser) parseStateFunc {
