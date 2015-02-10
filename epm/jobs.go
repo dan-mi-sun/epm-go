@@ -84,31 +84,31 @@ func (e *EPM) ExecuteJobs() error {
 // Args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job) error {
 	logger.Warnln("Executing job: ", job.cmd, "\targs: ", job.args)
-	job.args = e.VarSub(job.args) // substitute vars
+	args := e.ResolveArgs(job.args)
 	switch job.cmd {
 	case "deploy":
-		return e.Deploy(job.args)
+		return e.Deploy(args)
 	case "modify-deploy":
-		return e.ModifyDeploy(job.args)
+		return e.ModifyDeploy(args)
 	case "transact":
-		return e.Transact(job.args)
+		return e.Transact(args)
 	case "query":
-		return e.Query(job.args)
+		return e.Query(args)
 	case "log":
-		return e.Log(job.args)
+		return e.Log(args)
 	case "set":
-		return e.Set(job.args)
+		return e.Set(args)
 	case "endow":
-		return e.Endow(job.args)
+		return e.Endow(args)
 	case "test":
 		e.chain.Commit()
-		err := e.ExecuteTest(job.args[0], 0)
+		err := e.ExecuteTest(args[0], 0)
 		if err != nil {
 			logger.Errorln(err)
 			return err
 		}
 	case "epm":
-		return e.EPMx(job.args[0])
+		return e.EPMx(args[0])
 	default:
 		return fmt.Errorf("Unknown command: %s", job.cmd)
 	}

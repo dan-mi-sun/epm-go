@@ -237,18 +237,37 @@ func parseLine(line string) []string {
 	return args
 }
 
-func CopyContractPath() error {
-	// copy the current dir into scratch/epm. Necessary for finding include files after a modify. :sigh:
-	root := path.Base(ContractPath)
-	p := path.Join(EpmDir, root)
-	// TODO: should we delete and copy even if it does exist?
-	// we might miss changed otherwise
-	if _, err := os.Stat(p); err != nil {
-		cmd := exec.Command("cp", "-r", ContractPath, p)
-		err = cmd.Run()
-		if err != nil {
-			return fmt.Errorf("error copying working dir into tmp: %s", err.Error())
+func (e EPM) newDiffSched(i int) {
+	if e.diffSched[i] == nil {
+		e.diffSched[i] = []int{}
+		e.diffName[i] = []string{}
+	}
+}
+
+func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string]bool) {
+	// i is 0 for no jobs
+	i := len(e.jobs)
+	for {
+		name := parseStateDiff(lines, startLine)
+		if name != "" {
+			e.newDiffSched(i)
+			// if we've already seen the name, take diff
+			// else, store state
+			e.diffName[i] = append(e.diffName[i], name)
+			if _, ok := diffmap[name]; ok {
+				e.diffSched[i] = append(e.diffSched[i], 1)
+			} else {
+				e.diffSched[i] = append(e.diffSched[i], 0)
+				diffmap[name] = true
+			}
+			/*if s, ok := e.states[name]; ok{
+			      fmt.Println("Name of Diff:", name)
+			      PrettyPrintAcctDiff(StorageDiff(s, e.CurrentState()))
+			  } else{
+			      e.states[name] = e.CurrentState()
+			  }*/
+		} else {
+			break
 		}
 	}
-	return nil
 }

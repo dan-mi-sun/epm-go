@@ -101,6 +101,26 @@ var Commands = []command{
 		command: "endow",
 		args:    []int{},
 	},
+	command{
+		command: "query",
+		args:    []int{},
+	},
+	command{
+		command: "log",
+		args:    []int{},
+	},
+	command{
+		command: "set",
+		args:    []int{},
+	},
+	command{
+		command: "test",
+		args:    []int{},
+	},
+	command{
+		command: "epm",
+		args:    []int{},
+	},
 }
 
 func commandList(cmds []command) []string {

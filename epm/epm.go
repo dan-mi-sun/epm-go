@@ -1,7 +1,6 @@
 package epm
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
@@ -9,6 +8,8 @@ import (
 	//	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -20,12 +21,6 @@ var (
 	StateDiffClose = "!}"
 	//LLLURL         = "http://lllc.erisindustries.com/compile"
 )
-
-// an EPM Job
-type Job struct {
-	cmd  string
-	args []string // args may contain unparsed math that will be handled by jobs.go
-}
 
 type KeyManager interface {
 	ActiveAddress() string
@@ -76,8 +71,6 @@ type Blockchain interface {
 type EPM struct {
 	chain Blockchain
 
-	lllcURL string
-
 	jobs []Job
 	vars map[string]string
 
@@ -116,99 +109,36 @@ func (e *EPM) Stop() {
 	e.chain.Shutdown()
 }
 
-// allowed commands
-var CMDS = []string{"deploy", "modify-deploy", "transact", "query", "log", "set", "endow", "test", "epm"}
-
-func (e EPM) newDiffSched(i int) {
-	if e.diffSched[i] == nil {
-		e.diffSched[i] = []int{}
-		e.diffName[i] = []string{}
-	}
-}
-
-func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string]bool) {
-	// i is 0 for no jobs
-	i := len(e.jobs)
-	for {
-		name := parseStateDiff(lines, startLine)
-		if name != "" {
-			e.newDiffSched(i)
-			// if we've already seen the name, take diff
-			// else, store state
-			e.diffName[i] = append(e.diffName[i], name)
-			if _, ok := diffmap[name]; ok {
-				e.diffSched[i] = append(e.diffSched[i], 1)
-			} else {
-				e.diffSched[i] = append(e.diffSched[i], 0)
-				diffmap[name] = true
-			}
-			/*if s, ok := e.states[name]; ok{
-			      fmt.Println("Name of Diff:", name)
-			      PrettyPrintAcctDiff(StorageDiff(s, e.CurrentState()))
-			  } else{
-			      e.states[name] = e.CurrentState()
-			  }*/
-		} else {
-			break
-		}
-	}
-}
-
 // Parse a pdx file into a series of EPM jobs
 func (e *EPM) Parse(filename string) error {
 	logger.Infoln("Parsing ", filename)
 	// set current file to parse
 	e.pkgdef = filename
-
-	lines := []string{}
-	f, err := os.Open(filename)
+	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	scanner := bufio.NewScanner(f)
-	// read in all lines
-	for scanner.Scan() {
-		t := scanner.Text()
-		lines = append(lines, t)
+	// TODO: diffs
+	//diffmap := make(map[string]bool)
+
+	p := Parse(string(b))
+	if err := p.run(); err != nil {
+		return err
 	}
-	return e.parse(lines)
+	e.jobs = p.jobs
+	return nil
 }
 
 // New EPM Job
+// TODO: parse
 func NewJob(cmd string, args []string) *Job {
-	return &Job{cmd, args}
+	// return &job{cmd, args}
+	return nil
 }
 
 // Add job to EPM jobs
-func (e *EPM) AddJob(job *Job) {
-	e.jobs = append(e.jobs, *job)
-}
-
-// parse should take a list of lines, peel commands into jobs
-// lines either come from a file or from iepm
-func (e *EPM) parse(lines []string) error {
-
-	diffmap := make(map[string]bool)
-
-	l := 0
-	startLength := len(lines)
-	// check if we need to start diffs before the jobs
-	e.parseStateDiffs(&lines, l, diffmap)
-	for lines != nil {
-		// peel off a job and append
-		job, err := peelCmd(&lines, l)
-		if err != nil {
-			return err
-		}
-		if job.cmd != "" {
-			e.AddJob(job)
-		}
-		// check if we need to take or diff state after this job
-		// if diff is disabled they will not run, but we need to parse them out
-		e.parseStateDiffs(&lines, l, diffmap)
-		l = startLength - len(lines)
-	}
-	return nil
+func (e *EPM) AddJob(j *Job) {
+	e.jobs = append(e.jobs, *j)
 }
 
 // replaces any {{varname}} args with the variable value
@@ -282,4 +212,20 @@ func (e *EPM) StoreVar(key, val string) {
 		key = key[2 : len(key)-2]
 	}
 	e.vars[key] = utils.Coerce2Hex(val)
+}
+
+func CopyContractPath() error {
+	// copy the current dir into scratch/epm. Necessary for finding include files after a modify. :sigh:
+	root := path.Base(ContractPath)
+	p := path.Join(EpmDir, root)
+	// TODO: should we delete and copy even if it does exist?
+	// we might miss changed otherwise
+	if _, err := os.Stat(p); err != nil {
+		cmd := exec.Command("cp", "-r", ContractPath, p)
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("error copying working dir into tmp: %s", err.Error())
+		}
+	}
+	return nil
 }

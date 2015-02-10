@@ -10,7 +10,7 @@ type parseStateFunc func(p *parser) parseStateFunc
 type parser struct {
 	l    *lexer
 	last token
-	jobs []job // jobs to execute
+	jobs []Job // jobs to execute
 
 	peekCount int // 1 if we've peeked
 
@@ -20,10 +20,10 @@ type parser struct {
 
 	tree  *tree // top of current tree
 	treeP *tree // a pointer into current tree
-	job   *job  // current job
+	job   *Job  // current job
 }
 
-type job struct {
+type Job struct {
 	cmd  string
 	args [][]tree
 }
@@ -40,9 +40,9 @@ func Parse(input string) *parser {
 	l := Lex(input)
 	p := &parser{
 		l:    l,
-		jobs: []job{},
+		jobs: []Job{},
 		tree: new(tree),
-		job:  new(job),
+		job:  new(Job),
 	}
 	//go p.run()
 	return p
@@ -71,12 +71,13 @@ func (p *parser) backup() {
 	p.peekCount = 1
 }
 
-func (p *parser) run() {
+func (p *parser) run() error {
 	for state := parseStateStart; state != nil; state = state(p) {
 	}
 	if p.last.typ == tokenErrTy {
-		// PRINT ERROR!
+		// return  err
 	}
+	return nil
 }
 
 func (p *parser) accept(options []token) bool {
@@ -110,7 +111,7 @@ func parseStateStart(p *parser) parseStateFunc {
 		if t.typ != tokenColonTy {
 			return p.Error("Commands must be followed by a colon")
 		}
-		j := &job{
+		j := &Job{
 			cmd:  cmd,
 			args: [][]tree{},
 		}
