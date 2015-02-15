@@ -1,4 +1,4 @@
-package parse
+package epm
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ type Job struct {
 }
 
 type tree struct {
-	token    token
+	token    token // this must be a vm op or a value
 	parent   *tree
 	children []*tree
 
@@ -242,6 +242,8 @@ func (p *parser) parseExpression(tr *tree) error {
 
 		fmt.Println("next :", t.val, t.typ, tokenStringTy)
 		switch t.typ {
+		case tokenErrTy:
+			return fmt.Errorf(t.val)
 		case tokenLeftBraceTy:
 			tr2 := new(tree)
 			if err := p.parseExpression(tr2); err != nil {

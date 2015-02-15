@@ -1,4 +1,4 @@
-package parse
+package epm
 
 // This lexer is heavily inspired by Rob Pike's "Lexical Scanning in Go"
 
@@ -157,7 +157,7 @@ func lexStateStart(l *lexer) lexStateFunc {
 		return lexStateString
 	case tokenLeftBrace:
 		l.emit(tokenLeftBraceTy)
-		return lexStateString
+		return lexStateStart
 	case tokenRightBrace:
 		l.emit(tokenRightBraceTy)
 		return lexStateStart

@@ -1,4 +1,4 @@
-package parse
+package epm
 
 import (
 	"fmt"
@@ -125,4 +125,16 @@ func TestParse(t *testing.T) {
 		}
 
 	}
+}
+
+var text2 = `
+transact:
+	$alpha => (+ (* 4 (- 9 3)) 5)
+`
+
+func TestInterpreter(t *testing.T) {
+	p := Parse(text2)
+	p.run()
+	args := ResolveArgs(p.jobs[0].args)
+	fmt.Println(args)
 }

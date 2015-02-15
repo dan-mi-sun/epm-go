@@ -4,8 +4,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/lllc-server"
 	"github.com/eris-ltd/lllc-server/abi"
@@ -16,6 +14,17 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+)
+
+var GOPATH = os.Getenv("GOPATH")
+
+// TODO: Should be set to the "current" directory if using epm-cli
+var (
+	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
+	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
+
+	EpmDir  = utils.Epm
+	LogFile = path.Join(utils.Logs, "epm", "log")
 )
 
 // What to do if a job errs
@@ -36,14 +45,16 @@ func (e *EPM) Commit() {
 // Execute parsed jobs
 func (e *EPM) ExecuteJobs() error {
 	if e.Diff {
-		//e.checkTakeStateDiff(0)
+		e.checkTakeStateDiff(0)
 	}
+	// TODO: set gendoug...
+	//gendougaddr, _:= e.eth.Get("gendoug", nil)
+	//e.StoreVar("GENDOUG", gendougaddr)
 
 	for i, j := range e.jobs {
 		err := e.ExecuteJob(j)
 		if e.Diff {
-			_ = i
-			//e.checkTakeStateDiff(i + 1)
+			e.checkTakeStateDiff(i + 1)
 		}
 
 		if err != nil {
@@ -62,80 +73,48 @@ func (e *EPM) ExecuteJobs() error {
 		// otherwise, tx reactors get blocked;
 	}
 	if e.Diff {
-		//e.checkTakeStateDiff(len(e.jobs))
+		e.checkTakeStateDiff(len(e.jobs))
 	}
 	return nil
 }
-
-func requireErr(args []string, n int, cmd string) error {
-	if !require(args, n) {
-		return fmt.Errorf("%s requires at least %d arguments. Provided %d", cmd, n, len(args))
-	}
-	return nil
-}
-
-func require(args []string, n int) bool {
-	if len(args) >= n {
-		return true
-	}
-	return false
-}
-
-func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
-	switch name {
-	case "deploy":
-		return e.Deploy, 2
-	case "modify-deploy":
-		return e.ModifyDeploy, 4
-	case "transact":
-		return e.Transact, 2
-	case "query":
-		return e.Query, 3
-	case "log":
-		return e.Log, 2
-	case "set":
-		return e.Set, 2
-	case "endow":
-		return e.Endow, 2
-	case "test":
-		return func(a []string) error {
-			e.chain.Commit()
-			//err := e.ExecuteTest(a[0], 0)
-			var err error
-			if err != nil {
-				logger.Errorln(err)
-				return err
-			}
-			return nil
-		}, 1
-	case "epm":
-		return e.EPMx, 1
-	default:
-		return func([]string) error { return fmt.Errorf("Unknown command: %s", name) }, 0
-
-	}
-}
-
-var NoChainErr = fmt.Errorf("Chain is nil")
 
 // Job switch
 // Args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job) error {
 	logger.Warnln("Executing job: ", job.cmd, "\targs: ", job.args)
-	args := ResolveArgs(job.args)
-	f, n := e.resolveFunc(job.cmd)
-	if err := requireErr(args, n, job.cmd); err != nil {
-		return err
+	args := e.ResolveArgs(job.args)
+	switch job.cmd {
+	case "deploy":
+		return e.Deploy(args)
+	case "modify-deploy":
+		return e.ModifyDeploy(args)
+	case "transact":
+		return e.Transact(args)
+	case "query":
+		return e.Query(args)
+	case "log":
+		return e.Log(args)
+	case "set":
+		return e.Set(args)
+	case "endow":
+		return e.Endow(args)
+	case "test":
+		e.chain.Commit()
+		err := e.ExecuteTest(args[0], 0)
+		if err != nil {
+			logger.Errorln(err)
+			return err
+		}
+	case "epm":
+		return e.EPMx(args[0])
+	default:
+		return fmt.Errorf("Unknown command: %s", job.cmd)
 	}
-	if e.chain == nil {
-		return NoChainErr
-	}
-	return f(args)
+	return nil
 }
 
 // Deploy a pdx from a pdx
-func (e *EPM) EPMx(args []string) error {
-	filename := args[0]
+func (e *EPM) EPMx(filename string) error {
 	// save the old jobs, empty the job list
 	oldjobs := e.jobs
 	e.jobs = []Job{}
@@ -209,18 +188,49 @@ func (e *EPM) ModifyDeploy(args []string) error {
 	return e.Deploy([]string{newName, key})
 }
 
-// Send a transaction with data to a contract
-// Data should be list of strings/hex/numeric
-// already resolved
-func (e *EPM) Transact(args []string) (err error) {
-	to := args[0]
-	data := args[1:]
-	//data := strings.Split(dataS, " ")
-	//data = DoMath(data)
+func ReadAbi(root, to string) (abi.ABI, bool) {
+	p := path.Join(root, "abi", utils.StripHex(to))
+	if _, err := os.Stat(p); err != nil {
+		log.Println("Abi doesn't exist for", p)
+		return abi.NullABI, false
+	}
+	b, err := ioutil.ReadFile(p)
+	if err != nil {
+		log.Println("Failed to read abi file:", err)
+		return abi.NullABI, false
+	}
+	a := new(abi.ABI)
 
+	if err := a.UnmarshalJSON(b); err != nil {
+		log.Println("failed to unmarshal", err)
+		return abi.NullABI, false
+	}
+	return *a, true
+}
+
+// Send a transaction with data to a contract
+func (e *EPM) Transact(args []string) (err error) {
+
+	to := args[0]
+	dataS := args[1]
+	data := strings.Split(dataS, " ")
+	data = DoMath(data)
+
+	if len(data) == 0 {
+		_, err = e.chain.Msg(to, data)
+		if err != nil {
+			return
+		}
+		logger.Warnf("Sent %s to %s", data, to)
+		return
+	}
 	h, _ := hex.DecodeString(utils.StripHex(data[0]))
 	funcName := string(h)
-	args = data[1:]
+	if len(data) > 1 {
+		args = data[1:]
+	} else {
+		args = []string{}
+	}
 
 	fmt.Println("PACKING, func name", funcName)
 	packed := args
@@ -343,24 +353,4 @@ func Modify(contract string, args []string) (string, error) {
 		return "", fmt.Errorf("Could not write file %s: %s", newPath, err.Error())
 	}
 	return newPath, nil
-}
-
-func ReadAbi(root, to string) (abi.ABI, bool) {
-	p := path.Join(root, "abi", utils.StripHex(to))
-	if _, err := os.Stat(p); err != nil {
-		log.Println("Abi doesn't exist for", p)
-		return abi.NullABI, false
-	}
-	b, err := ioutil.ReadFile(p)
-	if err != nil {
-		log.Println("Failed to read abi file:", err)
-		return abi.NullABI, false
-	}
-	a := new(abi.ABI)
-
-	if err := a.UnmarshalJSON(b); err != nil {
-		log.Println("failed to unmarshal", err)
-		return abi.NullABI, false
-	}
-	return *a, true
 }

@@ -2,9 +2,9 @@ package epm
 
 import (
 	"fmt"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/utils"
+	"github.com/eris-ltd/modules/types"
+	"github.com/eris-ltd/thelonious/monklog"
 	//	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
 	"os"
@@ -19,17 +19,6 @@ var logger *monklog.Logger = monklog.NewLogger("EPM")
 var (
 	StateDiffOpen  = "!{"
 	StateDiffClose = "!}"
-)
-
-var GOPATH = os.Getenv("GOPATH")
-
-// TODO: Should be set to the "current" directory if using epm-cli
-var (
-	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
-	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
-
-	EpmDir  = utils.Epm
-	LogFile = path.Join(utils.Logs, "epm", "log")
 )
 
 type KeyManager interface {
@@ -113,10 +102,6 @@ func NewEPM(chain Blockchain, log string) (*EPM, error) {
 	// temp dir
 	err := CopyContractPath()
 	return e, err
-}
-
-func (e *EPM) Stop() {
-	e.chain.Shutdown()
 }
 
 // Parse a pdx file into a series of EPM jobs
