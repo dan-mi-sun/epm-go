@@ -19,7 +19,6 @@ var logger *monklog.Logger = monklog.NewLogger("EPM")
 var (
 	StateDiffOpen  = "!{"
 	StateDiffClose = "!}"
-	//LLLURL         = "http://lllc.erisindustries.com/compile"
 )
 
 type KeyManager interface {

@@ -19,7 +19,7 @@ transact:
 	"ok" => "dokay" => monkey
 
 	$monkey => "nice" => 0x43
-	(alphabet soup (brownies marmalade)) => "sup"
+	(alphabet soup (brownies (marmalade (eggplant honey comb)))) => "sup"
 
 `
 
@@ -81,7 +81,14 @@ var tokens = []tokenType{
 	tokenStringTy,
 	tokenLeftBraceTy,
 	tokenStringTy,
+	tokenLeftBraceTy,
 	tokenStringTy,
+	tokenLeftBraceTy,
+	tokenStringTy,
+	tokenStringTy,
+	tokenStringTy,
+	tokenRightBraceTy,
+	tokenRightBraceTy,
 	tokenRightBraceTy,
 	tokenRightBraceTy,
 	tokenArrowTy,
