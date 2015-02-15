@@ -19,6 +19,7 @@ transact:
 	"ok" => "dokay" => monkey
 
 	$monkey => "nice" => 0x43
+	(alphabet soup (brownies marmalade)) => "sup"
 
 `
 
@@ -74,6 +75,19 @@ var tokens = []tokenType{
 	tokenArrowTy,
 	tokenNumberTy,
 	tokenNewLineTy,
+	tokenTabTy,
+	tokenLeftBraceTy,
+	tokenStringTy,
+	tokenStringTy,
+	tokenLeftBraceTy,
+	tokenStringTy,
+	tokenStringTy,
+	tokenRightBraceTy,
+	tokenRightBraceTy,
+	tokenArrowTy,
+	tokenQuoteTy,
+	tokenStringTy,
+	tokenQuoteTy,
 	tokenNewLineTy,
 	tokenNewLineTy,
 }
@@ -99,7 +113,8 @@ func TestParse(t *testing.T) {
 		fmt.Println("##########")
 		fmt.Println(j.cmd, len(j.args))
 		for _, a := range j.args {
-			fmt.Println(a[0].token.val)
+			//fmt.Println(a[0].token.val)
+			PrintTree(a[0])
 		}
 
 	}

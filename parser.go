@@ -16,7 +16,7 @@ type parser struct {
 
 	inJob bool // are we in a job
 
-	arg []tree // current arg
+	arg []*tree // current arg
 
 	tree  *tree // top of current tree
 	treeP *tree // a pointer into current tree
@@ -25,13 +25,13 @@ type parser struct {
 
 type Job struct {
 	cmd  string
-	args [][]tree
+	args [][]*tree
 }
 
 type tree struct {
 	token    token
-	parent   token
-	children []token
+	parent   *tree
+	children []*tree
 
 	identifier bool // is the token a variable reference
 }
@@ -113,7 +113,7 @@ func parseStateStart(p *parser) parseStateFunc {
 		}
 		j := &Job{
 			cmd:  cmd,
-			args: [][]tree{},
+			args: [][]*tree{},
 		}
 		//p.jobs = append(p.jobs, j)
 		p.job = j
@@ -146,6 +146,7 @@ func parseStateCommand(p *parser) parseStateFunc {
 	case tokenTabTy, tokenArrowTy:
 		return parseStateArg
 	case tokenCmdTy:
+		// and we're done. onto the next command//
 		p.jobs = append(p.jobs, *p.job)
 		p.backup()
 		return parseStateStart
@@ -158,7 +159,7 @@ func parseStateCommand(p *parser) parseStateFunc {
 // Most will be length one and depth 0 (eg. a string, number, variable)
 // Others will be list of string/number/var/expression
 func parseStateArg(p *parser) parseStateFunc {
-	p.arg = []tree{}
+	p.arg = []*tree{}
 	var t = p.next()
 
 	// a single arg may have multiple elements, and is terminated by => or \n
@@ -166,7 +167,7 @@ func parseStateArg(p *parser) parseStateFunc {
 		switch t.typ {
 		case tokenNumberTy:
 			// numbers are easy
-			tr := tree{token: t}
+			tr := &tree{token: t}
 			p.arg = append(p.arg, tr)
 		case tokenQuoteTy:
 			// catch a quote delineated string
@@ -179,11 +180,11 @@ func parseStateArg(p *parser) parseStateFunc {
 				return p.Error(fmt.Sprintf("Missing ending quote"))
 			}
 
-			tr := tree{token: t2}
+			tr := &tree{token: t2}
 			p.arg = append(p.arg, tr)
 		case tokenStringTy:
 			// new variable (string without quotes)
-			tr := tree{token: t}
+			tr := &tree{token: t}
 			p.arg = append(p.arg, tr)
 		case tokenBlingTy:
 			// known variable
@@ -193,13 +194,19 @@ func parseStateArg(p *parser) parseStateFunc {
 			}
 			// setting identifier means epm will
 			// look it up in symbols table
-			tr := tree{
+			tr := &tree{
 				token:      v,
 				identifier: true,
 			}
 			p.arg = append(p.arg, tr)
-		case tokenLeftBracesTy:
-
+		case tokenLeftBraceTy:
+			// we're entering an expression
+			tr := new(tree)
+			if err := p.parseExpression(tr); err != nil {
+				return p.Error(err.Error())
+			}
+			fmt.Println("TREE PRINTING")
+			p.arg = append(p.arg, tr)
 		case tokenNewLineTy:
 		}
 	}
@@ -211,6 +218,54 @@ func parseStateArg(p *parser) parseStateFunc {
 		p.backup()
 	}
 	return parseStateCommand
+}
+
+func PrintTree(tr *tree) {
+	printTree(tr, "")
+}
+
+func printTree(tr *tree, prefix string) {
+	fmt.Println(prefix + tr.token.val)
+	for _, trc := range tr.children {
+		printTree(trc, prefix+"\t")
+	}
+}
+
+// called after a left brace token
+func (p *parser) parseExpression(tr *tree) error {
+	t := p.next()
+	// this is the op
+	tr.token = t
+	fmt.Println("in parse expression:", t.val, t.typ)
+	// grab the args
+	for t = p.next(); t.typ != tokenRightBraceTy; t = p.next() {
+
+		fmt.Println("next :", t.val, t.typ, tokenStringTy)
+		switch t.typ {
+		case tokenLeftBraceTy:
+			tr2 := new(tree)
+			if err := p.parseExpression(tr2); err != nil {
+				return err
+			}
+			tr.children = append(tr.children, tr2)
+		case tokenStringTy, tokenNumberTy:
+			fmt.Println("ok wtf")
+			tr2 := &tree{token: t}
+			fmt.Println("new tree", tr2)
+			tr.children = append(tr.children, tr2)
+		case tokenBlingTy:
+			t = p.next()
+			if t.typ != tokenStringTy {
+				return fmt.Errorf("Invalid variable name: %s", t.val)
+			}
+			tr2 := &tree{token: t, identifier: true}
+			tr.children = append(tr.children, tr2)
+		default:
+			fmt.Println(t.typ, t.val, t.typ == tokenStringTy)
+			fmt.Println("wtf")
+		}
+	}
+	return nil
 }
 
 func parseStateBrace(p *parser) parseStateFunc {

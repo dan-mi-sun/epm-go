@@ -66,6 +66,8 @@ const (
 	tokenCmdTy                          // command (deploy, modify-deploy, transact, etc.)
 	tokenLeftBracesTy                   // {{
 	tokenRightBracesTy                  // }}
+	tokenLeftBraceTy                    // (
+	tokenRightBraceTy                   // )
 	tokenNumberTy                       // int or hex
 	tokenArrowTy                        // =>
 	tokenColonTy                        // :
@@ -136,6 +138,8 @@ var (
 	tokenCmds        = commandList(Commands)
 	tokenLeftBraces  = "{{"
 	tokenRightBraces = "}}"
+	tokenLeftBrace   = "("
+	tokenRightBrace  = ")"
 	tokenArrow       = "=>"
 	tokenFourSpaces  = "    "
 	tokenQuote       = "\""

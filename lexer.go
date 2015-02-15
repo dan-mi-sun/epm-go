@@ -155,6 +155,12 @@ func lexStateStart(l *lexer) lexStateFunc {
 	case tokenBling:
 		l.emit(tokenBlingTy)
 		return lexStateString
+	case tokenLeftBrace:
+		l.emit(tokenLeftBraceTy)
+		return lexStateString
+	case tokenRightBrace:
+		l.emit(tokenRightBraceTy)
+		return lexStateStart
 	}
 	l.backup()
 
