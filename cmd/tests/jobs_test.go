@@ -3,9 +3,29 @@ package main
 import (
 	"encoding/hex"
 	"github.com/eris-ltd/epm-go/epm"
+	"github.com/eris-ltd/thelonious/monk"
 	"path"
 	"testing"
+	//"github.com/eris-ltd/thelonious/monkutil"
+	"os"
 )
+
+var GoPath = os.Getenv("GOPATH")
+
+func NewMonkModule() *monk.MonkModule {
+	epm.ErrMode = epm.ReturnOnErr
+	m := monk.NewMonk(nil)
+	m.Config.RootDir = ".ethchain"
+	m.Config.LogLevel = 5
+	m.Config.GenesisConfig = "genesis.json"
+	g := m.LoadGenesis(m.Config.GenesisConfig)
+	g.Difficulty = 14
+	m.SetGenesis(g)
+	m.Init()
+	m.Config.Mining = false
+	m.Start()
+	return m
+}
 
 /*
    For direct coding of hardcoded contracts and test results.
@@ -128,7 +148,7 @@ func TestKV(t *testing.T) {
 
 // not a real test since the diffs just print we don't have access to them programmatically yet
 // TODO>..
-func TestDiff(t *testing.T) {
+func iTestDiff(t *testing.T) {
 	m := NewMonkModule()
 	e, _ := epm.NewEPM(m, ".epm-log-test")
 
@@ -140,4 +160,15 @@ func TestDiff(t *testing.T) {
 	e.ExecuteJobs()
 
 	e.Commit()
+	m.Shutdown()
+}
+
+func TestPdt(t *testing.T) {
+	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_parse.epm"))
+	e.Commit()
+	_, err := e.Test(path.Join(epm.TestPath, "test_parse.epm-check"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.Shutdown()
 }

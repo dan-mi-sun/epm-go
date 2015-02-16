@@ -85,7 +85,7 @@ func (e *EPM) ExecuteTest(line string, i int) error {
 	// var sub, resolve
 	var argsTree [][]*tree
 	for _, a := range args {
-		p := Parse(a)
+		p := Parse(a + "\n")
 		parseStateArg(p)
 		argsTree = append(argsTree, p.arg)
 	}
@@ -94,7 +94,9 @@ func (e *EPM) ExecuteTest(line string, i int) error {
 	if err != nil {
 		return err
 	}
-	args = append(args, argsTree[3][0].token.val)
+	if len(argsTree) > 3 {
+		args = append(args, argsTree[3][0].token.val)
+	}
 
 	fmt.Println("test!", i)
 	s := "\t"
@@ -119,7 +121,7 @@ func (e *EPM) ExecuteTest(line string, i int) error {
 
 	if args[2] != "_" {
 		expected := utils.Coerce2Hex(args[2])
-		if utils.StripHex(expected) != utils.StripHex(val) {
+		if utils.StripZeros(utils.StripHex(expected)) != utils.StripZeros(utils.StripHex(val)) {
 			return fmt.Errorf("\t!!!!!Test %d failed. Got: %s, expected %s", i, val, expected)
 		} else {
 			fmt.Println("\tTest Passed (with flying colors!)")

@@ -81,7 +81,6 @@ func (l *lexer) run() {
 // To hell with utf8 :p
 func (l *lexer) next() string {
 	if l.pos >= l.length {
-		log.Println("DONE")
 		return ""
 	}
 	b := l.input[l.pos : l.pos+1]

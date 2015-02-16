@@ -227,6 +227,16 @@ func StripHex(s string) string {
 	return s
 }
 
+func StripZeros(s string) string {
+	i := 0
+	for ; i < len(s); i++ {
+		if s[i] != '0' {
+			break
+		}
+	}
+	return s[i:]
+}
+
 func Usr() string {
 	u, _ := user.Current()
 	return u.HomeDir
