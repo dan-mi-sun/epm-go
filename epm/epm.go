@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"strings"
 )
 
@@ -23,7 +22,6 @@ var (
 
 var GOPATH = os.Getenv("GOPATH")
 
-// TODO: Should be set to the "current" directory if using epm-cli
 var (
 	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
 	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
@@ -155,8 +153,19 @@ func (e *EPM) AddJob(j *Job) {
 	e.jobs = append(e.jobs, *j)
 }
 
+func (e *EPM) VarSub(id string) (string, error) {
+	if strings.HasPrefix(id, "{{") && strings.HasSuffix(id, "}}") {
+		id = id[2 : len(id)-2]
+	}
+	v, ok := e.vars[id]
+	if !ok {
+		return "", fmt.Errorf("Unknown variable %s", id)
+	}
+	return v, nil
+}
+
 // replaces any {{varname}} args with the variable value
-func (e *EPM) VarSub(args []string) []string {
+/*func (e *EPM) VarSub(args []string) []string {
 	r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
 	for i, a := range args {
 		// if its a known var, replace it
@@ -172,7 +181,7 @@ func (e *EPM) VarSub(args []string) []string {
 		})
 	}
 	return args
-}
+}*/
 
 // Read EPM variables in from a file
 func (e *EPM) ReadVars(file string) error {

@@ -16,7 +16,8 @@ type parser struct {
 
 	inJob bool // are we in a job
 
-	arg []*tree // current arg
+	arg  []*tree // current arg
+	argI int     // index of current arg
 
 	tree  *tree // top of current tree
 	treeP *tree // a pointer into current tree
@@ -122,8 +123,8 @@ func parseStateStart(p *parser) parseStateFunc {
 			cmd:  cmd,
 			args: [][]*tree{},
 		}
-		//p.jobs = append(p.jobs, j)
 		p.job = j
+		p.argI = 0
 		return parseStateCommand
 	}
 
@@ -168,6 +169,8 @@ func parseStateCommand(p *parser) parseStateFunc {
 func parseStateArg(p *parser) parseStateFunc {
 	p.arg = []*tree{}
 	var t = p.next()
+
+	// TODO: switch what kind of parsing we do here based on arg number of the current job
 
 	// a single arg may have multiple elements, and is terminated by => or \n
 	for ; t.typ != tokenArrowTy && t.typ != tokenNewLineTy; t = p.next() {
@@ -223,6 +226,7 @@ func parseStateArg(p *parser) parseStateFunc {
 	if t.typ == tokenArrowTy {
 		p.backup()
 	}
+	p.argI += 1
 	return parseStateCommand
 }
 

@@ -197,8 +197,7 @@ func lexStateStart(l *lexer) lexStateFunc {
 
 	// check for command
 	for _, t := range tokenCmds {
-		t += ":"
-		if strings.HasPrefix(remains, t) {
+		if strings.HasPrefix(remains, t+":") {
 			l.temp = t
 			return lexStateCmd
 		}

@@ -67,14 +67,14 @@ func (e *EPM) ExecuteJobs() error {
 	return nil
 }
 
-func requireErr(args []string, n int, cmd string) error {
+func requireErr(args [][]*tree, n int, cmd string) error {
 	if !require(args, n) {
 		return fmt.Errorf("%s requires at least %d arguments. Provided %d", cmd, n, len(args))
 	}
 	return nil
 }
 
-func require(args []string, n int) bool {
+func require(args [][]*tree, n int) bool {
 	if len(args) >= n {
 		return true
 	}
@@ -122,9 +122,12 @@ var NoChainErr = fmt.Errorf("Chain is nil")
 // Args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job) error {
 	logger.Warnln("Executing job: ", job.cmd, "\targs: ", job.args)
-	args := ResolveArgs(job.args)
 	f, n := e.resolveFunc(job.cmd)
-	if err := requireErr(args, n, job.cmd); err != nil {
+	if err := requireErr(job.args, n, job.cmd); err != nil {
+		return err
+	}
+	args, err := e.ResolveArgs(job.cmd, job.args)
+	if err != nil {
 		return err
 	}
 	if e.chain == nil {

@@ -129,12 +129,18 @@ func TestParse(t *testing.T) {
 
 var text2 = `
 transact:
-	$alpha => (+ (* 4 (- 9 3)) 5)
+	$alpha => (+ (* 4 (- 9 3)) 5) => A
+	"jimbo" => (+ $alpha 3)
 `
 
 func TestInterpreter(t *testing.T) {
+	e, _ := NewEPM(nil, "")
+	e.vars["alpha"] = "0x42"
 	p := Parse(text2)
 	p.run()
-	args := ResolveArgs(p.jobs[0].args)
+	args, err := e.ResolveArgs("", p.jobs[0].args)
+	if err != nil {
+		t.Fatal(err)
+	}
 	fmt.Println(args)
 }
