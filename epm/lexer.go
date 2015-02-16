@@ -168,7 +168,7 @@ func lexStateStart(l *lexer) lexStateFunc {
 	// check for tabs (four spaces)
 	if strings.HasPrefix(remains, tokenFourSpaces) {
 		// if its more than four spaces, ignore it all
-		if isSpace(l.peek()) {
+		if strings.HasPrefix(remains, tokenFourSpaces+" ") {
 			return lexStateSpace
 		}
 		return lexStateFourSpaces

@@ -112,6 +112,36 @@ func TestLexer(t *testing.T) {
 	}
 }
 
+var text1b = `
+deploy:
+    ok => doja
+`
+
+func TestLexer2(t *testing.T) {
+	fmt.Println([]byte(text1b))
+	l := Lex(text1b)
+	i := 0
+	for tok := range l.Chan() {
+		fmt.Println(tok)
+		if tok.typ != tokensB[i] {
+			t.Fatal("Error", tok.typ, tokensB[i])
+		}
+		i += 1
+	}
+}
+
+var tokensB = []tokenType{
+	tokenNewLineTy,
+	tokenCmdTy,
+	tokenColonTy,
+	tokenNewLineTy,
+	tokenTabTy,
+	tokenStringTy,
+	tokenArrowTy,
+	tokenStringTy,
+	tokenNewLineTy,
+}
+
 // TODO: proper test
 func TestParse(t *testing.T) {
 	p := Parse(text1)
