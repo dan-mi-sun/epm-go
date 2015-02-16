@@ -85,6 +85,7 @@ const (
 	tokenBlingTy                        // $
 	tokenLeftDiffTy                     // !{
 	tokenRightDiffTy                    // !}
+	tokenUnderscoreTy                   // _
 )
 
 type command struct {
@@ -157,9 +158,10 @@ var (
 	tokenPound       = "#"
 	tokenSpace       = " "
 	tokenBling       = "$"
+	tokenUnderscore  = "_"
 
 	tokenNumbers = "0123456789"
-	tokenHex     = "0123456789abcdef"
+	tokenHex     = "0123456789abcdefABCDEF"
 	tokenOps     = "+-*/%"
 	tokenChars   = "abcdefghijklmnopqrstuvwqyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-/_."
 )

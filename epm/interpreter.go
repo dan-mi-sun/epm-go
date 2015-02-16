@@ -15,12 +15,15 @@ func setter(cmd string) int {
 		return 1
 	case "query":
 		return 2
+	case "test":
+		return 3
 	default:
 		return -1
 	}
 }
 
 func (e *EPM) ResolveArgs(cmd string, args [][]*tree) ([]string, error) {
+
 	var stringArgs = []string{}
 	for i, a := range args {
 		for _, aa := range a {

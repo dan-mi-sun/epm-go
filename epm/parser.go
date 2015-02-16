@@ -122,7 +122,6 @@ func parseStateStart(p *parser) parseStateFunc {
 			p.diffsched[pj] = []string{}
 		}
 		p.diffsched[pj] = append(p.diffsched[pj], t.val)
-		fmt.Println("token diff:", t, pj, p.diffsched[pj])
 		return parseStateStart
 	case tokenCmdTy:
 		cmd := t.val
@@ -156,7 +155,7 @@ func parseStateCommand(p *parser) parseStateFunc {
 	p.inJob = true
 	t := p.next()
 	switch t.typ {
-	case tokenErrTy:
+	case tokenErrTy, tokenEOFTy:
 		p.jobs = append(p.jobs, *p.job)
 		return nil
 	case tokenPoundTy:
@@ -180,7 +179,6 @@ func parseStateCommand(p *parser) parseStateFunc {
 			p.diffsched[pj] = []string{}
 		}
 		p.diffsched[pj] = append(p.diffsched[pj], t.val)
-		fmt.Println("token diff:", t, pj, p.diffsched[pj])
 		return parseStateCommand
 	}
 
@@ -275,10 +273,16 @@ func parseStateArg(p *parser) parseStateFunc {
 				return p.Error(err.Error())
 			}
 			p.arg = append(p.arg, tr)
-		case tokenNewLineTy:
 		case tokenPoundTy:
 			// consume the comment
 			p.next()
+		case tokenUnderscoreTy:
+			p.arg = append(p.arg, &tree{token: t})
+		case tokenEOFTy:
+			p.job.args = append(p.job.args, p.arg)
+			p.argI += 1
+			p.backup()
+			return parseStateCommand
 		}
 	}
 
@@ -310,7 +314,6 @@ func (p *parser) parseExpression(tr *tree) error {
 	tr.token = t
 	// grab the args
 	for t = p.next(); t.typ != tokenRightBraceTy; t = p.next() {
-
 		switch t.typ {
 		case tokenErrTy:
 			return fmt.Errorf(t.val)

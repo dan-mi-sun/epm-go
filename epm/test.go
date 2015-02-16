@@ -85,25 +85,23 @@ func (e *EPM) ExecuteTest(line string, i int) error {
 	// var sub, resolve
 	var argsTree [][]*tree
 	for _, a := range args {
-		p := Parse(a + "\n")
+		p := Parse(a)
 		parseStateArg(p)
 		argsTree = append(argsTree, p.arg)
 	}
 
-	args, err := e.ResolveArgs("test", argsTree[:3])
+	args, err := e.ResolveArgs("test", argsTree)
 	if err != nil {
 		return err
 	}
-	if len(argsTree) > 3 {
-		args = append(args, argsTree[3][0].token.val)
-	}
 
 	fmt.Println("test!", i)
-	s := "\t"
+	fmt.Println(args, len(args))
+	/*s := "\t"
 	for _, a := range args {
 		s += a + "  "
-	}
-	fmt.Println(s)
+	}*/
+	//fmt.Println(s)
 
 	if len(args) < 3 || len(args) > 4 {
 		return fmt.Errorf("invalid number of args for test on line %d", i)
@@ -121,7 +119,7 @@ func (e *EPM) ExecuteTest(line string, i int) error {
 
 	if args[2] != "_" {
 		expected := utils.Coerce2Hex(args[2])
-		if utils.StripZeros(utils.StripHex(expected)) != utils.StripZeros(utils.StripHex(val)) {
+		if strings.ToLower(utils.StripZeros(utils.StripHex(expected))) != strings.ToLower(utils.StripZeros(utils.StripHex(val))) {
 			return fmt.Errorf("\t!!!!!Test %d failed. Got: %s, expected %s", i, val, expected)
 		} else {
 			fmt.Println("\tTest Passed (with flying colors!)")

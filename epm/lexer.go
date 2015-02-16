@@ -74,6 +74,7 @@ func (l *lexer) run() {
 	for state := lexStateStart; state != nil; state = state(l) {
 		// :D
 	}
+	l.emit(tokenEOFTy)
 	close(l.tokens)
 }
 
@@ -123,10 +124,20 @@ func (l *lexer) accept(options string) bool {
 
 func (l *lexer) acceptRun(options string) bool {
 	i := 0
-	for s := l.next(); strings.Contains(options, s); s = l.next() {
+	s := l.next()
+	for ; l.pos < l.length && strings.Contains(options, s); s = l.next() {
 		i += 1
 	}
-	l.backup()
+	if strings.Contains(options, s) {
+		// if we are at the end
+		// the loop never runs
+		return true
+	} else if l.pos < l.length {
+		l.backup()
+	} else if s != "" {
+		l.backup()
+	}
+
 	return i > 0
 }
 
@@ -159,6 +170,9 @@ func lexStateStart(l *lexer) lexStateFunc {
 		return lexStateStart
 	case tokenRightBrace:
 		l.emit(tokenRightBraceTy)
+		return lexStateStart
+	case tokenUnderscore:
+		l.emit(tokenUnderscoreTy)
 		return lexStateStart
 	}
 	l.backup()
@@ -350,6 +364,7 @@ func lexStateNumber(l *lexer) lexStateFunc {
 func lexStateString(l *lexer) lexStateFunc {
 	if !l.acceptRun(tokenChars) {
 		return l.Error("Expected a string")
+		l.backup()
 	}
 	l.emit(tokenStringTy)
 	return lexStateStart

@@ -116,13 +116,11 @@ func TestLexer(t *testing.T) {
 	testLexer(t, text1, tokens)
 }
 
-var text1b = `
-deploy:
+var text1b = `deploy:
     ok => doja
 `
 
 var tokensB = []tokenType{
-	tokenNewLineTy,
 	tokenCmdTy,
 	tokenColonTy,
 	tokenNewLineTy,
@@ -241,42 +239,89 @@ transact:
 !}bob
 `
 
+func TestSimple(t *testing.T) {
+	e, _ := testParse(t, text1b)
+	e.ExecuteJobs()
+}
+
 func TestDeploy(t *testing.T) {
-	p := Parse(text3)
-	p.run()
-	// setup EPM object with ChainInterface
-	e, _ := NewEPM(nil, "")
-
-	e.jobs = p.jobs
-	printJobs(e.jobs)
-
+	e, _ := testParse(t, text3)
 	// epm execute jobs
 	e.ExecuteJobs()
 }
 
 func TestTransact(t *testing.T) {
-	p := Parse(text4)
-	p.run()
-	// setup EPM object with ChainInterface
-	e, _ := NewEPM(nil, "")
-
-	e.jobs = p.jobs
-	printJobs(e.jobs)
-
+	e, _ := testParse(t, text4)
 	// epm execute jobs
 	e.ExecuteJobs()
 }
 
-func TestDiff(t *testing.T) {
-	p := Parse(text5)
+func testParse(t *testing.T, input string) (*EPM, *parser) {
+	p := Parse(input)
 	p.run()
 	// setup EPM object with ChainInterface
 	e, _ := NewEPM(nil, "")
 
 	e.jobs = p.jobs
 	printJobs(e.jobs)
-	fmt.Println("Diff sched:", p.diffsched)
+	return e, p
+}
 
+func TestDiff(t *testing.T) {
+	e, p := testParse(t, text5)
+	fmt.Println("Diff sched:", p.diffsched)
 	// epm execute jobs
 	e.ExecuteJobs()
+}
+
+var text6 = `deploy: 
+    c3dtest.lll => {{c3d}}
+log:
+	c3d => {{c3d}}`
+
+func Test6(t *testing.T) {
+	testLexer(t, text6, nil)
+	testParse(t, text6)
+}
+
+var text7 = `!{array
+deploy:
+	stdarraytest.lll => {{array}}
+log:  
+	array => {{array}}
+!}array`
+
+func Test7(t *testing.T) {
+	testLexer(t, text7, nil)
+	testParse(t, text7)
+}
+
+var text8 = `{{A}}; (+ {{A1}} 1); _; {{B}}
+{{C}}; (- {{B2}} 3); 0xDEED; {{C}}
+{{C}}; {{B2}}; 0x4`
+
+//var text8 = `4;`
+
+func Test8(t *testing.T) {
+	args := splitLine(text8)
+	fmt.Println("split args", args, len(args))
+	// for each arg, parse into tree,
+	// var sub, resolve
+	var argsTree [][]*tree
+	for _, a := range args {
+		testLexer(t, a, nil)
+		//p := Parse(a)
+		//parseStateArg(p)
+		//fmt.Println(a, p.arg)
+		//argsTree = append(argsTree, p.arg)
+	}
+	fmt.Println("len args tree:", len(argsTree))
+
+	/*args, err := e.ResolveArgs("test", argsTree)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println("len resolve args:", args, len(args))
+	*/
+
 }
