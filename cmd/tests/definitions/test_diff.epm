@@ -1,9 +1,9 @@
 !{begin
 deploy:
-    a.lll => {{A}}
+	a.lll => {{A}}
   !{tx
 transact:
-    {{A}} => 0x90 "ethan"    
+	{{A}} => 0x90 "ethan"    
   !}tx
 
   !}begin

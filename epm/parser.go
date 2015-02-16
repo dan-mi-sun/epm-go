@@ -171,8 +171,25 @@ func parseStateArg(p *parser) parseStateFunc {
 	var t = p.next()
 
 	// TODO: switch what kind of parsing we do here based on arg number of the current job
+	/* Args
+	Deploy
+		- string (no quotes)
+		- set var
+	Modify Deploy
+		- string (no quotes)
+		- set var
+		- string (no quotes)
+		- string (no quotes), use var
+	Transact
+		- use var
+		- list of strings/num/var/expr
+	Query
+		- use var
+		- string/var/num/exp
+		- set var
+	*/
 
-	// a single arg may have multiple elements, and is terminated by => or \n
+	// a single arg may have multiple elements, and is terminated by => or \n or #comment
 	for ; t.typ != tokenArrowTy && t.typ != tokenNewLineTy; t = p.next() {
 		switch t.typ {
 		case tokenNumberTy:
@@ -197,6 +214,7 @@ func parseStateArg(p *parser) parseStateFunc {
 			tr := &tree{token: t}
 			p.arg = append(p.arg, tr)
 		case tokenBlingTy:
+			// XXX: not in use
 			// known variable
 			v := p.next()
 			if v.typ != tokenStringTy {
@@ -204,6 +222,23 @@ func parseStateArg(p *parser) parseStateFunc {
 			}
 			// setting identifier means epm will
 			// look it up in symbols table
+			tr := &tree{
+				token:      v,
+				identifier: true,
+			}
+			p.arg = append(p.arg, tr)
+		case tokenLeftBracesTy:
+			v := p.next()
+			if v.typ != tokenStringTy {
+				return p.Error(fmt.Sprintf("Invalid variable name: %s", v.val))
+			}
+			cl := p.next()
+			if cl.typ != tokenRightBracesTy {
+				return p.Error("Must close left braces")
+			}
+			// setting identifier means epm will
+			// look it up in symbols table
+			// but if its in position to be a setter, resolve arg will ignore it
 			tr := &tree{
 				token:      v,
 				identifier: true,
@@ -217,6 +252,9 @@ func parseStateArg(p *parser) parseStateFunc {
 			}
 			p.arg = append(p.arg, tr)
 		case tokenNewLineTy:
+		case tokenPoundTy:
+			// consume the comment
+			p.next()
 		}
 	}
 

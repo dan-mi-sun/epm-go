@@ -116,7 +116,11 @@ func TestLexer(t *testing.T) {
 func TestParse(t *testing.T) {
 	p := Parse(text1)
 	p.run()
-	for _, j := range p.jobs {
+	printJobs(p.jobs)
+}
+
+func printJobs(jobs []Job) {
+	for _, j := range jobs {
 		fmt.Println("##########")
 		fmt.Println(j.cmd, len(j.args))
 		for _, a := range j.args {
@@ -125,6 +129,7 @@ func TestParse(t *testing.T) {
 		}
 
 	}
+
 }
 
 var text2 = `
@@ -143,4 +148,40 @@ func TestInterpreter(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println(args)
+}
+
+var text3 = `
+deploy:
+	"a.lll" => {{BOB}}
+`
+
+var text4 = `
+transact:
+	{{BOB}} => "jim" 0x34 (+ (* 2 0x4) 0x1)
+`
+
+func TestDeploy(t *testing.T) {
+	p := Parse(text3)
+	p.run()
+	// setup EPM object with ChainInterface
+	e, _ := NewEPM(nil, "")
+
+	e.jobs = p.jobs
+	printJobs(e.jobs)
+
+	// epm execute jobs
+	e.ExecuteJobs()
+}
+
+func TestTransact(t *testing.T) {
+	p := Parse(text4)
+	p.run()
+	// setup EPM object with ChainInterface
+	e, _ := NewEPM(nil, "")
+
+	e.jobs = p.jobs
+	printJobs(e.jobs)
+
+	// epm execute jobs
+	e.ExecuteJobs()
 }

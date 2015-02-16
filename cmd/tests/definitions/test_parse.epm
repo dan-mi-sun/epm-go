@@ -4,23 +4,23 @@
 # and three
 
 deploy:
-    a.lll => {{A}} #hi im a
+	a.lll => {{A}} #hi im a
 modify-deploy: #barbeque
-    b.lll => {{B}}
-    (def 'dougie 0x1313) => (def 'dougie {{A}})    #okokokok
+	b.lll => {{B}}
+	"(def 'dougie 0x1313)" => "(def 'dougie {{A}})" #okokokok
 modify-deploy: 
-    b.lll => {{D}}
-    (def 'dougie 0x1313) => (def 'dougie {{A}})
-    [[0x42]] => [[0x43]]
+	b.lll => {{D}}
+	"(def 'dougie 0x1313)" => "(def 'dougie {{A}})"
+	"[[0x42]]" => "[[0x43]]"
 # hows this for a good time
         # and this too
 transact:
-    {{B}} => 0x1+16+0x1 "ethan"
+	{{B}} => (+ (+ 1 16) 1) "ethan"
 transact:
-    {{B}} => 0x7 "not-ethan"
+	{{B}} => 0x7 "not-ethan"
 transact:
-    {{B}} => 0x231 "moreover"
+	{{B}} => 0x231 "moreover"
 query:
-    {{B}} => 0x15 => {{C}}
+	{{B}} => 0x15 => {{C}}
 endow:
-    {{A}} => 0x609
+	{{A}} => 0x609

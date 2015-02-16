@@ -112,6 +112,20 @@ func TestStack(t *testing.T) {
 	m.Shutdown()
 }
 
+func TestKV(t *testing.T) {
+	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_kv.epm"))
+
+	addr1 := e.Vars()["A"]
+	e.Commit()
+	got := m.StorageAt(addr1, "0x5")
+	exp := hex.EncodeToString([]byte("ethan"))
+	if got != exp {
+		t.Error("got:", got, "expected:", exp)
+	}
+	m.Shutdown()
+
+}
+
 // not a real test since the diffs just print we don't have access to them programmatically yet
 // TODO>..
 func TestDiff(t *testing.T) {

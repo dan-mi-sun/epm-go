@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 )
 
@@ -165,23 +166,20 @@ func (e *EPM) VarSub(id string) (string, error) {
 }
 
 // replaces any {{varname}} args with the variable value
-/*func (e *EPM) VarSub(args []string) []string {
+func (e *EPM) RegVarSub(arg string) string {
 	r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
-	for i, a := range args {
-		// if its a known var, replace it
-		// else, leave alone
-		args[i] = r.ReplaceAllStringFunc(a, func(s string) string {
-			k := s[2 : len(s)-2] // shave the brackets
-			v, ok := e.vars[k]
-			if ok {
-				return v
-			} else {
-				return s
-			}
-		})
-	}
-	return args
-}*/
+	// if its a known var, replace it
+	// else, leave alone
+	return r.ReplaceAllStringFunc(arg, func(s string) string {
+		k := s[2 : len(s)-2] // shave the brackets
+		v, ok := e.vars[k]
+		if ok {
+			return v
+		} else {
+			return s
+		}
+	})
+}
 
 // Read EPM variables in from a file
 func (e *EPM) ReadVars(file string) error {
@@ -235,6 +233,7 @@ func (e *EPM) StoreVar(key, val string) {
 		key = key[2 : len(key)-2]
 	}
 	e.vars[key] = utils.Coerce2Hex(val)
+	logger.Infof("Stored var %s:%s\n", key, e.vars[key])
 }
 
 func CopyContractPath() error {

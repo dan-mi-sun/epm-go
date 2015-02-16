@@ -1,13 +1,13 @@
 {
     "address":"0000000000THISISDOUG",
     "no-gendoug":true,
-    "doug":"Genesis DOUG/gendoug-v2.lll",
-    "model":"std",
+    "doug":"",
+    "model":"yes",
     "consensus":"", 
     "difficulty":17,
-    "public:mine":0,
-    "public:create":0,
-    "public:tx":0,
+    "public:mine":1,
+    "public:create":1,
+    "public:tx":1,
     "maxgastx":"0xfffffffffffffffffffffffff",
     "blocktime":5,
     "accounts":

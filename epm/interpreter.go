@@ -23,17 +23,17 @@ func setter(cmd string) int {
 func (e *EPM) ResolveArgs(cmd string, args [][]*tree) ([]string, error) {
 	var stringArgs = []string{}
 	for i, a := range args {
-		// this is a list of trees. assume for now all length one
-		aa := a[0]
-		if i == setter(cmd) {
-			stringArgs = append(stringArgs, aa.token.val)
-			continue
+		for _, aa := range a {
+			if i == setter(cmd) {
+				stringArgs = append(stringArgs, aa.token.val)
+				continue
+			}
+			r, err := e.resolveTree(aa)
+			if err != nil {
+				return nil, err
+			}
+			stringArgs = append(stringArgs, r)
 		}
-		r, err := e.resolveTree(aa)
-		if err != nil {
-			return nil, err
-		}
-		stringArgs = append(stringArgs, r)
 	}
 	return stringArgs, nil
 }
@@ -105,6 +105,9 @@ func string2Big(s string) (*big.Int, error) {
 
 	}
 	h := utils.StripHex(s)
+	if len(h)%2 != 0 {
+		h = "0" + h
+	}
 	b, err := hex.DecodeString(h)
 	if err != nil {
 		return nil, err

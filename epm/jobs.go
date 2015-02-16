@@ -100,8 +100,7 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 	case "test":
 		return func(a []string) error {
 			e.chain.Commit()
-			//err := e.ExecuteTest(a[0], 0)
-			var err error
+			err := e.ExecuteTest(a[0], 0)
 			if err != nil {
 				logger.Errorln(err)
 				return err
@@ -130,6 +129,8 @@ func (e *EPM) ExecuteJob(job Job) error {
 	if err != nil {
 		return err
 	}
+	logger.Infoln("ResolvedArgs:", args)
+	fmt.Println("ResolvedArgs:", args)
 	if e.chain == nil {
 		return NoChainErr
 	}
@@ -205,7 +206,7 @@ func (e *EPM) ModifyDeploy(args []string) error {
 	args = args[2:]
 
 	contract = strings.Trim(contract, "\"")
-	newName, err := Modify(path.Join(ContractPath, contract), args)
+	newName, err := e.Modify(path.Join(ContractPath, contract), args)
 	if err != nil {
 		return err
 	}
@@ -221,15 +222,15 @@ func (e *EPM) Transact(args []string) (err error) {
 	//data := strings.Split(dataS, " ")
 	//data = DoMath(data)
 
-	h, _ := hex.DecodeString(utils.StripHex(data[0]))
-	funcName := string(h)
-	args = data[1:]
-
-	fmt.Println("PACKING, func name", funcName)
-	packed := args
+	fmt.Println("TX ARGS PRE:", data)
+	packed := []string{}
 	// check for abi
 	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
 	if ok {
+		h, _ := hex.DecodeString(utils.StripHex(data[0]))
+		funcName := string(h)
+		args = data[1:]
+
 		fmt.Println("ABI Spec", abiSpec)
 		a := []interface{}{}
 		for _, aa := range args {
@@ -242,7 +243,16 @@ func (e *EPM) Transact(args []string) (err error) {
 		}
 		packed = []string{hex.EncodeToString(packedBytes)}
 
+	} else {
+		for _, aa := range data {
+			if !utils.IsHex(aa) {
+				aa = "0x" + fmt.Sprintf("%x", aa)
+			}
+			packed = append(packed, aa)
+		}
 	}
+
+	fmt.Println("ARGS FOR TX:", packed)
 
 	if _, err = e.chain.Msg(to, packed); err != nil {
 		return
@@ -309,13 +319,14 @@ func (e *EPM) Endow(args []string) error {
 
 // Apply substitution: replace pairs from args to contract
 // and save in a temporary file
-func Modify(contract string, args []string) (string, error) {
+func (e *EPM) Modify(contract string, args []string) (string, error) {
 	b, err := ioutil.ReadFile(contract)
 	if err != nil {
 		return "", fmt.Errorf("Could not open file %s: %s", contract, err.Error())
 	}
 
 	lll := string(b)
+	fmt.Println("ORIGINAL LLL:", lll)
 
 	// when we modify a contract, we save it in the .tmp dir in the same relative path as its original root.
 	// eg. if ContractPath is ~/ponos and we modify ponos/projects/issue.lll then the modified version will be found in
@@ -335,9 +346,14 @@ func Modify(contract string, args []string) (string, error) {
 		sub := args[0]
 		rep := args[1]
 
+		// rep may have an epm var in it
+		rep = e.RegVarSub(rep)
+
 		lll = strings.Replace(lll, sub, rep, -1)
 		args = args[2:]
 	}
+
+	fmt.Println("NEW LLL:", lll)
 
 	hash := sha256.Sum256([]byte(lll))
 	newPath := path.Join(EpmDir, dir, hex.EncodeToString(hash[:])+".lll")
