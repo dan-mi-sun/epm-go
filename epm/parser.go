@@ -48,6 +48,13 @@ func Parse(input string) *parser {
 	return p
 }
 
+func ParseArgs(cmd string, args string) *Job {
+	args += "\n"
+	p := Parse(args)
+	parseStateArg(p)
+	return NewJob(cmd, p.arg)
+}
+
 func (p *parser) next() token {
 	if p.peekCount == 1 {
 		p.peekCount = 0
@@ -205,7 +212,6 @@ func parseStateArg(p *parser) parseStateFunc {
 			if err := p.parseExpression(tr); err != nil {
 				return p.Error(err.Error())
 			}
-			fmt.Println("TREE PRINTING")
 			p.arg = append(p.arg, tr)
 		case tokenNewLineTy:
 		}
@@ -236,11 +242,9 @@ func (p *parser) parseExpression(tr *tree) error {
 	t := p.next()
 	// this is the op
 	tr.token = t
-	fmt.Println("in parse expression:", t.val, t.typ)
 	// grab the args
 	for t = p.next(); t.typ != tokenRightBraceTy; t = p.next() {
 
-		fmt.Println("next :", t.val, t.typ, tokenStringTy)
 		switch t.typ {
 		case tokenErrTy:
 			return fmt.Errorf(t.val)
@@ -251,9 +255,7 @@ func (p *parser) parseExpression(tr *tree) error {
 			}
 			tr.children = append(tr.children, tr2)
 		case tokenStringTy, tokenNumberTy:
-			fmt.Println("ok wtf")
 			tr2 := &tree{token: t}
-			fmt.Println("new tree", tr2)
 			tr.children = append(tr.children, tr2)
 		case tokenBlingTy:
 			t = p.next()
@@ -263,8 +265,6 @@ func (p *parser) parseExpression(tr *tree) error {
 			tr2 := &tree{token: t, identifier: true}
 			tr.children = append(tr.children, tr2)
 		default:
-			fmt.Println(t.typ, t.val, t.typ == tokenStringTy)
-			fmt.Println("wtf")
 		}
 	}
 	return nil

@@ -140,10 +140,14 @@ func (e *EPM) Parse(filename string) error {
 }
 
 // New EPM Job
-// TODO: parse
-func NewJob(cmd string, args []string) *Job {
-	// return &job{cmd, args}
-	return nil
+func NewJob(cmd string, args []*tree) *Job {
+	j := new(Job)
+	j.cmd = cmd
+	j.args = [][]*tree{}
+	for _, a := range args {
+		j.args = append(j.args, []*tree{a})
+	}
+	return j
 }
 
 // Add job to EPM jobs

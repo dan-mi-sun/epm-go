@@ -510,7 +510,12 @@ func cliCommand(c *cli.Context) {
 	cmd := args[0]
 	args = args[1:]
 
-	job := epm.NewJob(cmd, args)
+	argString := ""
+	for _, a := range args {
+		argString += a + " "
+	}
+
+	job := epm.ParseArgs(cmd, argString)
 
 	contractPath := c.String("c")
 	if !c.IsSet("c") {
@@ -685,16 +690,19 @@ func cliDeploy(c *cli.Context) {
 	e.Commit()
 	// run tests
 	if test_ {
-		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
-		if err != nil {
-			logger.Errorln(err)
-			if results != nil {
-				logger.Errorln("Failed tests:", results.FailedTests)
+		/*
+				results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
+				if err != nil {
+					logger.Errorln(err)
+					if results != nil {
+						logger.Errorln("Failed tests:", results.FailedTests)
+					}
+				}
+				e.Stop()
+				fmt.Printf("Testing %s.pdt failed\n", pkg)
+				os.Exit(1)
 			}
-			e.Stop()
-			fmt.Printf("Testing %s.pdt failed\n", pkg)
-			os.Exit(1)
-		}
+		*/
 	}
 }
 
@@ -737,7 +745,7 @@ func cliConsole(c *cli.Context) {
 	if diffStorage {
 		e.Diff = true
 	}
-	e.Repl()
+	//e.Repl()
 }
 
 func cliKeyImport(c *cli.Context) {
@@ -947,13 +955,15 @@ func cliInstall(c *cli.Context) {
 	e.Commit()
 	// run tests
 	if test_ {
-		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
-		if err != nil {
-			logger.Errorln(err)
-			if results != nil {
-				logger.Errorln("Failed tests:", results.FailedTests)
+		/*
+			results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
+			if err != nil {
+				logger.Errorln(err)
+				if results != nil {
+					logger.Errorln("Failed tests:", results.FailedTests)
+				}
 			}
-		}
+		*/
 	}
 
 	var rootContract string
