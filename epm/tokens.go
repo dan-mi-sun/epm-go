@@ -55,6 +55,10 @@ func (t tokenType) String() string {
 		return "[Op]"
 	case tokenSpaceTy:
 		return "[Space]"
+	case tokenLeftDiffTy:
+		return "[LeftDiff]"
+	case tokenRightDiffTy:
+		return "[RightDiff]"
 	}
 	return "[Unknown]"
 }
@@ -79,6 +83,8 @@ const (
 	tokenOpTy                           // math ops (+, -, *, /, %)
 	tokenSpaceTy                        // debugging
 	tokenBlingTy                        // $
+	tokenLeftDiffTy                     // !{
+	tokenRightDiffTy                    // !}
 )
 
 type command struct {
@@ -140,6 +146,8 @@ var (
 	tokenRightBraces = "}}"
 	tokenLeftBrace   = "("
 	tokenRightBrace  = ")"
+	tokenLeftDiff    = "!{"
+	tokenRightDiff   = "!}"
 	tokenArrow       = "=>"
 	tokenFourSpaces  = "    "
 	tokenQuote       = "\""

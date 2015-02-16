@@ -22,6 +22,9 @@ type parser struct {
 	tree  *tree // top of current tree
 	treeP *tree // a pointer into current tree
 	job   *Job  // current job
+	jobI  int   // job counter
+
+	diffsched map[int][]string
 }
 
 type Job struct {
@@ -40,12 +43,12 @@ type tree struct {
 func Parse(input string) *parser {
 	l := Lex(input)
 	p := &parser{
-		l:    l,
-		jobs: []Job{},
-		tree: new(tree),
-		job:  new(Job),
+		l:         l,
+		jobs:      []Job{},
+		tree:      new(tree),
+		job:       new(Job),
+		diffsched: make(map[int][]string),
 	}
-	//go p.run()
 	return p
 }
 
@@ -88,10 +91,6 @@ func (p *parser) run() error {
 	return nil
 }
 
-func (p *parser) accept(options []token) bool {
-	return true
-}
-
 // return a parseStateFunc that prints the error and triggers exit (returns nil)
 // closures++
 func (p *parser) Error(s string) parseStateFunc {
@@ -113,6 +112,18 @@ func parseStateStart(p *parser) parseStateFunc {
 		return parseStateStart
 	case tokenPoundTy:
 		return parseStateComment
+	case tokenLeftDiffTy:
+		t = p.next()
+		if t.typ != tokenStringTy {
+			return p.Error("Diff braces must be followed by a string")
+		}
+		pj := p.jobI
+		if _, ok := p.diffsched[pj]; !ok {
+			p.diffsched[pj] = []string{}
+		}
+		p.diffsched[pj] = append(p.diffsched[pj], t.val)
+		fmt.Println("token diff:", t, pj, p.diffsched[pj])
+		return parseStateStart
 	case tokenCmdTy:
 		cmd := t.val
 		t = p.next()
@@ -125,6 +136,7 @@ func parseStateStart(p *parser) parseStateFunc {
 		}
 		p.job = j
 		p.argI = 0
+		p.jobI += 1
 		return parseStateCommand
 	}
 
@@ -158,6 +170,18 @@ func parseStateCommand(p *parser) parseStateFunc {
 		p.jobs = append(p.jobs, *p.job)
 		p.backup()
 		return parseStateStart
+	case tokenLeftDiffTy, tokenRightDiffTy:
+		t = p.next()
+		if t.typ != tokenStringTy {
+			return p.Error("Diff braces must be followed by a string")
+		}
+		pj := p.jobI
+		if _, ok := p.diffsched[pj]; !ok {
+			p.diffsched[pj] = []string{}
+		}
+		p.diffsched[pj] = append(p.diffsched[pj], t.val)
+		fmt.Println("token diff:", t, pj, p.diffsched[pj])
+		return parseStateCommand
 	}
 
 	return p.Error("Command args must be indented")
@@ -305,6 +329,17 @@ func (p *parser) parseExpression(tr *tree) error {
 				return fmt.Errorf("Invalid variable name: %s", t.val)
 			}
 			tr2 := &tree{token: t, identifier: true}
+			tr.children = append(tr.children, tr2)
+		case tokenLeftBracesTy:
+			v := p.next()
+			if v.typ != tokenStringTy {
+				return fmt.Errorf("Invalid variable name: %s", v.val)
+			}
+			cl := p.next()
+			if cl.typ != tokenRightBracesTy {
+				return fmt.Errorf("Must close left braces")
+			}
+			tr2 := &tree{token: v, identifier: true}
 			tr.children = append(tr.children, tr2)
 		default:
 		}

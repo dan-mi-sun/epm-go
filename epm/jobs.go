@@ -36,14 +36,13 @@ func (e *EPM) Commit() {
 // Execute parsed jobs
 func (e *EPM) ExecuteJobs() error {
 	if e.Diff {
-		//e.checkTakeStateDiff(0)
+		e.checkTakeStateDiff(0)
 	}
 
 	for i, j := range e.jobs {
 		err := e.ExecuteJob(j)
 		if e.Diff {
-			_ = i
-			//e.checkTakeStateDiff(i + 1)
+			e.checkTakeStateDiff(i + 1)
 		}
 
 		if err != nil {
@@ -57,12 +56,9 @@ func (e *EPM) ExecuteJobs() error {
 				continue
 			}
 		}
-
-		// time.Sleep(time.Second) // this was not necessary for epm but was when called from CI. not sure why :(
-		// otherwise, tx reactors get blocked;
 	}
 	if e.Diff {
-		//e.checkTakeStateDiff(len(e.jobs))
+		e.checkTakeStateDiff(len(e.jobs))
 	}
 	return nil
 }

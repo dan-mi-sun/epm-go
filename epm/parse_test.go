@@ -99,36 +99,27 @@ var tokens = []tokenType{
 	tokenNewLineTy,
 }
 
-func TestLexer(t *testing.T) {
-	fmt.Println([]byte(text1))
-	l := Lex(text1)
+func testLexer(t *testing.T, input string, ground []tokenType) {
+	l := Lex(input)
 	i := 0
 	for tok := range l.Chan() {
 		fmt.Println(tok)
-		if tok.typ != tokens[i] {
+		if ground != nil && tok.typ != ground[i] {
 			t.Fatal("Error", tok.typ, tokens[i])
 		}
 		i += 1
 	}
+
+}
+
+func TestLexer(t *testing.T) {
+	testLexer(t, text1, tokens)
 }
 
 var text1b = `
 deploy:
     ok => doja
 `
-
-func TestLexer2(t *testing.T) {
-	fmt.Println([]byte(text1b))
-	l := Lex(text1b)
-	i := 0
-	for tok := range l.Chan() {
-		fmt.Println(tok)
-		if tok.typ != tokensB[i] {
-			t.Fatal("Error", tok.typ, tokensB[i])
-		}
-		i += 1
-	}
-}
 
 var tokensB = []tokenType{
 	tokenNewLineTy,
@@ -140,6 +131,39 @@ var tokensB = []tokenType{
 	tokenArrowTy,
 	tokenStringTy,
 	tokenNewLineTy,
+}
+
+func TestLexer2(t *testing.T) {
+	testLexer(t, text1b, tokensB)
+}
+
+var text1c = `
+!{bob
+deploy:
+    ok => doja
+!}bob
+`
+
+var tokensC = []tokenType{
+	tokenNewLineTy,
+	tokenLeftDiffTy,
+	tokenStringTy,
+	tokenNewLineTy,
+	tokenCmdTy,
+	tokenColonTy,
+	tokenNewLineTy,
+	tokenTabTy,
+	tokenStringTy,
+	tokenArrowTy,
+	tokenStringTy,
+	tokenNewLineTy,
+	tokenRightDiffTy,
+	tokenStringTy,
+	tokenNewLineTy,
+}
+
+func TestLexer3(t *testing.T) {
+	testLexer(t, text1c, tokensC)
 }
 
 // TODO: proper test
@@ -180,6 +204,26 @@ func TestInterpreter(t *testing.T) {
 	fmt.Println(args)
 }
 
+var text2b = `
+transact:
+	$alpha => (+ (* {{A}} (- 9 {{B}})) 5) => A
+	"jimbo" => (+ $alpha 3)
+`
+
+func TestInterpreter2(t *testing.T) {
+	e, _ := NewEPM(nil, "")
+	e.vars["alpha"] = "0x42"
+	e.vars["A"] = "0x5"
+	e.vars["B"] = "0x3"
+	p := Parse(text2b)
+	p.run()
+	args, err := e.ResolveArgs("", p.jobs[0].args)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fmt.Println(args)
+}
+
 var text3 = `
 deploy:
 	"a.lll" => {{BOB}}
@@ -188,6 +232,13 @@ deploy:
 var text4 = `
 transact:
 	{{BOB}} => "jim" 0x34 (+ (* 2 0x4) 0x1)
+`
+
+var text5 = `
+!{bob
+transact:
+	0x5 => "jim" 0x34 (+ (* 2 0x4) 0x1)
+!}bob
 `
 
 func TestDeploy(t *testing.T) {
@@ -211,6 +262,20 @@ func TestTransact(t *testing.T) {
 
 	e.jobs = p.jobs
 	printJobs(e.jobs)
+
+	// epm execute jobs
+	e.ExecuteJobs()
+}
+
+func TestDiff(t *testing.T) {
+	p := Parse(text5)
+	p.run()
+	// setup EPM object with ChainInterface
+	e, _ := NewEPM(nil, "")
+
+	e.jobs = p.jobs
+	printJobs(e.jobs)
+	fmt.Println("Diff sched:", p.diffsched)
 
 	// epm execute jobs
 	e.ExecuteJobs()

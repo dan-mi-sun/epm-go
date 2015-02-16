@@ -179,14 +179,24 @@ func lexStateStart(l *lexer) lexStateFunc {
 		return lexStateSpace
 	}
 
-	// check for left brace
+	// check for left braces
 	if strings.HasPrefix(remains, tokenLeftBraces) {
 		return lexStateLeftBraces
 	}
 
-	// check for right brace
+	// check for right braces
 	if strings.HasPrefix(remains, tokenRightBraces) {
 		return lexStateRightBraces
+	}
+
+	// check for left diff
+	if strings.HasPrefix(remains, tokenLeftDiff) {
+		return lexStateLeftDiff
+	}
+
+	// check for right diff
+	if strings.HasPrefix(remains, tokenRightDiff) {
+		return lexStateRightDiff
 	}
 
 	// check for arrow
@@ -308,6 +318,20 @@ func lexStateLeftBraces(l *lexer) lexStateFunc {
 func lexStateRightBraces(l *lexer) lexStateFunc {
 	l.pos += len(tokenRightBraces)
 	l.emit(tokenRightBracesTy)
+	return lexStateStart
+}
+
+// On !{
+func lexStateLeftDiff(l *lexer) lexStateFunc {
+	l.pos += len(tokenLeftDiff)
+	l.emit(tokenLeftDiffTy)
+	return lexStateStart
+}
+
+// On !}
+func lexStateRightDiff(l *lexer) lexStateFunc {
+	l.pos += len(tokenRightDiff)
+	l.emit(tokenRightDiffTy)
 	return lexStateStart
 }
 

@@ -87,10 +87,8 @@ type EPM struct {
 	Diff   bool
 	states map[string]types.State
 
-	//map job numbers to names of diffs invoked after that job
-	diffName map[int][]string
-	//map job numbers to diff actions (save or diff ie 0 or 1)
-	diffSched map[int][]int
+	//map job numbers to names of diffs invoked before a job
+	diffSched map[int][]string
 
 	log string
 }
@@ -106,8 +104,7 @@ func NewEPM(chain Blockchain, log string) (*EPM, error) {
 		log:       ".epm-log",
 		Diff:      false, // off by default
 		states:    make(map[string]types.State),
-		diffName:  make(map[int][]string),
-		diffSched: make(map[int][]int),
+		diffSched: make(map[int][]string),
 	}
 	// temp dir
 	err := CopyContractPath()
@@ -127,14 +124,13 @@ func (e *EPM) Parse(filename string) error {
 	if err != nil {
 		return err
 	}
-	// TODO: diffs
-	//diffmap := make(map[string]bool)
 
 	p := Parse(string(b))
 	if err := p.run(); err != nil {
 		return err
 	}
 	e.jobs = p.jobs
+	e.diffSched = p.diffsched
 	return nil
 }
 
