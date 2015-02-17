@@ -13,8 +13,11 @@ var (
 
 	plopCmd = cli.Command{
 		Name:   "plop",
-		Usage:  "epm plop <config | genesis>",
+		Usage:  "epm plop <config | genesis | chainid | vars | pid>",
 		Action: cliPlop,
+		Flags: []cli.Flag{
+			chainFlag,
+		},
 	}
 
 	refsCmd = cli.Command{
