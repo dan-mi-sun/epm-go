@@ -142,7 +142,7 @@ var (
 	}
 
 	contractPathFlag = cli.StringFlag{
-		Name:  "c",
+		Name:  "contracts, c",
 		Value: defaultContractPath,
 		Usage: "set the contract path",
 	}

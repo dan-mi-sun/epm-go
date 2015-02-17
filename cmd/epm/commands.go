@@ -182,6 +182,16 @@ var (
 		Flags:  []cli.Flag{},
 	}
 
+	testCmd = cli.Command{
+		Name:   "test",
+		Usage:  "run all pdx/pdt in the directory",
+		Action: cliTest,
+		Flags: []cli.Flag{
+			chainFlag,
+			contractPathFlag,
+		},
+	}
+
 	installCmd = cli.Command{
 		Name:   "install",
 		Usage:  "install a dapp",

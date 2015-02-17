@@ -72,6 +72,7 @@ func main() {
 		deployCmd,
 		consoleCmd,
 		keygenCmd,
+		testCmd,
 	}
 
 	run(app)

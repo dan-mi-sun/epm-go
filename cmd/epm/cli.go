@@ -491,6 +491,100 @@ func cliCommand(c *cli.Context) {
 	e.Commit()
 }
 
+func cliTest(c *cli.Context) {
+	packagePath := "."
+	if len(c.Args()) > 0 {
+		packagePath = c.Args()[0]
+	}
+
+	contractPath := c.String("contracts")
+	dontClear := c.Bool("dont-clear")
+	diffStorage := c.Bool("diff")
+
+	chainRoot, chainType, _, err := resolveRootFlag(c)
+	ifExit(err)
+	// hierarchy : name > chainId > db > config > HEAD > default
+
+	if !c.IsSet("contracts") {
+		contractPath = defaultContractPath
+	}
+	epm.ContractPath, err = filepath.Abs(contractPath)
+	ifExit(err)
+
+	logger.Debugln("Contract root:", epm.ContractPath)
+
+	// clear the cache
+	if !dontClear {
+		err := os.RemoveAll(utils.Epm)
+		if err != nil {
+			logger.Errorln("Error clearing cache: ", err)
+		}
+		utils.InitDataDir(utils.Epm)
+	}
+
+	// read all pdxs in the dir
+	fs, err := ioutil.ReadDir(packagePath)
+	ifExit(err)
+	failed := make(map[string][]int)
+	for _, f := range fs {
+		fname := f.Name()
+		if path.Ext(fname) != ".pdx" {
+			continue
+		}
+		sp := strings.Split(fname, ".")
+		pkg := sp[0]
+		dir := packagePath
+		if _, err := os.Stat(path.Join(dir, pkg+".pdt")); err != nil {
+			continue
+		}
+
+		// setup EPM object with ChainInterface
+		var chain epm.Blockchain
+		chain = loadChain(c, chainType, chainRoot)
+		e, err := epm.NewEPM(chain, epm.LogFile)
+		ifExit(err)
+		e.ReadVars(path.Join(chainRoot, EPMVars))
+
+		// epm parse the package definition file
+		err = e.Parse(path.Join(dir, fname))
+		ifExit(err)
+
+		if diffStorage {
+			e.Diff = true
+		}
+
+		// epm execute jobs
+		e.ExecuteJobs()
+		// write epm variables to file
+		e.WriteVars(path.Join(chainRoot, EPMVars))
+		// wait for a block
+		e.Commit()
+		// run tests
+		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
+		if err != nil {
+			logger.Errorln(err)
+			if results != nil {
+				logger.Errorln("Failed tests:", results.FailedTests)
+			}
+		}
+		chain.Shutdown()
+		if results.Err != "" {
+			log.Fatal(results.Err)
+		}
+		if results.Failed > 0 {
+			failed[pkg] = results.FailedTests
+		}
+	}
+	if len(failed) == 0 {
+		fmt.Println("All tests passed")
+	} else {
+		fmt.Println("Failed:")
+		for p, ns := range failed {
+			fmt.Println(p, ns)
+		}
+	}
+}
+
 // deploy a pdx file on a chain
 func cliDeploy(c *cli.Context) {
 	packagePath := "."
