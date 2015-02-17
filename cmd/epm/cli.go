@@ -18,8 +18,10 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/signal"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -49,6 +51,10 @@ func cliPlop(c *cli.Context) {
 		fmt.Println(chainId)
 	case "vars":
 		b, err := ioutil.ReadFile(path.Join(root, EPMVars))
+		ifExit(err)
+		fmt.Println(string(b))
+	case "pid":
+		b, err := ioutil.ReadFile(path.Join(root, "pid"))
 		ifExit(err)
 		fmt.Println(string(b))
 	default:
@@ -340,9 +346,24 @@ func cliRun(c *cli.Context) {
 	root, chainType, chainId, err := resolveRootFlag(c)
 	ifExit(err)
 
+	pid := os.Getpid()
+	pidFile := path.Join(root, "pid")
+	err = ioutil.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0600)
+	ifExit(err)
+
 	logger.Infof("Running chain %s/%s\n", chainType, chainId)
 	chain := loadChain(c, chainType, root)
+
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, os.Interrupt)
+	go func() {
+		<-ch
+		chain.Shutdown()
+	}()
+
 	chain.WaitForShutdown()
+	err = os.Remove(pidFile)
+	ifExit(err)
 }
 
 // TODO: multi types
