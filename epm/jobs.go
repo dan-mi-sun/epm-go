@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/eris-ltd/lllc-server"
-	"github.com/eris-ltd/lllc-server/abi"
 	"github.com/eris-ltd/thelonious/monklog"
 	"io/ioutil"
 	"log"
@@ -146,11 +145,10 @@ func (e *EPM) Deploy(args []string) error {
 		p = path.Join(ContractPath, contract)
 	}
 	// compile
-	bytecode, abiSpec, err := lllcserver.Compile(p)
+	bytecode, err := lllcserver.Compile(p)
 	if err != nil {
 		return err
 	}
-	logger.Debugln("Abi spec:", string(abiSpec))
 	// send transaction
 	addr, err := e.chain.Script(hex.EncodeToString(bytecode))
 	if err != nil {
@@ -159,16 +157,6 @@ func (e *EPM) Deploy(args []string) error {
 		return err
 	}
 	logger.Warnf("Deployed %s as %s\n", addr, key)
-	// write abi to file
-	abiDir := path.Join(e.chain.Property("RootDir").(string), "abi")
-	if _, err := os.Stat(abiDir); err != nil {
-		if err := os.Mkdir(abiDir, 0700); err != nil {
-			return err
-		}
-	}
-	if err := ioutil.WriteFile(path.Join(abiDir, utils.StripHex(addr)), []byte(abiSpec), 0600); err != nil {
-		return err
-	}
 	// save contract address
 	e.StoreVar(key, addr)
 	return nil
@@ -188,74 +176,15 @@ func (e *EPM) ModifyDeploy(args []string) error {
 	return e.Deploy([]string{newName, key})
 }
 
-func ReadAbi(root, to string) (abi.ABI, bool) {
-	p := path.Join(root, "abi", utils.StripHex(to))
-	if _, err := os.Stat(p); err != nil {
-		log.Println("Abi doesn't exist for", p)
-		return abi.NullABI, false
-	}
-	b, err := ioutil.ReadFile(p)
-	if err != nil {
-		log.Println("Failed to read abi file:", err)
-		return abi.NullABI, false
-	}
-	a := new(abi.ABI)
-
-	if err := a.UnmarshalJSON(b); err != nil {
-		log.Println("failed to unmarshal", err)
-		return abi.NullABI, false
-	}
-	return *a, true
-}
-
 // Send a transaction with data to a contract
-func (e *EPM) Transact(args []string) (err error) {
-
+func (e *EPM) Transact(args []string) error {
 	to := args[0]
 	dataS := args[1]
 	data := strings.Split(dataS, " ")
 	data = DoMath(data)
-
-	if len(data) == 0 {
-		_, err = e.chain.Msg(to, data)
-		if err != nil {
-			return
-		}
-		logger.Warnf("Sent %s to %s", data, to)
-		return
-	}
-	h, _ := hex.DecodeString(utils.StripHex(data[0]))
-	funcName := string(h)
-	if len(data) > 1 {
-		args = data[1:]
-	} else {
-		args = []string{}
-	}
-
-	fmt.Println("PACKING, func name", funcName)
-	packed := args
-	// check for abi
-	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
-	if ok {
-		fmt.Println("ABI Spec", abiSpec)
-		a := []interface{}{}
-		for _, aa := range args {
-			bb, _ := hex.DecodeString(utils.StripHex(aa))
-			a = append(a, bb)
-		}
-		packedBytes, err := abiSpec.Pack(funcName, a...)
-		if err != nil {
-			return err
-		}
-		packed = []string{hex.EncodeToString(packedBytes)}
-
-	}
-
-	if _, err = e.chain.Msg(to, packed); err != nil {
-		return
-	}
+	e.chain.Msg(to, data)
 	logger.Warnf("Sent %s to %s", data, to)
-	return
+	return nil
 }
 
 // Issue a query.
