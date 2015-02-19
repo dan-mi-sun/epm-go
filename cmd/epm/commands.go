@@ -55,7 +55,11 @@ var (
 		Name:   "fetch",
 		Usage:  "fetch a chain from peer server",
 		Action: cliFetch,
-		Flags:  []cli.Flag{},
+		Flags: []cli.Flag{
+			nameFlag,
+			forceNameFlag,
+			newCheckoutFlag,
+		},
 	}
 
 	newCmd = cli.Command{

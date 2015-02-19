@@ -17,6 +17,7 @@ import (
 	"github.com/eris-ltd/thelonious/monkutil"      // for fetch
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"os/signal"
 	"path"
@@ -145,13 +146,14 @@ func cliFetch(c *cli.Context) {
 
 	chainType := "thelonious"
 	peerserver := c.Args()[0]
+	peerip, _, err := net.SplitHostPort(peerserver)
+	ifExit(err)
 	peerserver = "http://" + peerserver
 
 	chainId, err := thelonious.GetChainId(peerserver)
 	ifExit(err)
 
 	rootDir := chains.ComposeRoot(chainType, monkutil.Bytes2Hex(chainId))
-
 	monkutil.Config = &monkutil.ConfigManager{ExecPath: rootDir, Debug: true, Paranoia: true}
 	utils.InitLogging(rootDir, "", 5, "")
 	db := mutils.NewDatabase("database", false)
@@ -179,12 +181,27 @@ func cliFetch(c *cli.Context) {
 	err = ioutil.WriteFile(path.Join(rootDir, "genesis.json"), g, 0600)
 	ifExit(err)
 
+	peerport, err := thelonious.GetFetchPeerPort(peerserver)
+	ifExit(err)
+
 	// drop config
 	chain := newChain(chainType, false)
 	chain.SetProperty("RootDir", rootDir)
+	chain.SetProperty("RemoteHost", peerip)
+	chain.SetProperty("RemotePort", peerport)
+	chain.SetProperty("UseSeed", true)
 	ifExit(chain.WriteConfig(path.Join(rootDir, "config.json")))
 
 	logger.Warnf("Fetched genesis block for chain %x", chainId)
+
+	chainID := hex.EncodeToString(chainId)
+	if c.Bool("checkout") {
+		ifExit(chains.ChangeHead(chainType, chainID))
+		logger.Warnf("Checked out chain: %s/%s", chainType, chainID)
+	}
+
+	// update refs
+	updateRefs(chainType, chainID, c.String("force-name"), c.String("name"))
 }
 
 // deploy the genblock into a random folder in scratch
