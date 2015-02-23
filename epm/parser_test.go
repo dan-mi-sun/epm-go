@@ -1,6 +1,7 @@
 package epm
 
 import (
+	"github.com/eris-ltd/epm-go/utils"
 	"path"
 	"testing"
 )
@@ -17,8 +18,11 @@ var ExpectedParse = []Job{
 }
 
 func TestParse(t *testing.T) {
-	e := NewEPM(nil, ".epm-log-test")
-	err := e.Parse(path.Join(TestPath, "test_parse.epm"))
+	e, err := NewEPM(nil, ".epm-log-test")
+	if err != nil {
+		t.Error(err)
+	}
+	err = e.Parse(path.Join(TestPath, "test_parse.epm"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -32,17 +36,20 @@ func TestParse(t *testing.T) {
 	}
 }
 
-var ExpectedVarSub_map = map[string]string{"A": Coerce2Hex("hello")}
+var ExpectedVarSub_map = map[string]string{"A": utils.Coerce2Hex("hello")}
 
 var ExpectedVarSub_jobs = []Job{
 	Job{"set", []string{"{{A}}", "hello"}},
-	Job{"transact", []string{Coerce2Hex("hello"), "0x15 0x12"}},
-	Job{"modify-deploy", []string{"a.lll", "{{C}}", "(def 'dougie 0x1313)", "(def 'dougie " + Coerce2Hex("hello") + ")"}},
+	Job{"transact", []string{utils.Coerce2Hex("hello"), "0x15 0x12"}},
+	Job{"modify-deploy", []string{"a.lll", "{{C}}", "(def 'dougie 0x1313)", "(def 'dougie " + utils.Coerce2Hex("hello") + ")"}},
 }
 
 func TestVarSub(t *testing.T) {
-	e := NewEPM(nil, ".epm-log-test")
-	err := e.Parse(path.Join(TestPath, "test_varsub.epm"))
+	e, err := NewEPM(nil, ".epm-log-test")
+	if err != nil {
+		t.Error(err)
+	}
+	err = e.Parse(path.Join(TestPath, "test_varsub.epm"))
 	if err != nil {
 		t.Error(err)
 	}
