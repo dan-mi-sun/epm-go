@@ -2,13 +2,13 @@ general:
   build_dir: cmd/epm
 
 machine:
-  pre:
+  services:
+    - docker
+
+  post:
     - rm -rf ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}
     - mkdir -p ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}
     - cp -r ${HOME}/${CIRCLE_PROJECT_REPONAME} ${GOPATH%%:*}/src/github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}
-
-  services:
-    - docker
 
 dependencies:
   pre:
