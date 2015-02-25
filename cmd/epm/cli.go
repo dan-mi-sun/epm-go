@@ -19,11 +19,13 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var EPMVars = "epm.vars"
@@ -745,6 +747,20 @@ func cliInstall(c *cli.Context) {
 	if len(c.Args()) > 1 {
 		dappName = c.Args()[1]
 	}
+
+	if strings.Contains(dappPath, "github.com") {
+		// make sure the path doesn't exist before trying to clone
+		if _, err := os.Stat(dappPath); err != nil {
+			logger.Infoln("fetching dapp from", dappPath)
+			cmd := exec.Command("git", "clone", "https://"+dappPath, path.Join(utils.Dapps, dappName))
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			ifExit(cmd.Run())
+			dappPath = path.Join(utils.Dapps, dappName)
+		}
+	}
+	time.Sleep(time.Second)
+
 	pdxPath := path.Join(dappPath, "contracts")
 
 	r := make([]byte, 8)
@@ -764,6 +780,20 @@ func cliInstall(c *cli.Context) {
 	// if we provide genesis, dont open editor for genesis
 	noEditor := c.IsSet("genesis")
 
+	// if deployConf not given, and the dapp has a config.json, use that
+	if !c.IsSet("config") {
+		if _, err := os.Stat(path.Join(dappPath, "config.json")); err == nil {
+			deployConf = path.Join(dappPath, "config.json")
+		}
+	}
+
+	// if deployGen not given, and the dapp has a genesis.json, use that
+	if !c.IsSet("genesis") {
+		if _, err := os.Stat(path.Join(dappPath, "genesis.json")); err == nil {
+			deployGen = path.Join(dappPath, "genesis.json")
+		}
+	}
+
 	// install chain
 	chainId := deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType, rpc, editCfg, noEditor)
 
@@ -778,7 +808,7 @@ func cliInstall(c *cli.Context) {
 	chainRoot := chains.ComposeRootMulti("thelonious", chainId, "0")
 
 	// Startup the chain
-	logger.Warnf("Starting up chain:", chainRoot)
+	logger.Warnln("Starting up chain:", chainRoot)
 	var chain epm.Blockchain
 	chain = loadChain(c, "thelonious", chainRoot)
 
@@ -847,9 +877,13 @@ func cliInstall(c *cli.Context) {
 	}
 	// TODO: fetch root contract from vars...
 
-	// install dapp into decerver tree
+	// install dapp into decerver tree if not there yet
+	abs, err := filepath.Abs(dappPath)
+	ifExit(err) // this should never happen ...
 	p := path.Join(utils.Dapps, dappName)
-	ifExit(utils.Copy(dappPath, p))
+	if !strings.Contains(abs, p) {
+		ifExit(utils.Copy(dappPath, p))
+	}
 
 	// update package.json with chainid and root contract
 	p = path.Join(p, "package.json")
