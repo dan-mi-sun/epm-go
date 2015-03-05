@@ -2,7 +2,7 @@ package epm
 
 import (
 	"fmt"
-	"github.com/eris-ltd/modules/types"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
 )
 
 func (e *EPM) CurrentState() types.State { //map[string]string{

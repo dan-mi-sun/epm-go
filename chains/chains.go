@@ -8,7 +8,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/eris-ltd/decerver/interfaces/dapps"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/decerver/interfaces/dapps"
 	"github.com/eris-ltd/epm-go/utils"
 )
 

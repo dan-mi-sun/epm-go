@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/codegangsta/cli"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 )
 
 var (

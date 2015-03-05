@@ -2,9 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monk" //"github.com/eris-ltd/thelonious/monkutil"
 	"github.com/eris-ltd/epm-go/epm"
-	"github.com/eris-ltd/thelonious/monk"
-	//"github.com/eris-ltd/thelonious/monkutil"
 	"os"
 	"path"
 )

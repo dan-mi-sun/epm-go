@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/codegangsta/cli"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/utils"
-	"github.com/eris-ltd/thelonious/monklog"
 	"os"
 	"path"
 	"runtime"

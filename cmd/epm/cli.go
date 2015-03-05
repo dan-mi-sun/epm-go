@@ -5,16 +5,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/codegangsta/cli"
-	color "github.com/daviddengcn/go-colortext"
-	"github.com/eris-ltd/decerver/interfaces/dapps"
-	"github.com/eris-ltd/epm-go/chains"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	color "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/daviddengcn/go-colortext"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/decerver/interfaces/dapps"
+	mutils "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkutils" // for fetch
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious"               // for fetch
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkcrypto"    // keygen
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkutil"
+	"github.com/eris-ltd/epm-go/chains" // for fetch
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
-	mutils "github.com/eris-ltd/modules/monkutils" // for fetch
-	"github.com/eris-ltd/thelonious"               // for fetch
-	"github.com/eris-ltd/thelonious/monkcrypto"    // keygen
-	"github.com/eris-ltd/thelonious/monkutil"      // for fetch
 	"io/ioutil"
 	"log"
 	"net"
