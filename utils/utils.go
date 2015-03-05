@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/eris-ltd/thelonious/monklog"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"io"
 	"io/ioutil"
 	"log"

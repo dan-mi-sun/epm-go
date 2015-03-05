@@ -3,9 +3,9 @@ package epm
 import (
 	"bufio"
 	"fmt"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/utils"
-	"github.com/eris-ltd/modules/types"
-	"github.com/eris-ltd/thelonious/monklog"
 	//	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
 	"os"
