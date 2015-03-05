@@ -11,9 +11,16 @@ RUN apt-get update
 RUN apt-get install -y \
   libgmp3-dev
 
+RUN mkdir --parents $GOPATH/src/github.com/eris-ltd
+WORKDIR $GOPATH/src/github.com/eris-ltd
+
+RUN git clone https://github.com/eris-ltd/eris-std-lib
+
 ## Copy In the Good Stuff
-RUN go get github.com/eris-ltd/epm-go/cmd/epm
+COPY . $GOPATH/src/github.com/eris-ltd/epm-go
+RUN cd epm-go
 COPY *.sh /
+
 
 ## How Does It Run?
 EXPOSE 15254 15255
