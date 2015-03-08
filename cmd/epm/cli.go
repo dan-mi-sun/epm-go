@@ -43,9 +43,10 @@ func cliClean(c *cli.Context) {
 
 // plop the config or genesis defaults into current dir
 func cliPlop(c *cli.Context) {
-	root, _, chainId, err := resolveRootFlag(c)
+	root, chainType, chainId, err := resolveRootFlag(c)
 	ifExit(err)
-	switch c.Args().First() {
+	toPlop := c.Args().First()
+	switch toPlop {
 	case "genesis":
 		ifExit(utils.Copy(path.Join(utils.Blockchains, "thelonious", "genesis.json"), "genesis.json"))
 	case "config":
@@ -58,6 +59,22 @@ func cliPlop(c *cli.Context) {
 		fmt.Println(string(b))
 	case "pid":
 		b, err := ioutil.ReadFile(path.Join(root, "pid"))
+		ifExit(err)
+		fmt.Println(string(b))
+	case "key", "addr":
+		rpc := c.GlobalBool("rpc")
+		configPath := path.Join(root, "config.json")
+		m := newChain(chainType, rpc)
+		err := m.ReadConfig(configPath)
+		ifExit(err)
+		keyname := m.Property("KeySession").(string)
+		var b []byte
+		switch toPlop {
+		case "key":
+			b, err = ioutil.ReadFile(path.Join(root, keyname+".prv"))
+		case "addr":
+			b, err = ioutil.ReadFile(path.Join(root, keyname+".addr"))
+		}
 		ifExit(err)
 		fmt.Println(string(b))
 	default:
