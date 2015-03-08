@@ -230,4 +230,9 @@ var (
 		Name:  "edit, e",
 		Usage: "edit the genesis.json even if it is provided",
 	}
+
+	noImportFlag = cli.BoolFlag{
+		Name:  "no-import",
+		Usage: "stop epm from importing the generated key into chain's config",
+	}
 )
