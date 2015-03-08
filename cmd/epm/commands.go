@@ -181,10 +181,37 @@ var (
 		},
 	}
 
+	keysCmd = cli.Command{
+		Name:   "keys",
+		Usage:  "display and manage chain references",
+		Action: cliRefs,
+		Subcommands: []cli.Command{
+			keygenCmd,
+			keyExportCmd,
+			keyImportCmd,
+		},
+	}
+
 	keygenCmd = cli.Command{
-		Name:   "keygen",
+		Name:   "gen",
 		Usage:  "generate secp256k1 keys",
 		Action: cliKeygen,
+		Flags: []cli.Flag{
+			noImportFlag,
+		},
+	}
+
+	keyExportCmd = cli.Command{
+		Name:   "export",
+		Usage:  "export a key file",
+		Action: cliKeyExport,
+		Flags:  []cli.Flag{},
+	}
+
+	keyImportCmd = cli.Command{
+		Name:   "import",
+		Usage:  "import a key file",
+		Action: cliKeyImport,
 		Flags:  []cli.Flag{},
 	}
 

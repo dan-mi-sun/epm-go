@@ -71,7 +71,7 @@ func main() {
 		removeCmd,
 		deployCmd,
 		consoleCmd,
-		keygenCmd,
+		keysCmd,
 		testCmd,
 	}
 
