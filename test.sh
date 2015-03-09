@@ -22,4 +22,7 @@ cd $GOPATH/src/github.com/eris-ltd/eris-std-lib/DTT/tests
 ./test.sh
 
 # fig up doesn't return proper error codes, so this is our hack
-touch /tmp/success
+touch /opt/success
+
+
+
