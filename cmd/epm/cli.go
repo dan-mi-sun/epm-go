@@ -105,14 +105,30 @@ func cliRefs(c *cli.Context) {
 		keyname := m.Property("KeySession").(string)
 		var key []byte
 		key, err = ioutil.ReadFile(path.Join(chainDir, keyname+".addr"))
+		kn := "0x" + string(key)
 		ifExit(err)
 		if strings.Contains(rv, h) {
 			color.ChangeColor(color.Green, true, color.None, false)
-			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, key)
+			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, kn)
 			color.ResetColor()
 		} else {
-			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, key)
+			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, kn)
 		}
+	}
+	exit(err)
+}
+
+// list the keyfiles
+func cliLsKeys(c *cli.Context) {
+	keys, err := ioutil.ReadDir(utils.Keys)
+	ifExit(err)
+	fmt.Printf("%-20s%-60s%-20s\n", "Name:", "Address:", "Key Value:")
+	for i := range keys {
+		k := strings.Split(keys[i].Name(), "-")
+		k[1] = "0x" + k[1]
+		kv, err := ioutil.ReadFile(path.Join(utils.Keys, keys[i].Name()))
+		ifExit(err)
+		fmt.Printf("%-20s%-60s%-20s\n", k[0], k[1], kv)
 	}
 	exit(err)
 }
