@@ -204,10 +204,6 @@
 			"Rev": "d899334bba7bf4a157cab19d8ad836dcb1de0c34"
 		},
 		{
-			"ImportPath": "github.com/obscuren/secp256k1-go",
-			"Rev": "88d689c5032b23994016f6206d7ac1340ec6974e"
-		},
-		{
 			"ImportPath": "github.com/obscuren/sha3",
 			"Rev": "4ae244389bb9c339b4df6c3930a15396a1e801d7"
 		},
