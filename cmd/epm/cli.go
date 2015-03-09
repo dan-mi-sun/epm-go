@@ -91,7 +91,7 @@ func cliPlop(c *cli.Context) {
 func cliRefs(c *cli.Context) {
 	r, err := chains.GetRefs()
 	_, h, _ := chains.GetHead()
-	fmt.Println("Name \t\t:\tChain\t\t\t\t\t\t\t:\tAddress")
+	fmt.Printf("%-20s%-60s%-20s\n", "Name:", "Chain:", "Address:")
 	for rk, rv := range r {
 		chainType, chainId, e := chains.ResolveChain(rv)
 		ifExit(e)
@@ -108,10 +108,10 @@ func cliRefs(c *cli.Context) {
 		ifExit(err)
 		if strings.Contains(rv, h) {
 			color.ChangeColor(color.Green, true, color.None, false)
-			fmt.Printf("%s \t:\t%s\t:\t%s\n", rk, rv, key)
+			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, key)
 			color.ResetColor()
 		} else {
-			fmt.Printf("%s \t:\t%s\t:\t%s\n", rk, rv, key)
+			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, key)
 		}
 	}
 	exit(err)
