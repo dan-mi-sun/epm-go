@@ -13,6 +13,10 @@ cd ../cmd/epm && go test -v ./... -race # these don't exist yet
 # run the base pdx deploy test
 cd ../tests && go test -v ./... -race
 
+# install epm
+cd $GOPATH/src/github.com/eris-ltd/epm-go/cmd/epm
+go install
+
 # test suite of eris-std-lib deploys
 cd $GOPATH/src/github.com/eris-ltd/eris-std-lib/DTT/tests
 ./test.sh
