@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 cd $GOPATH/src/github.com/eris-ltd/epm-go
 
