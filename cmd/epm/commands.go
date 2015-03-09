@@ -5,34 +5,25 @@ import (
 )
 
 var (
+
+	addRefCmd = cli.Command{
+		Name:   "add",
+		Usage:  "add a new reference to a blockchain id: epm refs add <thelonious/f858469a00e80e4f5eb536501eb7d98c7e1cc432>",
+		Action: cliAddRef,
+		Flags: []cli.Flag{
+			multiFlag,
+		},
+	}
+
 	cleanCmd = cli.Command{
 		Name:   "clean",
 		Usage:  "wipes out the contents of the specified directory in the decerver tree",
 		Action: cliClean,
 	}
 
-	plopCmd = cli.Command{
-		Name:   "plop",
-		Usage:  "epm plop <config | genesis | chainid | vars | pid>",
-		Action: cliPlop,
-		Flags: []cli.Flag{
-			chainFlag,
-		},
-	}
-
-	refsCmd = cli.Command{
-		Name:   "refs",
-		Usage:  "display and manage chain references",
-		Action: cliRefs,
-		Subcommands: []cli.Command{
-			addRefCmd,
-			rmRefCmd,
-		},
-	}
-
 	cpCmd = cli.Command{
 		Name:   "cp",
-		Usage:  "copy a blockchain",
+		Usage:  "make a copy of a blockchain",
 		Action: cliCp,
 		Flags: []cli.Flag{
 			bareFlag,
@@ -41,8 +32,27 @@ var (
 
 	headCmd = cli.Command{
 		Name:   "head",
-		Usage:  "display the current working chain",
+		Usage:  "display the current working blockchain",
 		Action: cliHead,
+	}
+
+	plopCmd = cli.Command{
+		Name:   "plop",
+		Usage:  "machine readable variable display: epm plop <addr | chainid | config | genesis | key | pid | vars>",
+		Action: cliPlop,
+		Flags: []cli.Flag{
+			chainFlag,
+		},
+	}
+
+	refsCmd = cli.Command{
+		Name:   "refs",
+		Usage:  "display and manage blockchain names (references)",
+		Action: cliRefs,
+		Subcommands: []cli.Command{
+			addRefCmd,
+			rmRefCmd,
+		},
 	}
 
 	initCmd = cli.Command{
@@ -53,7 +63,7 @@ var (
 
 	fetchCmd = cli.Command{
 		Name:   "fetch",
-		Usage:  "fetch a chain from peer server",
+		Usage:  "fetch a blockchain from a given peer server",
 		Action: cliFetch,
 		Flags: []cli.Flag{
 			nameFlag,
@@ -64,7 +74,7 @@ var (
 
 	newCmd = cli.Command{
 		Name:   "new",
-		Usage:  "create a new chain and install into the decerver tree",
+		Usage:  "create a new blockchain and install into the blockchains tree",
 		Action: cliNew,
 		Flags: []cli.Flag{
 			newCheckoutFlag,
@@ -81,22 +91,13 @@ var (
 
 	checkoutCmd = cli.Command{
 		Name:   "checkout",
-		Usage:  "change the current working chain",
+		Usage:  "change the currently used blockchain",
 		Action: cliCheckout,
-	}
-
-	addRefCmd = cli.Command{
-		Name:   "add",
-		Usage:  "add a new reference to a chain id: `epm refs add thel/f8`",
-		Action: cliAddRef,
-		Flags: []cli.Flag{
-			multiFlag,
-		},
 	}
 
 	rmRefCmd = cli.Command{
 		Name:   "rm",
-		Usage:  "rm a reference from a chain id, but leave the data",
+		Usage:  "remove a reference to a blockchain, but leave the data in the blockchains tree",
 		Action: cliRmRef,
 		Flags: []cli.Flag{
 			multiFlag,
@@ -105,7 +106,7 @@ var (
 
 	runCmd = cli.Command{
 		Name:   "run",
-		Usage:  "run a chain by reference or id",
+		Usage:  "run a blockchain by reference or id",
 		Action: cliRun,
 		Flags: []cli.Flag{
 			mineFlag,
@@ -116,7 +117,7 @@ var (
 
 	runDappCmd = cli.Command{
 		Name:   "run-dapp",
-		Usage:  "run a chain by dapp name",
+		Usage:  "run a blockchain by dapp name",
 		Action: cliRunDapp,
 		Flags: []cli.Flag{
 			mineFlag,
@@ -126,7 +127,7 @@ var (
 
 	configCmd = cli.Command{
 		Name:   "config",
-		Usage:  "epm config <config key 1>:<config value 1> <config key 2>:<config value 2> ...",
+		Usage:  "configure epm variables in the blockchain's config.json: epm config <config key 1>:<config value 1> <config key 2>:<config value 2> ...",
 		Action: cliConfig,
 		Flags: []cli.Flag{
 			chainFlag,
@@ -137,7 +138,7 @@ var (
 
 	commandCmd = cli.Command{
 		Name:   "cmd",
-		Usage:  "epm cmd deploy contract.lll",
+		Usage:  "run a command (useful when combined with RPC): epm cmd <deploy contract.lll>",
 		Action: cliCommand,
 		Flags: []cli.Flag{
 			chainFlag,
@@ -148,7 +149,7 @@ var (
 
 	removeCmd = cli.Command{
 		Name:   "rm",
-		Usage:  "remove a chain from the global directory",
+		Usage:  "remove a blockchain reference as well as its data from the blockchains tree",
 		Action: cliRemove,
 		Flags: []cli.Flag{
 			multiFlag,
@@ -157,7 +158,7 @@ var (
 
 	deployCmd = cli.Command{
 		Name:   "deploy",
-		Usage:  "deploy a .pdx file onto a chain",
+		Usage:  "deploy a .pdx file onto a blockchain",
 		Action: cliDeploy,
 		Flags: []cli.Flag{
 			chainFlag,
@@ -183,7 +184,7 @@ var (
 
 	keysCmd = cli.Command{
 		Name:   "keys",
-		Usage:  "display and manage chain references",
+		Usage:  "generate, import, and export keys for your blockchains",
 		Action: cliRefs,
 		Subcommands: []cli.Command{
 			keygenCmd,
@@ -227,7 +228,7 @@ var (
 
 	installCmd = cli.Command{
 		Name:   "install",
-		Usage:  "install a dapp",
+		Usage:  "install a dapp into the decerver working tree and add a new blockchain with the same reference",
 		Action: cliInstall,
 		Flags: []cli.Flag{
 			newConfigFlag,

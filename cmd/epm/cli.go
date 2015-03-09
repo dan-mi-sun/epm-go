@@ -78,7 +78,7 @@ func cliPlop(c *cli.Context) {
 		ifExit(err)
 		fmt.Println(string(b))
 	default:
-		logger.Errorln("Plop options: config, genesis, chainid, vars")
+		logger.Errorln("Plop options: addr, chainid, config, genesis, key, pid, vars")
 	}
 	exit(nil)
 }
@@ -378,7 +378,7 @@ func cliAddRef(c *cli.Context) {
 		typ, id, err = chains.SplitRef(chain)
 
 		if err != nil {
-			exit(fmt.Errorf(`Error: specify the type in the first 
+			exit(fmt.Errorf(`Error: specify the type in the first
                 argument as '<type>/<chainId>'`))
 		}
 	}
