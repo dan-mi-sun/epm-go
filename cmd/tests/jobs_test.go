@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/hex"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monk"
 	"github.com/eris-ltd/epm-go/epm"
-	"github.com/eris-ltd/thelonious/monk"
 	"path"
 	"testing"
 	//"github.com/eris-ltd/thelonious/monkutil"

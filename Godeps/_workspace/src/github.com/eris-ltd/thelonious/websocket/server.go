@@ -3,7 +3,7 @@ package websocket
 import (
 	"net/http"
 
-	ws "code.google.com/p/go.net/websocket"
+	ws "github.com/eris-ltd/epm-go/Godeps/_workspace/src/code.google.com/p/go.net/websocket"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 )
 

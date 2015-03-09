@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/ebuchman/lexer"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/ebuchman/lexer"
 	"log"
 )
 

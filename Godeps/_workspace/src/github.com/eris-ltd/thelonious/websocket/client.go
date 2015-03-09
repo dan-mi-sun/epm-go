@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	ws "code.google.com/p/go.net/websocket"
+	ws "github.com/eris-ltd/epm-go/Godeps/_workspace/src/code.google.com/p/go.net/websocket"
 )
 
 const channelBufSize = 100

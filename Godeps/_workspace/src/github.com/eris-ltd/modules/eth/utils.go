@@ -12,8 +12,8 @@ import (
 	"runtime"
 	"time"
 
-	eth "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto"
+	eth "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/eth"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/ethdb"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/ethutil"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/logger"
@@ -21,7 +21,7 @@ import (
 
 	//"github.com/eris-ltd/go-ethereum/xeth"
 	//"github.com/eris-ltd/go-ethereum/monkrpc"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/wire"
+	//"github.com/eris-ltd/modules/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/wire"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/kardianos/osext"
 )
 
@@ -132,11 +132,6 @@ func NewDatabase(dbName string) ethutil.Database {
 	return db
 }
 
-func NewClientIdentity(clientIdentifier, version, customIdentifier string) *wire.SimpleClientIdentity {
-	ethlogger.Infoln("identity created")
-	return wire.NewSimpleClientIdentity(clientIdentifier, version, customIdentifier)
-}
-
 /*
 func NewEthereum(db ethutil.Database, clientIdentity wire.ClientIdentity, keyManager *crypto.KeyManager, usePnp bool, OutboundPort string, MaxPeer int) *eth.Thelonious {
 	ethereum, err := eth.New(db, clientIdentity, keyManager, eth.CapDefault, usePnp)
@@ -147,15 +142,6 @@ func NewEthereum(db ethutil.Database, clientIdentity wire.ClientIdentity, keyMan
 	ethereum.MaxPeers = MaxPeer
 	return ethereum
 }*/
-
-func StartEthereum(ethereum *eth.Ethereum, UseSeed bool) {
-	ethlogger.Infof("Starting %s", ethereum.ClientIdentity())
-	ethereum.Start(UseSeed)
-	RegisterInterrupt(func(sig os.Signal) {
-		ethereum.Stop()
-		logger.Flush()
-	})
-}
 
 func ShowGenesis(ethereum *eth.Ethereum) {
 	ethlogger.Infoln(ethereum.ChainManager().Genesis())
@@ -261,9 +247,6 @@ func StartMining(ethereum *eth.Ethereum) bool {
 			}
 			// Give it some time to connect with peers
 			time.Sleep(3 * time.Second)
-			for !ethereum.IsUpToDate() {
-				time.Sleep(5 * time.Second)
-			}
 			myMiner.Start()
 		}()
 		RegisterInterrupt(func(os.Signal) {
@@ -297,24 +280,6 @@ func StopMining(ethereum *eth.Ethereum) bool {
 	}
 
 	return false
-}
-
-// Replay block
-func BlockDo(ethereum *eth.Ethereum, hash []byte) error {
-	block := ethereum.ChainManager().GetBlock(hash)
-	if block == nil {
-		return fmt.Errorf("unknown block %x", hash)
-	}
-
-	parent := ethereum.ChainManager().GetBlock(block.PrevHash)
-
-	_, err := ethereum.BlockManager().ApplyDiff(parent.State(), parent, block)
-	if err != nil {
-		return err
-	}
-
-	return nil
-
 }
 
 // If an address is empty, load er up
