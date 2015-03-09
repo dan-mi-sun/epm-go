@@ -12,8 +12,8 @@ import (
 
 	ethutils "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/cmd/utils"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/core"
-	ethtypes "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/core/types" //"github.com/eris-ltd/go-ethereum/chain"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto"
+	ethtypes "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/core/types"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto" //"github.com/eris-ltd/go-ethereum/chain"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/eth"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/ethutil"
 	ethevent "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/event"
@@ -22,11 +22,12 @@ import (
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/state"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/xeth"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
+	"github.com/eris-ltd/epm-go/utils"
 )
 
-var ( // error?!
-	GoPath = os.Getenv("GOPATH")
-	usr, _ = user. //"github.com/eris-ltd/go-ethereum/react"
+var (
+	GoPath = os.Getenv("GOPATH") // error?!
+	usr, _ = user.               //"github.com/eris-ltd/go-ethereum/react"
 		Current()
 )
 
@@ -343,14 +344,14 @@ func (eth *Eth) Account(target string) *types.Account {
 func (eth *Eth) StorageAt(contract_addr string, storage_addr string) string {
 	var saddr *big.Int
 	if ethutil.IsHex(storage_addr) {
-		saddr = ethutil.BigD(ethutil.Hex2Bytes(storage_addr))
+		saddr = ethutil.BigD(ethutil.Hex2Bytes(utils.StripHex(storage_addr)))
 	} else {
 		saddr = ethutil.Big(storage_addr)
 	}
 
 	//contract_addr = ethutil.StripHex(contract_addr)
 	w := eth.pipe.State()
-	ret := w.SafeGet(contract_addr).GetStorage(saddr)
+	ret := w.SafeGet(utils.StripHex(contract_addr)).GetStorage(saddr)
 	if ret.IsNil() {
 		return ""
 	}

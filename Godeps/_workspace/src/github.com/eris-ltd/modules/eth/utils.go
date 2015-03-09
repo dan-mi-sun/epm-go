@@ -21,7 +21,7 @@ import (
 
 	//"github.com/eris-ltd/go-ethereum/xeth"
 	//"github.com/eris-ltd/go-ethereum/monkrpc"
-	//"github.com/eris-ltd/modules/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/wire"
+	//"github.com/eris-ltd/go-ethereum/wire"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/kardianos/osext"
 )
 

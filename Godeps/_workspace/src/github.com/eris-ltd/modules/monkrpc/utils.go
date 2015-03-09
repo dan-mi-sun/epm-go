@@ -16,7 +16,8 @@ import (
 
 var (
 	GoPath = os.Getenv("GOPATH")
-	usr, _ = user. // error?!
+	usr, _ = // error?!
+	user.
 		Current()
 )
 

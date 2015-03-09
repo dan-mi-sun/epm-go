@@ -384,7 +384,7 @@ func (self *ChainManager) InsertChain(chain types.Blocks) error {
 
 				self.setTotalDifficulty(td)
 				self.insert(block)
-				self.transState = state.New(cblock.Root(), self.db) //state.New(cblock.Trie().Copy())
+				self.transState = state.New(block.Root(), self.db) //state.New(cblock.Trie().Copy())
 			}
 
 		}

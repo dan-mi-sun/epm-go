@@ -34,9 +34,8 @@ func (l LangConfig) Ext(h string) string {
 }
 
 // Fill in the filename and return the command line args
-func (l LangConfig) Cmd(file string) (prgrm string, args []string) {
-	prgrm = l.CompileCmd[0]
-	for _, s := range l.CompileCmd[1:] {
+func (l LangConfig) Cmd(file string) (args []string) {
+	for _, s := range l.CompileCmd {
 		if s == "_" {
 			args = append(args, file)
 		} else {
@@ -46,13 +45,12 @@ func (l LangConfig) Cmd(file string) (prgrm string, args []string) {
 	return
 }
 
-func (l LangConfig) Abi(file string) (prgm string, args []string) {
+func (l LangConfig) Abi(file string) (args []string) {
 	if len(l.AbiCmd) < 2 {
-		return "", []string{}
+		return 
 	}
 
-	prgm = l.AbiCmd[0]
-	for _, s := range l.AbiCmd[1:] {
+	for _, s := range l.AbiCmd {
 		if s == "_" {
 			args = append(args, file)
 		} else {
@@ -105,6 +103,31 @@ var Languages = map[string]LangConfig{
 			"/usr/local/bin/serpent",
 			"mk_full_signature",
 			"_",
+		},
+	},
+	"sol": LangConfig{
+		URL:        DefaultUrl,
+		Path:       path.Join(homeDir(), "cpp-ethereum/build/solc/solc"),
+		Net:        true,
+		Extensions: []string{"sol"},
+		IncludeRegexes: []string{
+		},
+		IncludeReplaces: [][]string{
+		},
+		CompileCmd: []string{
+			path.Join(homeDir(), "cpp-ethereum/build/solc/solc"),
+			"_",
+			"--binary", "stdout", "|",
+			"grep", "[0-9a-fA-F]", "|",
+			"sort", "-rn", "|",
+			"awk", "{print $1; exit}",
+
+		},
+		AbiCmd: []string{
+			path.Join(homeDir(), "cpp-ethereum/build/solc/solc"),
+			"_",
+			"--json-abi", "stdout", "|",
+			"awk", "NR >= 4",
 		},
 	},
 }

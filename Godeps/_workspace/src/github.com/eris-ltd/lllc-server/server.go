@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/ebuchman/go-shell-pipes"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/go-martini/martini"
 	"github.com/eris-ltd/epm-go/utils"
 	"io/ioutil"
@@ -172,7 +173,7 @@ func compileServerCore(req *Request) *Response {
 	return resp
 }
 
-func commandWrapper(prgrm string, args []string) (string, error) {
+func commandWrapper_(prgrm string, args []string) (string, error) {
 	a := fmt.Sprint(args)
 	logger.Infoln(fmt.Sprintf("Running command %s %s ", prgrm, a))
 	cmd := exec.Command(prgrm, args...)
@@ -186,6 +187,12 @@ func commandWrapper(prgrm string, args []string) (string, error) {
 	// get rid of new lines at the end
 	outstr = strings.TrimSpace(outstr)
 	return outstr, nil
+}
+
+func commandWrapper(tokens ...string) (string, error) {
+	s, err := pipes.RunStrings(tokens...)
+	s = strings.TrimSpace(s)
+	return s, err
 }
 
 // wrapper to cli
@@ -205,15 +212,15 @@ func CompileWrapper(filename string, lang string) ([]byte, string, error) {
 		os.Chdir(cur)
 	}()
 
-	prgrm, args := Languages[lang].Cmd(filename)
-	hexCode, err := commandWrapper(prgrm, args)
+	tokens := Languages[lang].Cmd(filename)
+	hexCode, err := commandWrapper(tokens...)
 	if err != nil {
 		logger.Errorln("Couldn't compile!!", err)
 		return nil, "", err
 	}
 
-	prgrm, args = Languages[lang].Abi(filename)
-	jsonAbi, err := commandWrapper(prgrm, args)
+	tokens = Languages[lang].Abi(filename)
+	jsonAbi, err := commandWrapper(tokens...)
 	if err != nil {
 		logger.Errorln("Couldn't produce abi doc!!", err)
 		// we swallow this error, but maybe we shouldnt...
