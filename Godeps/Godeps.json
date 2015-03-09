@@ -64,98 +64,98 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/cmd/utils",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/compression/rle",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/core",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/crypto",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/eth",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/ethdb",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/ethutil",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/event",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/logger",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/miner",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/p2p",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/pow",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/rlp",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/rpc",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/state",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/trie",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/vm",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/whisper",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/xeth",
-			"Comment": "v0.6.8-2206-g04792dc",
-			"Rev": "04792dcd67cb6d1118acbdf5eec8da1c2fd9ce3f"
+			"Comment": "v0.6.8-2207-g74e7aa9",
+			"Rev": "74e7aa90568a41aa895cf2b3575ea0a791dd10aa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/lllc-server",
@@ -185,10 +185,6 @@
 			"ImportPath": "github.com/eris-ltd/thelonious",
 			"Comment": "v0.8-66-g4fecdf6",
 			"Rev": "4fecdf6286ca10fdd192a07e86fb083eab7560fb"
-		},
-		{
-			"ImportPath": "github.com/ethereum/serpent-go",
-			"Rev": "5767a0dbd759d313df3f404dadb7f98d7ab51443"
 		},
 		{
 			"ImportPath": "github.com/go-martini/martini",

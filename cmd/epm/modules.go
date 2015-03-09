@@ -13,9 +13,9 @@ import (
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/eth"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/genblock"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkrpc" // modules
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkrpc"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monk"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkdoug"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkdoug" // modules
 )
 
 func newChain(chainType string, rpc bool) epm.Blockchain {
