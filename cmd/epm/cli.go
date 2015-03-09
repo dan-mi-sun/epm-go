@@ -87,14 +87,27 @@ func cliPlop(c *cli.Context) {
 func cliRefs(c *cli.Context) {
 	r, err := chains.GetRefs()
 	_, h, _ := chains.GetHead()
-	fmt.Println("Available refs:")
+	fmt.Println("Name \t\t:\tChain\t\t\t\t\t\t\t:\tAddress")
 	for rk, rv := range r {
+		chainType, chainId, e := chains.ResolveChain(rv)
+		ifExit(e)
+		chainDir, er := chains.ResolveChainDir(chainType, rk, chainId)
+		ifExit(er)
+		rpc := c.GlobalBool("rpc")
+		m := newChain(chainType, rpc)
+		configPath := path.Join(chainDir, "config.json")
+		err := m.ReadConfig(configPath)
+		ifExit(err)
+		keyname := m.Property("KeySession").(string)
+		var key []byte
+		key, err = ioutil.ReadFile(path.Join(chainDir, keyname+".addr"))
+		ifExit(err)
 		if strings.Contains(rv, h) {
 			color.ChangeColor(color.Green, true, color.None, false)
-			fmt.Printf("%s \t : \t %s\n", rk, rv)
+			fmt.Printf("%s \t:\t%s\t:\t%s\n", rk, rv, key)
 			color.ResetColor()
 		} else {
-			fmt.Printf("%s \t : \t %s\n", rk, rv)
+			fmt.Printf("%s \t:\t%s\t:\t%s\n", rk, rv, key)
 		}
 	}
 	exit(err)
@@ -378,7 +391,7 @@ func cliAddRef(c *cli.Context) {
 		typ, id, err = chains.SplitRef(chain)
 
 		if err != nil {
-			exit(fmt.Errorf(`Error: specify the type in the first 
+			exit(fmt.Errorf(`Error: specify the type in the first
                 argument as '<type>/<chainId>'`))
 		}
 	}
