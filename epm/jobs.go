@@ -221,16 +221,19 @@ func (e *EPM) Transact(args []string) (err error) {
 	// check for abi
 	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
 	if ok {
-		h, _ := hex.DecodeString(utils.StripHex(data[0]))
-		funcName := string(h)
+		//h, _ := hex.DecodeString(utils.StripHex(data[0]))
+		funcName := data[0] //string(h)
 		args = data[1:]
 
 		fmt.Println("ABI Spec", abiSpec)
 		a := []interface{}{}
 		for _, aa := range args {
 			bb, _ := hex.DecodeString(utils.StripHex(aa))
+			//bb := utils.StripHex(aa)
+			fmt.Println("AN ARG:", bb)
 			a = append(a, bb)
 		}
+		fmt.Println("FUNCNAME:", funcName, a)
 		packedBytes, err := abiSpec.Pack(funcName, a...)
 		if err != nil {
 			return err

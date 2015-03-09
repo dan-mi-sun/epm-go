@@ -221,7 +221,11 @@ func AddHex(s string) string {
 func StripHex(s string) string {
 	if len(s) > 1 {
 		if s[:2] == "0x" {
-			return s[2:]
+			s = s[2:]
+			if len(s)%2 != 0 {
+				s = "0" + s
+			}
+			return s
 		}
 	}
 	return s
