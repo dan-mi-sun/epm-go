@@ -23,6 +23,10 @@ transact:
 
 `
 
+func init() {
+	ErrMode = PersistOnErr
+}
+
 var tokens = []tokenType{
 	tokenNewLineTy,
 	tokenPoundTy,
@@ -97,6 +101,7 @@ var tokens = []tokenType{
 	tokenQuoteTy,
 	tokenNewLineTy,
 	tokenNewLineTy,
+	tokenEOFTy,
 }
 
 func testLexer(t *testing.T, input string, ground []tokenType) {
@@ -129,6 +134,7 @@ var tokensB = []tokenType{
 	tokenArrowTy,
 	tokenStringTy,
 	tokenNewLineTy,
+	tokenEOFTy,
 }
 
 func TestLexer2(t *testing.T) {
@@ -158,6 +164,7 @@ var tokensC = []tokenType{
 	tokenRightDiffTy,
 	tokenStringTy,
 	tokenNewLineTy,
+	tokenEOFTy,
 }
 
 func TestLexer3(t *testing.T) {
