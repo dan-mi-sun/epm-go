@@ -207,16 +207,6 @@ var (
 		},
 	}
 
-	testCmd = cli.Command{
-		Name:   "test",
-		Usage:  "run all pdx/pdt in the directory",
-		Action: cliTest,
-		Flags: []cli.Flag{
-			chainFlag,
-			contractPathFlag,
-		},
-	}
-
 	installCmd = cli.Command{
 		Name:   "install",
 		Usage:  "install a dapp into the decerver working tree and add a new blockchain with the same reference",
@@ -227,6 +217,7 @@ var (
 			nameFlag,
 			forceNameFlag,
 			editConfigFlag,
+			noNewChainFlag,
 		},
 	}
 
@@ -246,8 +237,8 @@ var (
 	}
 
 	keyLsCmd = cli.Command{
-		Name:	"ls",
-		Usage: "list the blockchains and their asssociated key addresses",
+		Name:   "ls",
+		Usage:  "list the blockchains and their asssociated key addresses",
 		Action: cliRefs,
 	}
 
@@ -272,5 +263,15 @@ var (
 		Usage:  "import a key file",
 		Action: cliKeyImport,
 		Flags:  []cli.Flag{},
+	}
+
+	testCmd = cli.Command{
+		Name:   "test",
+		Usage:  "run all pdx/pdt in the directory",
+		Action: cliTest,
+		Flags: []cli.Flag{
+			chainFlag,
+			contractPathFlag,
+		},
 	}
 )

@@ -869,7 +869,7 @@ func cliInstall(c *cli.Context) {
 			dappPath = path.Join(utils.Dapps, dappName)
 		}
 	}
-	time.Sleep(time.Second)
+	time.Sleep(time.Second) // TODO: remove
 
 	pdxPath := path.Join(dappPath, "contracts")
 
@@ -877,45 +877,52 @@ func cliInstall(c *cli.Context) {
 	rand.Read(r)
 	tmpRoot := path.Join(utils.Scratch, "epm", hex.EncodeToString(r))
 
-	chainType := "thelonious"
+	var chainRoot string
+	var chainId string
+	// deploy a new chain for installation of the dapp
+	if !c.Bool("no-new") {
+		chainType := "thelonious"
 
-	forceName := c.String("force-name")
-	name := c.String("name")
-	deployConf := c.String("config")
-	deployGen := c.String("genesis")
-	tempConf := ".config.json"
-	editCfg := c.Bool("edit-config")
-	diffStorage := c.Bool("diff")
-	rpc := c.Bool("rpc")
-	// if we provide genesis, dont open editor for genesis
-	noEditor := c.IsSet("genesis")
+		forceName := c.String("force-name")
+		name := c.String("name")
+		deployConf := c.String("config")
+		deployGen := c.String("genesis")
+		tempConf := ".config.json"
+		editCfg := c.Bool("edit-config")
+		rpc := c.Bool("rpc")
+		// if we provide genesis, dont open editor for genesis
+		noEditor := c.IsSet("genesis")
 
-	// if deployConf not given, and the dapp has a config.json, use that
-	if !c.IsSet("config") {
-		if _, err := os.Stat(path.Join(dappPath, "config.json")); err == nil {
-			deployConf = path.Join(dappPath, "config.json")
+		// if deployConf not given, and the dapp has a config.json, use that
+		if !c.IsSet("config") {
+			if _, err := os.Stat(path.Join(dappPath, "config.json")); err == nil {
+				deployConf = path.Join(dappPath, "config.json")
+			}
 		}
-	}
 
-	// if deployGen not given, and the dapp has a genesis.json, use that
-	if !c.IsSet("genesis") {
-		if _, err := os.Stat(path.Join(dappPath, "genesis.json")); err == nil {
-			deployGen = path.Join(dappPath, "genesis.json")
+		// if deployGen not given, and the dapp has a genesis.json, use that
+		if !c.IsSet("genesis") {
+			if _, err := os.Stat(path.Join(dappPath, "genesis.json")); err == nil {
+				deployGen = path.Join(dappPath, "genesis.json")
+			}
 		}
+
+		// install chain
+		chainId = deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType, rpc, editCfg, noEditor)
+
+		ifExit(chains.ChangeHead(chainType, chainId))
+		logger.Warnf("Checked out chain: %s/%s", chainType, chainId)
+
+		updateRefs(chainType, chainId, forceName, name)
+		chainRoot = chains.ComposeRootMulti("thelonious", chainId, "0")
+	} else {
+		var err error
+		chainRoot, _, chainId, err = resolveRootFlag(c)
+		ifExit(err)
 	}
-
-	// install chain
-	chainId := deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType, rpc, editCfg, noEditor)
-
-	ifExit(chains.ChangeHead(chainType, chainId))
-	logger.Warnf("Checked out chain: %s/%s", chainType, chainId)
-
-	updateRefs(chainType, chainId, forceName, name)
 
 	// deploy pdx
 	contractPath := c.String("c")
-
-	chainRoot := chains.ComposeRootMulti("thelonious", chainId, "0")
 
 	// Startup the chain
 	logger.Warnln("Starting up chain:", chainRoot)
@@ -952,6 +959,7 @@ func cliInstall(c *cli.Context) {
 	err = e.Parse(path.Join(dir, pkg+"."+PkgExt))
 	ifExit(err)
 
+	diffStorage := c.Bool("diff")
 	if diffStorage {
 		e.Diff = true
 	}
