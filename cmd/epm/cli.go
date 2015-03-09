@@ -48,9 +48,13 @@ func cliPlop(c *cli.Context) {
 	toPlop := c.Args().First()
 	switch toPlop {
 	case "genesis":
-		ifExit(utils.Copy(path.Join(utils.Blockchains, "thelonious", "genesis.json"), "genesis.json"))
+		b, err := ioutil.ReadFile(path.Join(utils.Blockchains, "thelonious", chainId, "0", "genesis.json"))
+		ifExit(err)
+		fmt.Println(string(b))
 	case "config":
-		ifExit(utils.Copy(path.Join(utils.Blockchains, "thelonious", "config.json"), "config.json"))
+		b, err := ioutil.ReadFile(path.Join(utils.Blockchains, "thelonious", chainId, "0", "config.json"))
+		ifExit(err)
+		fmt.Println(string(b))
 	case "chainid":
 		fmt.Println(chainId)
 	case "vars":
@@ -378,7 +382,7 @@ func cliAddRef(c *cli.Context) {
 		typ, id, err = chains.SplitRef(chain)
 
 		if err != nil {
-			exit(fmt.Errorf(`Error: specify the type in the first 
+			exit(fmt.Errorf(`Error: specify the type in the first
                 argument as '<type>/<chainId>'`))
 		}
 	}
