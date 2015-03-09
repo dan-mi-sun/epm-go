@@ -53,7 +53,6 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
-		addRefCmd,
 		checkoutCmd,
 		cleanCmd,
 		commandCmd,
