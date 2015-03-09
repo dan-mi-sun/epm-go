@@ -28,8 +28,8 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "epm"
-	app.Usage = ""
-	app.Version = "0.1.0"
+	app.Usage = "The Eris Package Manager Builds, Tests, Operates, and Manages Blockchains and Smart Contract Systems"
+	app.Version = "0.8.3"
 	app.Author = "Ethan Buchman"
 	app.Email = "ethan@erisindustries.com"
 	//	app.EnableBashCompletion = true
@@ -53,25 +53,25 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
+		addRefCmd,
+		checkoutCmd,
 		cleanCmd,
-		plopCmd,
-		refsCmd,
+		commandCmd,
+		configCmd,
+		consoleCmd,
+		cpCmd,
+		deployCmd,
+		fetchCmd,
 		headCmd,
 		initCmd,
-		fetchCmd,
 		installCmd,
+		keysCmd,
 		newCmd,
-		cpCmd,
-		checkoutCmd,
-		addRefCmd,
+		plopCmd,
+		refsCmd,
+		removeCmd,
 		runCmd,
 		runDappCmd,
-		configCmd,
-		commandCmd,
-		removeCmd,
-		deployCmd,
-		consoleCmd,
-		keysCmd,
 		testCmd,
 	}
 

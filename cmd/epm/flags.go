@@ -99,7 +99,7 @@ var (
 	forceNameFlag = cli.StringFlag{
 		Name:   "force-name, N",
 		Value:  "",
-		Usage:  "Force a ref name (even if already taken)",
+		Usage:  "force a ref name (even if already taken)",
 		EnvVar: "",
 	}
 
@@ -125,19 +125,19 @@ var (
 
 	interactiveFlag = cli.BoolFlag{
 		Name:   "i",
-		Usage:  "Run epm in interactive mode",
+		Usage:  "run epm in interactive mode",
 		EnvVar: "",
 	}
 
 	diffFlag = cli.BoolFlag{
 		Name:   "diff",
-		Usage:  "Show a diff of all contract storage",
+		Usage:  "show a diff of all contract storage",
 		EnvVar: "",
 	}
 
 	dontClearFlag = cli.BoolFlag{
 		Name:   "dont-clear",
-		Usage:  "Stop epm from clearing the epm cache on startup",
+		Usage:  "stop epm from clearing the epm cache on startup",
 		EnvVar: "",
 	}
 
@@ -151,6 +151,7 @@ var (
 		Name:  "p",
 		Value: ".",
 		Usage: "specify a .pdx file to deploy",
+		EnvVar: "DEPLOY_PDX",
 	}
 
 	logLevelFlag = cli.IntFlag{
@@ -223,7 +224,7 @@ var (
 
 	noEditFlag = cli.BoolFlag{
 		Name:  "no-edit",
-		Usage: "prevent genesis.json from popping up (uses default)",
+		Usage: "prevent genesis.json from popping up (will use the default genesis.json)",
 	}
 
 	editGenesisFlag = cli.BoolFlag{

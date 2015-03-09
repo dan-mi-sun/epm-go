@@ -82,7 +82,7 @@ func cliPlop(c *cli.Context) {
 		ifExit(err)
 		fmt.Println(string(b))
 	default:
-		logger.Errorln("Plop options: config, genesis, chainid, vars")
+		logger.Errorln("Plop options: addr, chainid, config, genesis, key, pid, vars")
 	}
 	exit(nil)
 }
