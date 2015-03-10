@@ -100,7 +100,6 @@ func (self *Vm) Run(me, caller ContextRef, code []byte, value, gas, price *big.I
 		fmt.Println("EMPTY CODE!")
 		return context.Return(nil), nil
 	}
-	fmt.Println("CODE:", code)
 
 	for {
 		prevStep = step

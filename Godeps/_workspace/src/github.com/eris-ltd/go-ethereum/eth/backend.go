@@ -78,7 +78,6 @@ type Ethereum struct {
 func New(config *Config) (*Ethereum, error) {
 	// Boostrap database
 	logger := ethlogger.New(config.DataDir, config.LogFile, config.LogLevel)
-	fmt.Println("LOGGER:", config.LogLevel)
 	db, err := ethdb.NewLDBDatabase("blockchain")
 	if err != nil {
 		return nil, err

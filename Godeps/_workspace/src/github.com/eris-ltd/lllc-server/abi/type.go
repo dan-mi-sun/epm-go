@@ -134,7 +134,6 @@ func (t Type) String() (out string) {
 // * Integer are checked for size
 // * Strings, addresses and bytes are checks for type and size
 func (t Type) pack(v interface{}) ([]byte, error) {
-	fmt.Println("PACKING AN ARG:", v)
 	value := reflect.ValueOf(v)
 	switch kind := value.Kind(); kind {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -165,10 +164,7 @@ func (t Type) pack(v interface{}) ([]byte, error) {
 		}
 
 		if bb, ok := v.([]byte); ok {
-			fmt.Println("BYTE SLICE NIG")
 			return ethutil.LeftPadBytes(bb, 32), nil
-		} else {
-			fmt.Println("ITS NOT A SLICE OF BYTES?!?!?!?")
 		}
 
 		// Address is a special slice. The slice acts as one rather than a list of elements.

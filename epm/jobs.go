@@ -124,7 +124,6 @@ func (e *EPM) ExecuteJob(job Job) error {
 		return err
 	}
 	logger.Infoln("ResolvedArgs:", args)
-	fmt.Println("ResolvedArgs:", args)
 	if e.chain == nil {
 		return NoChainErr
 	}
@@ -216,7 +215,6 @@ func (e *EPM) Transact(args []string) (err error) {
 	//data := strings.Split(dataS, " ")
 	//data = DoMath(data)
 
-	fmt.Println("TX ARGS PRE:", data)
 	packed := []string{}
 	// check for abi
 	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
@@ -230,10 +228,8 @@ func (e *EPM) Transact(args []string) (err error) {
 		for _, aa := range args {
 			bb, _ := hex.DecodeString(utils.StripHex(aa))
 			//bb := utils.StripHex(aa)
-			fmt.Println("AN ARG:", bb)
 			a = append(a, bb)
 		}
-		fmt.Println("FUNCNAME:", funcName, a)
 		packedBytes, err := abiSpec.Pack(funcName, a...)
 		if err != nil {
 			return err
@@ -248,8 +244,6 @@ func (e *EPM) Transact(args []string) (err error) {
 			packed = append(packed, aa)
 		}
 	}
-
-	fmt.Println("ARGS FOR TX:", packed)
 
 	if _, err = e.chain.Msg(to, packed); err != nil {
 		return

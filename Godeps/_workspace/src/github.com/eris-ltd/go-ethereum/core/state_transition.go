@@ -192,15 +192,12 @@ func (self *StateTransition) TransitionState() (ret []byte, err error) {
 	if MessageCreatesContract(msg) {
 		contract := MakeContract(msg, self.state)
 		ret, err, ref = vmenv.Create(sender, contract.Address(), self.msg.Data(), self.gas, self.gasPrice, self.value)
-		fmt.Println("Created Contract:", contract.Address(), err)
 		if err == nil {
 			dataGas := big.NewInt(int64(len(ret)))
 			dataGas.Mul(dataGas, vm.GasCreateByte)
 			if err := self.UseGas(dataGas); err == nil {
-				fmt.Println("SETTING CODE:", ret)
 				ref.SetCode(ret)
 			} else {
-				fmt.Println("FAILED TO SET CODE", err)
 			}
 		}
 
