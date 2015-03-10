@@ -21,6 +21,11 @@ go install
 cd $GOPATH/src/github.com/eris-ltd/eris-std-lib/DTT/tests
 ./test.sh
 
+# test serpent
+epm --log 5 new -type eth -checkout
+cd $GOPATH/src/github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server/tests
+epm --log 5 deploy test_serpent.pdx
+
 # fig up doesn't return proper error codes, so this is our hack
 touch /opt/success
 
