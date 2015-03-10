@@ -23,6 +23,7 @@ cd $GOPATH/src/github.com/eris-ltd/eris-std-lib/DTT/tests
 
 # test serpent
 epm --log 5 new -type eth -checkout
+epm keys import $GOPATH/src/github.com/eris-ltd/epm-go/cmd/tests/tester-c5ac1950c7fa7f8f0abd54e83495425fc0c5fc2e
 cd $GOPATH/src/github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server/tests
 epm --log 5 deploy test_serpent.pdx
 

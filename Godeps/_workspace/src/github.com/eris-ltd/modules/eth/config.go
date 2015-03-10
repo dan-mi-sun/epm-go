@@ -114,10 +114,9 @@ func (eth *Eth) ethConfig() {
 	_, err := os.Stat(cfg.RootDir)
 	if err != nil {
 		os.Mkdir(cfg.RootDir, 0777)
-		_, err := os.Stat(path.Join(cfg.RootDir, cfg.KeySession) + ".prv")
-		if err != nil {
-			utils.Copy(cfg.KeyFile, path.Join(cfg.RootDir, cfg.KeySession)+".prv")
-		}
+	}
+	if _, err := os.Stat(path.Join(cfg.RootDir, cfg.KeySession) + ".prv"); err != nil {
+		utils.Copy(cfg.KeyFile, path.Join(cfg.RootDir, cfg.KeySession)+".prv")
 	}
 	// eth-go uses a global ethutil.Config object. This will set it up for us, but we do our config of course our way
 	// it also uses rakyl/globalconf, but fuck that for now

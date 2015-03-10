@@ -47,7 +47,7 @@ func (l LangConfig) Cmd(file string) (args []string) {
 
 func (l LangConfig) Abi(file string) (args []string) {
 	if len(l.AbiCmd) < 2 {
-		return 
+		return
 	}
 
 	for _, s := range l.AbiCmd {
@@ -106,14 +106,12 @@ var Languages = map[string]LangConfig{
 		},
 	},
 	"sol": LangConfig{
-		URL:        DefaultUrl,
-		Path:       path.Join(homeDir(), "cpp-ethereum/build/solc/solc"),
-		Net:        true,
-		Extensions: []string{"sol"},
-		IncludeRegexes: []string{
-		},
-		IncludeReplaces: [][]string{
-		},
+		URL:             DefaultUrl,
+		Path:            path.Join(homeDir(), "cpp-ethereum/build/solc/solc"),
+		Net:             true,
+		Extensions:      []string{"sol"},
+		IncludeRegexes:  []string{},
+		IncludeReplaces: [][]string{},
 		CompileCmd: []string{
 			path.Join(homeDir(), "cpp-ethereum/build/solc/solc"),
 			"_",
@@ -121,7 +119,6 @@ var Languages = map[string]LangConfig{
 			"grep", "[0-9a-fA-F]", "|",
 			"sort", "-rn", "|",
 			"awk", "{print $1; exit}",
-
 		},
 		AbiCmd: []string{
 			path.Join(homeDir(), "cpp-ethereum/build/solc/solc"),

@@ -39,6 +39,7 @@ func GenesisBlock(db ethutil.Database) *types.Block {
 		"2ef47100e0787b915105fd5e3f4ff6752079d5cb",
 		"e6716f9544a56c530d868e4bfbacb172315bdead",
 		"1a26338f0d905e295fccb71fa9ea849ffa12aaf4",
+		"c5ac1950c7fa7f8f0abd54e83495425fc0c5fc2e",
 	} {
 		codedAddr := ethutil.Hex2Bytes(addr)
 		account := statedb.GetAccount(codedAddr)
