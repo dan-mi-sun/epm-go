@@ -148,9 +148,9 @@ var (
 	}
 
 	pdxPathFlag = cli.StringFlag{
-		Name:  "p",
-		Value: ".",
-		Usage: "specify a .pdx file to deploy",
+		Name:   "p",
+		Value:  ".",
+		Usage:  "specify a .pdx file to deploy",
 		EnvVar: "DEPLOY_PDX",
 	}
 
@@ -235,5 +235,10 @@ var (
 	noImportFlag = cli.BoolFlag{
 		Name:  "no-import",
 		Usage: "stop epm from importing the generated key into chain's config",
+	}
+
+	noNewChainFlag = cli.BoolFlag{
+		Name:  "no-new",
+		Usage: "dont deploy a new chain for installation of the dapp",
 	}
 )
