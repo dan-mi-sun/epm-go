@@ -1,8 +1,8 @@
 package monkcrypto
 
 import (
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto/secp256k1"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkutil"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/obscuren/secp256k1-go"
 	"strings"
 )
 

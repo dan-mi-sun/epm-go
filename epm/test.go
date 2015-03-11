@@ -80,32 +80,46 @@ func (e *EPM) Test(filename string) (*TestResults, error) {
 
 // execute a single test line
 func (e *EPM) ExecuteTest(line string, i int) error {
-	args := parseLine(line)
-	args = e.VarSub(args)
+	args := splitLine(line)
+	// for each arg, parse into tree,
+	// var sub, resolve
+	var argsTree [][]*tree
+	for _, a := range args {
+		p := Parse(a)
+		parseStateArg(p)
+		argsTree = append(argsTree, p.arg)
+	}
+
+	args, err := e.ResolveArgs("test", argsTree)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println("test!", i)
-	s := "\t"
+	fmt.Println(args, len(args))
+	/*s := "\t"
 	for _, a := range args {
 		s += a + "  "
-	}
-	fmt.Println(s)
+	}*/
+	//fmt.Println(s)
+
 	if len(args) < 3 || len(args) > 4 {
 		return fmt.Errorf("invalid number of args for test on line %d", i)
 	}
-	margs := DoMath(args[:3])
+
 	// a test is 'addr storage expected'
 	// if there's a fourth, its the variable name to store the result under
 	// expected can be `_` in which case it is not tested (but may be saved)
-	addr := margs[0]
-	storage := margs[1]
-	//expected := args[2]
+	addr := args[0]
+	storage := args[1]
 
 	// retrieve the value
 	val := e.chain.StorageAt(utils.AddHex(addr), utils.AddHex(storage))
 	val = utils.AddHex(val)
 
 	if args[2] != "_" {
-		expected := utils.Coerce2Hex(margs[2])
-		if utils.StripHex(expected) != utils.StripHex(val) {
+		expected := utils.Coerce2Hex(args[2])
+		if strings.ToLower(utils.StripZeros(utils.StripHex(expected))) != strings.ToLower(utils.StripZeros(utils.StripHex(val))) {
 			return fmt.Errorf("\t!!!!!Test %d failed. Got: %s, expected %s", i, val, expected)
 		} else {
 			fmt.Println("\tTest Passed (with flying colors!)")
@@ -120,6 +134,18 @@ func (e *EPM) ExecuteTest(line string, i int) error {
 		fmt.Println("\tStored:", args[3], val)
 	}
 	return nil
+}
+
+// split line and trim space
+func splitLine(line string) []string {
+	line = strings.TrimSpace(line)
+	line = strings.TrimRight(line, ";")
+
+	args := strings.Split(line, ";")
+	for i, a := range args {
+		args[i] = strings.TrimSpace(a)
+	}
+	return args
 }
 
 // pretty print the test results for json (double escape \n!)

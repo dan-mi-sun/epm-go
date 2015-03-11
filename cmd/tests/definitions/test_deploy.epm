@@ -1,2 +1,2 @@
 deploy:
-    a.lll => {{addr}}
+	a.lll => {{addr}}

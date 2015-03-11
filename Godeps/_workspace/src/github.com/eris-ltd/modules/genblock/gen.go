@@ -18,9 +18,10 @@ import (
 )
 
 var (
-	GoPath         = os.Getenv("GOPATH")
-	usr, _         = // error?!
-	user.Current()
+	GoPath = os.Getenv("GOPATH")
+	usr, _ = // error?!
+	user.
+		Current()
 )
 
 // This is a dead simple blockchain module for deploying genesis blocks from epm

@@ -15,6 +15,7 @@ RUN mkdir --parents $GOPATH/src/github.com/eris-ltd
 WORKDIR $GOPATH/src/github.com/eris-ltd
 
 RUN git clone https://github.com/eris-ltd/eris-std-lib
+RUN cd eris-std-lib && git checkout newepm # needed for new branch
 
 ## Copy In the Good Stuff
 COPY . $GOPATH/src/github.com/eris-ltd/epm-go

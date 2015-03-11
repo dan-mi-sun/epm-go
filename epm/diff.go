@@ -12,16 +12,20 @@ func (e *EPM) CurrentState() types.State { //map[string]string{
 	return *(e.chain.State())
 }
 
+func (e *EPM) newDiffSched(i int) {
+	if e.diffSched[i] == nil {
+		e.diffSched[i] = []string{}
+	}
+}
+
 func (e *EPM) checkTakeStateDiff(i int) {
 	if _, ok := e.diffSched[i]; !ok {
 		return
 	}
 	e.chain.Commit()
-	scheds := e.diffSched[i]
-	names := e.diffName[i]
-	for j, sched := range scheds {
-		name := names[j]
-		if sched == 0 {
+	names := e.diffSched[i]
+	for _, name := range names {
+		if _, ok := e.states[name]; !ok {
 			// store state
 			e.states[name] = e.CurrentState()
 		} else {

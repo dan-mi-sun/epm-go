@@ -15,9 +15,10 @@ import (
 )
 
 var (
-	GoPath         = os.Getenv("GOPATH")
-	usr, _         = // error?!
-	user.Current()
+	GoPath = os.Getenv("GOPATH")
+	usr, _ = // error?!
+	user.
+		Current()
 )
 
 // A tx to be signed by a local daemon

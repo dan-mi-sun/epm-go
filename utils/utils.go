@@ -196,6 +196,16 @@ func Coerce2Hex(s string) string {
 	return ret
 }
 
+func IsHex(s string) bool {
+	if len(s) < 2 {
+		return false
+	}
+	if s[:2] == "0x" {
+		return true
+	}
+	return false
+}
+
 func AddHex(s string) string {
 	if len(s) < 2 {
 		return "0x" + s
@@ -211,10 +221,24 @@ func AddHex(s string) string {
 func StripHex(s string) string {
 	if len(s) > 1 {
 		if s[:2] == "0x" {
-			return s[2:]
+			s = s[2:]
+			if len(s)%2 != 0 {
+				s = "0" + s
+			}
+			return s
 		}
 	}
 	return s
+}
+
+func StripZeros(s string) string {
+	i := 0
+	for ; i < len(s); i++ {
+		if s[i] != '0' {
+			break
+		}
+	}
+	return s[i:]
 }
 
 func Usr() string {

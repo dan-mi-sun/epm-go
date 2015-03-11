@@ -8,11 +8,11 @@ import (
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	color "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/daviddengcn/go-colortext"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/decerver/interfaces/dapps"
-	mutils "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkutils" // for fetch
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious"               // for fetch
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkcrypto"    // keygen
+	mutils "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkutils"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkcrypto"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkutil"
-	"github.com/eris-ltd/epm-go/chains" // for fetch
+	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
 	"io/ioutil"
@@ -527,20 +527,27 @@ func cliCommand(c *cli.Context) {
 	cmd := args[0]
 	args = args[1:]
 
-	job := epm.NewJob(cmd, args)
+	// put the args into a string and parse them
+	argString := ""
+	for _, a := range args {
+		argString += a + " "
+	}
+	job := epm.ParseArgs(cmd, argString)
 
+	// set contract path
 	contractPath := c.String("c")
 	if !c.IsSet("c") {
 		contractPath = defaultContractPath
 	}
-
 	epm.ContractPath, err = filepath.Abs(contractPath)
 	ifExit(err)
 
+	// load epm
 	e, err := epm.NewEPM(chain, epm.LogFile)
 	ifExit(err)
 	e.ReadVars(path.Join(root, EPMVars))
 
+	// run job
 	e.AddJob(job)
 	e.ExecuteJobs()
 	e.WriteVars(path.Join(root, EPMVars))
@@ -754,7 +761,7 @@ func cliConsole(c *cli.Context) {
 	if diffStorage {
 		e.Diff = true
 	}
-	e.Repl()
+	//e.Repl()
 }
 
 func cliKeyImport(c *cli.Context) {

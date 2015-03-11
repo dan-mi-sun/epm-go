@@ -1,7 +1,6 @@
 package epm
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
@@ -9,6 +8,8 @@ import (
 	//	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -18,14 +19,17 @@ var logger *monklog.Logger = monklog.NewLogger("EPM")
 var (
 	StateDiffOpen  = "!{"
 	StateDiffClose = "!}"
-	//LLLURL         = "http://lllc.erisindustries.com/compile"
 )
 
-// an EPM Job
-type Job struct {
-	cmd  string
-	args []string // args may contain unparsed math that will be handled by jobs.go
-}
+var GOPATH = os.Getenv("GOPATH")
+
+var (
+	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
+	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
+
+	EpmDir  = utils.Epm
+	LogFile = path.Join(utils.Logs, "epm", "log")
+)
 
 type KeyManager interface {
 	ActiveAddress() string
@@ -76,8 +80,6 @@ type Blockchain interface {
 type EPM struct {
 	chain Blockchain
 
-	lllcURL string
-
 	jobs []Job
 	vars map[string]string
 
@@ -85,10 +87,8 @@ type EPM struct {
 	Diff   bool
 	states map[string]types.State
 
-	//map job numbers to names of diffs invoked after that job
-	diffName map[int][]string
-	//map job numbers to diff actions (save or diff ie 0 or 1)
-	diffSched map[int][]int
+	//map job numbers to names of diffs invoked before a job
+	diffSched map[int][]string
 
 	log string
 }
@@ -104,8 +104,7 @@ func NewEPM(chain Blockchain, log string) (*EPM, error) {
 		log:       ".epm-log",
 		Diff:      false, // off by default
 		states:    make(map[string]types.State),
-		diffName:  make(map[int][]string),
-		diffSched: make(map[int][]int),
+		diffSched: make(map[int][]string),
 	}
 	// temp dir
 	err := CopyContractPath()
@@ -116,118 +115,66 @@ func (e *EPM) Stop() {
 	e.chain.Shutdown()
 }
 
-// allowed commands
-var CMDS = []string{"deploy", "modify-deploy", "transact", "query", "log", "set", "endow", "test", "epm"}
-
-func (e EPM) newDiffSched(i int) {
-	if e.diffSched[i] == nil {
-		e.diffSched[i] = []int{}
-		e.diffName[i] = []string{}
-	}
-}
-
-func (e *EPM) parseStateDiffs(lines *[]string, startLine int, diffmap map[string]bool) {
-	// i is 0 for no jobs
-	i := len(e.jobs)
-	for {
-		name := parseStateDiff(lines, startLine)
-		if name != "" {
-			e.newDiffSched(i)
-			// if we've already seen the name, take diff
-			// else, store state
-			e.diffName[i] = append(e.diffName[i], name)
-			if _, ok := diffmap[name]; ok {
-				e.diffSched[i] = append(e.diffSched[i], 1)
-			} else {
-				e.diffSched[i] = append(e.diffSched[i], 0)
-				diffmap[name] = true
-			}
-			/*if s, ok := e.states[name]; ok{
-			      fmt.Println("Name of Diff:", name)
-			      PrettyPrintAcctDiff(StorageDiff(s, e.CurrentState()))
-			  } else{
-			      e.states[name] = e.CurrentState()
-			  }*/
-		} else {
-			break
-		}
-	}
-}
-
 // Parse a pdx file into a series of EPM jobs
 func (e *EPM) Parse(filename string) error {
 	logger.Infoln("Parsing ", filename)
 	// set current file to parse
 	e.pkgdef = filename
-
-	lines := []string{}
-	f, err := os.Open(filename)
+	b, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	scanner := bufio.NewScanner(f)
-	// read in all lines
-	for scanner.Scan() {
-		t := scanner.Text()
-		lines = append(lines, t)
+
+	p := Parse(string(b))
+	if err := p.run(); err != nil {
+		return err
 	}
-	return e.parse(lines)
-}
-
-// New EPM Job
-func NewJob(cmd string, args []string) *Job {
-	return &Job{cmd, args}
-}
-
-// Add job to EPM jobs
-func (e *EPM) AddJob(job *Job) {
-	e.jobs = append(e.jobs, *job)
-}
-
-// parse should take a list of lines, peel commands into jobs
-// lines either come from a file or from iepm
-func (e *EPM) parse(lines []string) error {
-
-	diffmap := make(map[string]bool)
-
-	l := 0
-	startLength := len(lines)
-	// check if we need to start diffs before the jobs
-	e.parseStateDiffs(&lines, l, diffmap)
-	for lines != nil {
-		// peel off a job and append
-		job, err := peelCmd(&lines, l)
-		if err != nil {
-			return err
-		}
-		if job.cmd != "" {
-			e.AddJob(job)
-		}
-		// check if we need to take or diff state after this job
-		// if diff is disabled they will not run, but we need to parse them out
-		e.parseStateDiffs(&lines, l, diffmap)
-		l = startLength - len(lines)
-	}
+	e.jobs = p.jobs
+	e.diffSched = p.diffsched
 	return nil
 }
 
-// replaces any {{varname}} args with the variable value
-func (e *EPM) VarSub(args []string) []string {
-	r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
-	for i, a := range args {
-		// if its a known var, replace it
-		// else, leave alone
-		args[i] = r.ReplaceAllStringFunc(a, func(s string) string {
-			k := s[2 : len(s)-2] // shave the brackets
-			v, ok := e.vars[k]
-			if ok {
-				return v
-			} else {
-				return s
-			}
-		})
+// New EPM Job
+func NewJob(cmd string, args []*tree) *Job {
+	j := new(Job)
+	j.cmd = cmd
+	j.args = [][]*tree{}
+	for _, a := range args {
+		j.args = append(j.args, []*tree{a})
 	}
-	return args
+	return j
+}
+
+// Add job to EPM jobs
+func (e *EPM) AddJob(j *Job) {
+	e.jobs = append(e.jobs, *j)
+}
+
+func (e *EPM) VarSub(id string) (string, error) {
+	if strings.HasPrefix(id, "{{") && strings.HasSuffix(id, "}}") {
+		id = id[2 : len(id)-2]
+	}
+	v, ok := e.vars[id]
+	if !ok {
+		return "", fmt.Errorf("Unknown variable %s", id)
+	}
+	return v, nil
+}
+
+// replaces any {{varname}} args with the variable value
+func (e *EPM) RegVarSub(arg string) string {
+	r, _ := regexp.Compile(`\{\{(.+?)\}\}`)
+	// if its a known var, replace it
+	// else, leave alone
+	return r.ReplaceAllStringFunc(arg, func(s string) string {
+		k := s[2 : len(s)-2] // shave the brackets
+		v, ok := e.vars[k]
+		if ok {
+			return v
+		} else {
+			return s
+		}
+	})
 }
 
 // Read EPM variables in from a file
@@ -277,9 +224,26 @@ func (e *EPM) Jobs() []Job {
 
 // Store a variable (strips {{ }} from key if necessary)
 func (e *EPM) StoreVar(key, val string) {
-
+	fmt.Println("Storing:", key, val)
 	if len(key) > 4 && key[:2] == "{{" && key[len(key)-2:] == "}}" {
 		key = key[2 : len(key)-2]
 	}
 	e.vars[key] = utils.Coerce2Hex(val)
+	logger.Infof("Stored var %s:%s\n", key, e.vars[key])
+}
+
+func CopyContractPath() error {
+	// copy the current dir into scratch/epm. Necessary for finding include files after a modify. :sigh:
+	root := path.Base(ContractPath)
+	p := path.Join(EpmDir, root)
+	// TODO: should we delete and copy even if it does exist?
+	// we might miss changed otherwise
+	if _, err := os.Stat(p); err != nil {
+		cmd := exec.Command("cp", "-r", ContractPath, p)
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("error copying working dir into tmp: %s", err.Error())
+		}
+	}
+	return nil
 }

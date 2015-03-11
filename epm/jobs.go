@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server/abi"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/utils"
 	"io/ioutil"
@@ -13,17 +14,6 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
-)
-
-var GOPATH = os.Getenv("GOPATH")
-
-// TODO: Should be set to the "current" directory if using epm-cli
-var (
-	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
-	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
-
-	EpmDir  = utils.Epm
-	LogFile = path.Join(utils.Logs, "epm", "log")
 )
 
 // What to do if a job errs
@@ -46,9 +36,6 @@ func (e *EPM) ExecuteJobs() error {
 	if e.Diff {
 		e.checkTakeStateDiff(0)
 	}
-	// TODO: set gendoug...
-	//gendougaddr, _:= e.eth.Get("gendoug", nil)
-	//e.StoreVar("GENDOUG", gendougaddr)
 
 	for i, j := range e.jobs {
 		err := e.ExecuteJob(j)
@@ -67,9 +54,6 @@ func (e *EPM) ExecuteJobs() error {
 				continue
 			}
 		}
-
-		// time.Sleep(time.Second) // this was not necessary for epm but was when called from CI. not sure why :(
-		// otherwise, tx reactors get blocked;
 	}
 	if e.Diff {
 		e.checkTakeStateDiff(len(e.jobs))
@@ -77,43 +61,78 @@ func (e *EPM) ExecuteJobs() error {
 	return nil
 }
 
-// Job switch
-// Args are still raw input from user (but only 2 or 3)
-func (e *EPM) ExecuteJob(job Job) error {
-	logger.Warnln("Executing job: ", job.cmd, "\targs: ", job.args)
-	job.args = e.VarSub(job.args) // substitute vars
-	switch job.cmd {
-	case "deploy":
-		return e.Deploy(job.args)
-	case "modify-deploy":
-		return e.ModifyDeploy(job.args)
-	case "transact":
-		return e.Transact(job.args)
-	case "query":
-		return e.Query(job.args)
-	case "log":
-		return e.Log(job.args)
-	case "set":
-		return e.Set(job.args)
-	case "endow":
-		return e.Endow(job.args)
-	case "test":
-		e.chain.Commit()
-		err := e.ExecuteTest(job.args[0], 0)
-		if err != nil {
-			logger.Errorln(err)
-			return err
-		}
-	case "epm":
-		return e.EPMx(job.args[0])
-	default:
-		return fmt.Errorf("Unknown command: %s", job.cmd)
+func requireErr(args [][]*tree, n int, cmd string) error {
+	if !require(args, n) {
+		return fmt.Errorf("%s requires at least %d arguments. Provided %d", cmd, n, len(args))
 	}
 	return nil
 }
 
+func require(args [][]*tree, n int) bool {
+	if len(args) >= n {
+		return true
+	}
+	return false
+}
+
+func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
+	switch name {
+	case "deploy":
+		return e.Deploy, 2
+	case "modify-deploy":
+		return e.ModifyDeploy, 4
+	case "transact":
+		return e.Transact, 2
+	case "query":
+		return e.Query, 3
+	case "log":
+		return e.Log, 2
+	case "set":
+		return e.Set, 2
+	case "endow":
+		return e.Endow, 2
+	case "test":
+		return func(a []string) error {
+			e.chain.Commit()
+			err := e.ExecuteTest(a[0], 0)
+			if err != nil {
+				logger.Errorln(err)
+				return err
+			}
+			return nil
+		}, 1
+	case "epm":
+		return e.EPMx, 1
+	default:
+		return func([]string) error { return fmt.Errorf("Unknown command: %s", name) }, 0
+
+	}
+}
+
+var NoChainErr = fmt.Errorf("Chain is nil")
+
+// Job switch
+// Args are still raw input from user (but only 2 or 3)
+func (e *EPM) ExecuteJob(job Job) error {
+	logger.Warnln("Executing job: ", job.cmd, "\targs: ", job.args)
+	f, n := e.resolveFunc(job.cmd)
+	if err := requireErr(job.args, n, job.cmd); err != nil {
+		return err
+	}
+	args, err := e.ResolveArgs(job.cmd, job.args)
+	if err != nil {
+		return err
+	}
+	logger.Infoln("ResolvedArgs:", args)
+	if e.chain == nil {
+		return NoChainErr
+	}
+	return f(args)
+}
+
 // Deploy a pdx from a pdx
-func (e *EPM) EPMx(filename string) error {
+func (e *EPM) EPMx(args []string) error {
+	filename := args[0]
 	// save the old jobs, empty the job list
 	oldjobs := e.jobs
 	e.jobs = []Job{}
@@ -145,10 +164,11 @@ func (e *EPM) Deploy(args []string) error {
 		p = path.Join(ContractPath, contract)
 	}
 	// compile
-	bytecode, err := lllcserver.Compile(p)
+	bytecode, abiSpec, err := lllcserver.Compile(p)
 	if err != nil {
 		return err
 	}
+	logger.Debugln("Abi spec:", string(abiSpec))
 	// send transaction
 	addr, err := e.chain.Script(hex.EncodeToString(bytecode))
 	if err != nil {
@@ -157,6 +177,16 @@ func (e *EPM) Deploy(args []string) error {
 		return err
 	}
 	logger.Warnf("Deployed %s as %s\n", addr, key)
+	// write abi to file
+	abiDir := path.Join(e.chain.Property("RootDir").(string), "abi")
+	if _, err := os.Stat(abiDir); err != nil {
+		if err := os.Mkdir(abiDir, 0700); err != nil {
+			return err
+		}
+	}
+	if err := ioutil.WriteFile(path.Join(abiDir, utils.StripHex(addr)), []byte(abiSpec), 0600); err != nil {
+		return err
+	}
 	// save contract address
 	e.StoreVar(key, addr)
 	return nil
@@ -169,7 +199,7 @@ func (e *EPM) ModifyDeploy(args []string) error {
 	args = args[2:]
 
 	contract = strings.Trim(contract, "\"")
-	newName, err := Modify(path.Join(ContractPath, contract), args)
+	newName, err := e.Modify(path.Join(ContractPath, contract), args)
 	if err != nil {
 		return err
 	}
@@ -177,14 +207,49 @@ func (e *EPM) ModifyDeploy(args []string) error {
 }
 
 // Send a transaction with data to a contract
-func (e *EPM) Transact(args []string) error {
+// Data should be list of strings/hex/numeric
+// already resolved
+func (e *EPM) Transact(args []string) (err error) {
 	to := args[0]
-	dataS := args[1]
-	data := strings.Split(dataS, " ")
-	data = DoMath(data)
-	e.chain.Msg(to, data)
+	data := args[1:]
+	//data := strings.Split(dataS, " ")
+	//data = DoMath(data)
+
+	packed := []string{}
+	// check for abi
+	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
+	if ok {
+		//h, _ := hex.DecodeString(utils.StripHex(data[0]))
+		funcName := data[0] //string(h)
+		args = data[1:]
+
+		fmt.Println("ABI Spec", abiSpec)
+		a := []interface{}{}
+		for _, aa := range args {
+			bb, _ := hex.DecodeString(utils.StripHex(aa))
+			//bb := utils.StripHex(aa)
+			a = append(a, bb)
+		}
+		packedBytes, err := abiSpec.Pack(funcName, a...)
+		if err != nil {
+			return err
+		}
+		packed = []string{hex.EncodeToString(packedBytes)}
+
+	} else {
+		for _, aa := range data {
+			if !utils.IsHex(aa) {
+				aa = "0x" + fmt.Sprintf("%x", aa)
+			}
+			packed = append(packed, aa)
+		}
+	}
+
+	if _, err = e.chain.Msg(to, packed); err != nil {
+		return
+	}
 	logger.Warnf("Sent %s to %s", data, to)
-	return nil
+	return
 }
 
 // Issue a query.
@@ -245,13 +310,14 @@ func (e *EPM) Endow(args []string) error {
 
 // Apply substitution: replace pairs from args to contract
 // and save in a temporary file
-func Modify(contract string, args []string) (string, error) {
+func (e *EPM) Modify(contract string, args []string) (string, error) {
 	b, err := ioutil.ReadFile(contract)
 	if err != nil {
 		return "", fmt.Errorf("Could not open file %s: %s", contract, err.Error())
 	}
 
 	lll := string(b)
+	fmt.Println("ORIGINAL LLL:", lll)
 
 	// when we modify a contract, we save it in the .tmp dir in the same relative path as its original root.
 	// eg. if ContractPath is ~/ponos and we modify ponos/projects/issue.lll then the modified version will be found in
@@ -271,9 +337,14 @@ func Modify(contract string, args []string) (string, error) {
 		sub := args[0]
 		rep := args[1]
 
+		// rep may have an epm var in it
+		rep = e.RegVarSub(rep)
+
 		lll = strings.Replace(lll, sub, rep, -1)
 		args = args[2:]
 	}
+
+	fmt.Println("NEW LLL:", lll)
 
 	hash := sha256.Sum256([]byte(lll))
 	newPath := path.Join(EpmDir, dir, hex.EncodeToString(hash[:])+".lll")
@@ -282,4 +353,24 @@ func Modify(contract string, args []string) (string, error) {
 		return "", fmt.Errorf("Could not write file %s: %s", newPath, err.Error())
 	}
 	return newPath, nil
+}
+
+func ReadAbi(root, to string) (abi.ABI, bool) {
+	p := path.Join(root, "abi", utils.StripHex(to))
+	if _, err := os.Stat(p); err != nil {
+		log.Println("Abi doesn't exist for", p)
+		return abi.NullABI, false
+	}
+	b, err := ioutil.ReadFile(p)
+	if err != nil {
+		log.Println("Failed to read abi file:", err)
+		return abi.NullABI, false
+	}
+	a := new(abi.ABI)
+
+	if err := a.UnmarshalJSON(b); err != nil {
+		log.Println("failed to unmarshal", err)
+		return abi.NullABI, false
+	}
+	return *a, true
 }
