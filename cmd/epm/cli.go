@@ -112,13 +112,30 @@ func cliRefs(c *cli.Context) {
 				ifExit(err)
 			}
 		}
+		kn := "0x" + string(key)
+		ifExit(err)
 		if strings.Contains(rv, h) {
 			color.ChangeColor(color.Green, true, color.None, false)
-			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, key)
+			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, kn)
 			color.ResetColor()
 		} else {
-			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, key)
+			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, kn)
 		}
+	}
+	exit(err)
+}
+
+// list the keyfiles
+func cliLsKeys(c *cli.Context) {
+	keys, err := ioutil.ReadDir(utils.Keys)
+	ifExit(err)
+	fmt.Printf("%-20s%-60s%-20s\n", "Name:", "Address:", "Key Value:")
+	for i := range keys {
+		k := strings.Split(keys[i].Name(), "-")
+		k[1] = "0x" + k[1]
+		kv, err := ioutil.ReadFile(path.Join(utils.Keys, keys[i].Name()))
+		ifExit(err)
+		fmt.Printf("%-20s%-60s%-20s\n", k[0], k[1], kv)
 	}
 	exit(err)
 }
@@ -780,16 +797,16 @@ func cliKeyUse(c *cli.Context) {
 	keyName := c.Args()[0]
 	allKeys, err := filepath.Glob(path.Join(utils.Keys, keyName) + "*")
 	ifExit(err)
-	if (len(allKeys) > 1) {
+	if len(allKeys) > 1 {
 		var i int
 		fmt.Println("More than one key found with that name. Please select the proper one.")
 		for key := range allKeys {
-			fmt.Printf("%v.\t%s\n", (key+1), allKeys[key])
+			fmt.Printf("%v.\t%s\n", (key + 1), allKeys[key])
 		}
 		fmt.Printf(">>> ")
 		fmt.Scan(&i)
-		keyFile = allKeys[(i-1)]
-	} else if (len(allKeys) == 1) {
+		keyFile = allKeys[(i - 1)]
+	} else if len(allKeys) == 1 {
 		keyFile = allKeys[0]
 	} else {
 		exit(fmt.Errorf("No key found with that name."))
@@ -820,7 +837,6 @@ func useKey(keyFile string, c *cli.Context) {
 	m.WriteConfig(path.Join(root, "config.json"))
 	logger.Warnln("Using key")
 }
-
 
 func cliKeyExport(c *cli.Context) {
 	if len(c.Args()) == 0 {
