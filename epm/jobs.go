@@ -76,23 +76,25 @@ func require(args [][]*tree, n int) bool {
 }
 
 func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
+	var f func([]string) error
+	n := CommandArgs[name]
 	switch name {
 	case "deploy":
-		return e.Deploy, 2
+		f = e.Deploy
 	case "modify-deploy":
-		return e.ModifyDeploy, 4
+		f = e.ModifyDeploy
 	case "transact":
-		return e.Transact, 2
+		f = e.Transact
 	case "query":
-		return e.Query, 3
+		f = e.Query
 	case "log":
-		return e.Log, 2
+		f = e.Log
 	case "set":
-		return e.Set, 2
+		f = e.Set
 	case "endow":
-		return e.Endow, 2
+		f = e.Endow
 	case "test":
-		return func(a []string) error {
+		f = func(a []string) error {
 			e.chain.Commit()
 			err := e.ExecuteTest(a[0], 0)
 			if err != nil {
@@ -100,13 +102,14 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 				return err
 			}
 			return nil
-		}, 1
+		}
 	case "epm":
-		return e.EPMx, 1
+		f = e.EPMx
 	default:
-		return func([]string) error { return fmt.Errorf("Unknown command: %s", name) }, 0
-
+		f = func([]string) error { return fmt.Errorf("Unknown command: %s", name) }
+		n = 0
 	}
+	return f, n
 }
 
 var NoChainErr = fmt.Errorf("Chain is nil")
