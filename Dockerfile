@@ -9,7 +9,7 @@ MAINTAINER Eris Industries <contact@erisindustries.com>
 ### The base image kills /var/lib/apt/lists/*.
 RUN apt-get update
 RUN apt-get install -y \
-  libgmp3-dev
+  libgmp3-dev jq
 
 RUN mkdir --parents $GOPATH/src/github.com/eris-ltd
 WORKDIR $GOPATH/src/github.com/eris-ltd

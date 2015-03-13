@@ -12,6 +12,7 @@ func init() {
 	ClearCaches()
 }
 
+// test the result of compiling through the lllc pipeline vs giving it to the wrapper
 func testContract(t *testing.T, file string) {
 	our_code, our_abi, err := Compile(file)
 	if err != nil {
@@ -76,7 +77,6 @@ func TestSerpentClientRemote(t *testing.T) {
 
 func printCodeTop(s string, code []byte, n int) {
 	fmt.Println("length:", len(code))
-
 	if len(code) > n {
 		code = code[:n]
 	}

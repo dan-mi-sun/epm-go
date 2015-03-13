@@ -141,6 +141,7 @@ func compileServerCore(req *Request) *Response {
 	// check if filename already exists. if not, write
 	if _, err := os.Stat(filename); err != nil {
 		ioutil.WriteFile(filename, c, 0644)
+		logger.Debugln(filename, "does not exist. Writing")
 		maybeCached = false
 	}
 
@@ -148,9 +149,9 @@ func compileServerCore(req *Request) *Response {
 	for k, v := range req.Includes {
 		filename := path.Join(ServerCache, compiler.Ext(k))
 		if _, err := os.Stat(filename); err != nil {
-			ioutil.WriteFile(filename, v, 0644)
 			maybeCached = false
 		}
+		ioutil.WriteFile(filename, v, 0644)
 	}
 
 	// check cache
