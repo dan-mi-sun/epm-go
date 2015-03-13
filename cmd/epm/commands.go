@@ -231,6 +231,7 @@ var (
 		Subcommands: []cli.Command{
 			keygenCmd,
 			keyLsCmd,
+			keyUseCmd,
 			keyExportCmd,
 			keyImportCmd,
 		},
@@ -249,6 +250,12 @@ var (
 		Flags: []cli.Flag{
 			noImportFlag,
 		},
+	}
+
+	keyUseCmd = cli.Command{
+		Name: "use",
+		Usage: "use a particular key with the currently checked out blockchain",
+		Action: cliKeyUse,
 	}
 
 	keyExportCmd = cli.Command{
