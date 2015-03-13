@@ -9,9 +9,10 @@ import (
 
 // 0 for nothing, 4 for everything
 // Overwritten by cmd/lllc-server
-var DebugMode = 2
-
-var logger = &Logger{}
+var (
+	DebugMode = 2
+	logger    = &Logger{}
+)
 
 // Client cache location in decerver tree
 var ClientCache = path.Join(utils.Lllc, "client")
@@ -44,12 +45,12 @@ func (c *CompileClient) Compile(dir string, code []byte) (*Response, error) {
 	// replace includes with hash of included contents and add those contents to Includes (recursive)
 	var includes = make(map[string][]byte)
 	var err error
-	logger.Debugln("pre includes;", code)
+	logger.Debugln("pre includes;", string(code))
 	code, err = c.replaceIncludes(code, dir, includes)
 	if err != nil {
 		return nil, err
 	}
-	logger.Debugln("post replaceincludes;", code)
+	logger.Debugln("post replaceincludes;", string(code))
 
 	// go through all includes, check if they have changed
 	hash, cached := c.checkCached(code, includes)
@@ -117,5 +118,5 @@ func Compile(filename string) ([]byte, string, error) {
 
 // Compile a literal piece of code
 func CompileLiteral(code string, lang string) ([]byte, string, error) {
-	return compile([]byte(code), lang, utils.Scratch)
+	return compile([]byte(code), lang, utils.Lllc)
 }

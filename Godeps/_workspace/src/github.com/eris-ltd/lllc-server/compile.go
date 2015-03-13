@@ -9,7 +9,7 @@ import (
 	"path"
 )
 
-var DefaultUrl = "http://ps.erisindustries.com:8090/compile"
+var DefaultUrl = "http://ps.erisindustries.com:8091/compile"
 
 // Language configuration struct
 // New language capabilities can be added to the server simply by
@@ -64,7 +64,7 @@ func (l LangConfig) Abi(file string) (args []string) {
 var Languages = map[string]LangConfig{
 	"lll": LangConfig{
 		URL:        DefaultUrl,
-		Path:       path.Join(homeDir(), "cpp-ethereum/build/lllc/lllc"),
+		Path:       path.Join(homeDir(), "eric-cpp/build/lllc/lllc"),
 		Net:        true,
 		Extensions: []string{"lll", "def"},
 		IncludeRegexes: []string{
@@ -74,7 +74,7 @@ var Languages = map[string]LangConfig{
 			[]string{`(include "`, `.lll")`},
 		},
 		CompileCmd: []string{
-			path.Join(homeDir(), "cpp-ethereum/build/lllc/lllc"),
+			path.Join(homeDir(), "eris-cpp/build/lllc/lllc"),
 			"_",
 		},
 	},
