@@ -227,10 +227,11 @@ var (
 	keysCmd = cli.Command{
 		Name:   "keys",
 		Usage:  "generate, import, and export keys for your blockchains",
-		Action: cliRefs,
+		Action: cliLsKeys,
 		Subcommands: []cli.Command{
 			keygenCmd,
 			keyLsCmd,
+			keyUseCmd,
 			keyExportCmd,
 			keyImportCmd,
 		},
@@ -238,8 +239,8 @@ var (
 
 	keyLsCmd = cli.Command{
 		Name:   "ls",
-		Usage:  "list the blockchains and their asssociated key addresses",
-		Action: cliRefs,
+		Usage:  "list the keys and their associated names and addresses",
+		Action: cliLsKeys,
 	}
 
 	keygenCmd = cli.Command{
@@ -249,6 +250,12 @@ var (
 		Flags: []cli.Flag{
 			noImportFlag,
 		},
+	}
+
+	keyUseCmd = cli.Command{
+		Name:   "use",
+		Usage:  "use a particular key with the currently checked out blockchain",
+		Action: cliKeyUse,
 	}
 
 	keyExportCmd = cli.Command{
