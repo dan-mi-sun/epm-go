@@ -163,7 +163,7 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/lllc-server",
-			"Rev": "b24e212cc4a3de2fa14004c397832a562a616303"
+			"Rev": "d482eddefba8db221b7d5031698a54c2127a138d"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/eth",

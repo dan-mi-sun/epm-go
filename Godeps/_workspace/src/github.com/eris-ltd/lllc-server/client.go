@@ -43,10 +43,11 @@ func (c *CompileClient) compileRequest(req *Request) (respJ *Response, err error
 // Takes a dir and some code, replaces all includes, checks cache, compiles, caches
 func (c *CompileClient) Compile(dir string, code []byte) (*Response, error) {
 	// replace includes with hash of included contents and add those contents to Includes (recursive)
-	var includes = make(map[string][]byte)
+	var includes = make(map[string][]byte)     // hashes to code
+	var includeNames = make(map[string]string) //hashes before replace to hashes after
 	var err error
 	logger.Debugln("pre includes;", string(code))
-	code, err = c.replaceIncludes(code, dir, includes)
+	code, err = c.replaceIncludes(code, dir, includes, includeNames)
 	if err != nil {
 		return nil, err
 	}
