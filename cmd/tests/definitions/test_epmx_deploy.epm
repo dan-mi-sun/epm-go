@@ -1,0 +1,4 @@
+epm:
+	definitions/test_deploy.epm => dep
+transact:
+	{{dep.addr}} => 0x3 0x4

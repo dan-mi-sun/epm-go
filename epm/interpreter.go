@@ -5,20 +5,32 @@ import (
 	"fmt"
 	"github.com/eris-ltd/epm-go/utils"
 	"math/big"
+	"path"
 	"strconv"
 )
 
 // which arg is a "set var"
-func setter(cmd string) int {
+func isSet(cmd string, i int) bool {
 	switch cmd {
 	case "deploy", "modify-deploy":
-		return 1
+		return i == 1
+	case "include":
+		return i%2 == 1
 	case "query":
-		return 2
+		return i == 2
 	case "test":
-		return 3
+		return i == 3
 	default:
-		return -1
+		return false
+	}
+}
+
+func isPath(cmd string, i int) bool {
+	switch cmd {
+	case "deploy":
+		return i == 0
+	default:
+		return false
 	}
 }
 
@@ -26,16 +38,34 @@ func (e *EPM) ResolveArgs(cmd string, args [][]*tree) ([]string, error) {
 
 	var stringArgs = []string{}
 	for i, a := range args {
-		for _, aa := range a {
-			if i == setter(cmd) {
-				stringArgs = append(stringArgs, aa.token.val)
-				continue
+		if isPath(cmd, i) {
+			fPath := ""
+			for _, aa := range a {
+				r, err := e.resolveTree(aa)
+				if err != nil {
+					return nil, err
+				}
+				if len(fPath) == 0 {
+					fPath += r
+				} else {
+					fPath = path.Join(fPath, r)
+				}
 			}
-			r, err := e.resolveTree(aa)
-			if err != nil {
-				return nil, err
+			stringArgs = append(stringArgs, fPath)
+
+		} else {
+			for _, aa := range a {
+				if isSet(cmd, i) {
+					stringArgs = append(stringArgs, aa.token.val)
+					continue
+				}
+				r, err := e.resolveTree(aa)
+				if err != nil {
+					return nil, err
+				}
+				logger.Debugln("resolved tree:", r)
+				stringArgs = append(stringArgs, r)
 			}
-			stringArgs = append(stringArgs, r)
 		}
 	}
 	return stringArgs, nil

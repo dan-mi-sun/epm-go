@@ -167,6 +167,44 @@ var tokensC = []tokenType{
 	tokenEOFTy,
 }
 
+var textInclude = `
+include:
+	github.com/eris-ltd/eris-std-lib => {{esl}}
+deploy:
+	{{esl}} epm/a.lll => {{addr}}
+`
+var tokensI = []tokenType{
+	tokenNewLineTy,
+	tokenCmdTy,
+	tokenColonTy,
+	tokenNewLineTy,
+	tokenTabTy,
+	tokenStringTy,
+	tokenArrowTy,
+	tokenLeftBracesTy,
+	tokenStringTy,
+	tokenRightBracesTy,
+	tokenNewLineTy,
+	tokenCmdTy,
+	tokenColonTy,
+	tokenNewLineTy,
+	tokenTabTy,
+	tokenLeftBracesTy,
+	tokenStringTy,
+	tokenRightBracesTy,
+	tokenStringTy,
+	tokenArrowTy,
+	tokenLeftBracesTy,
+	tokenStringTy,
+	tokenRightBracesTy,
+	tokenNewLineTy,
+	tokenEOFTy,
+}
+
+func TestLexInclude(t *testing.T) {
+	testLexer(t, textInclude, tokensI)
+}
+
 func TestLexer3(t *testing.T) {
 	testLexer(t, text1c, tokensC)
 }

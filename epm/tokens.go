@@ -88,61 +88,23 @@ const (
 	tokenUnderscoreTy                   // _
 )
 
-type command struct {
-	command string
-	args    []int // commands can take variable number of args
-}
-
-var Commands = []command{
-	command{
-		command: "deploy",
-		args:    []int{},
-	},
-	command{
-		command: "modify-deploy",
-		args:    []int{},
-	},
-	command{
-		command: "transact",
-		args:    []int{},
-	},
-	command{
-		command: "endow",
-		args:    []int{},
-	},
-	command{
-		command: "query",
-		args:    []int{},
-	},
-	command{
-		command: "log",
-		args:    []int{},
-	},
-	command{
-		command: "set",
-		args:    []int{},
-	},
-	command{
-		command: "test",
-		args:    []int{},
-	},
-	command{
-		command: "epm",
-		args:    []int{},
-	},
-}
-
-func commandList(cmds []command) []string {
-	cs := make([]string, len(cmds))
-	for i, c := range cmds {
-		cs[i] = c.command
-	}
-	return cs
+// min args per command
+var CommandArgs = map[string]int{
+	"deploy":        2,
+	"modify-deploy": 4,
+	"transact":      2,
+	"query":         3,
+	"log":           2,
+	"set":           2,
+	"endow":         2,
+	"test":          1,
+	"epm":           1,
+	"include":       2,
 }
 
 // tokens and special chars
 var (
-	tokenCmds        = commandList(Commands)
+	tokenCmds        = CommandArgs
 	tokenLeftBraces  = "{{"
 	tokenRightBraces = "}}"
 	tokenLeftBrace   = "("

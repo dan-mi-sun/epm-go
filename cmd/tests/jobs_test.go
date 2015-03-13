@@ -13,7 +13,7 @@ import (
 var GoPath = os.Getenv("GOPATH")
 
 func NewMonkModule() *monk.MonkModule {
-	epm.ErrMode = epm.ReturnOnErr
+	epm.ErrMode = epm.FailOnErr
 	m := monk.NewMonk(nil)
 	m.Config.RootDir = ".ethchain"
 	m.Config.LogLevel = 5
@@ -169,6 +169,43 @@ func TestPdt(t *testing.T) {
 	_, err := e.Test(path.Join(epm.TestPath, "test_parse.epm-check"))
 	if err != nil {
 		t.Fatal(err)
+	}
+	m.Shutdown()
+}
+
+func TestInclude(t *testing.T) {
+	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_path_include.epm"))
+
+	addr := e.Vars()["addr"]
+	addr2 := e.Vars()["addr2"]
+	addr3 := e.Vars()["addr3"]
+	//fmt.Println("addr", addr)
+	//0x60, 5050
+
+	e.Commit()
+	got := m.StorageAt(addr, "0x60")
+	if got != "5050" {
+		t.Error("got:", got, "expected:", "0x5050")
+	}
+	got = m.StorageAt(addr2, "0x60")
+	if got != "5060" {
+		t.Error("got:", got, "expected:", "0x5060")
+	}
+	got = m.StorageAt(addr3, "0x60")
+	if got != "5060" {
+		t.Error("got:", got, "expected:", "0x5060")
+	}
+	m.Shutdown()
+}
+
+func TestEPMxNamespace(t *testing.T) {
+	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_epmx_deploy.epm"))
+
+	addr := e.Vars()["dep.addr"]
+	e.Commit()
+	got := m.StorageAt(addr, "0x3")
+	if got != "04" {
+		t.Error("got:", got, "expected:", "0x04")
 	}
 	m.Shutdown()
 }

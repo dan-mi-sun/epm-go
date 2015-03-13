@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -76,23 +77,25 @@ func require(args [][]*tree, n int) bool {
 }
 
 func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
+	var f func([]string) error
+	n := CommandArgs[name]
 	switch name {
 	case "deploy":
-		return e.Deploy, 2
+		f = e.Deploy
 	case "modify-deploy":
-		return e.ModifyDeploy, 4
+		f = e.ModifyDeploy
 	case "transact":
-		return e.Transact, 2
+		f = e.Transact
 	case "query":
-		return e.Query, 3
+		f = e.Query
 	case "log":
-		return e.Log, 2
+		f = e.Log
 	case "set":
-		return e.Set, 2
+		f = e.Set
 	case "endow":
-		return e.Endow, 2
+		f = e.Endow
 	case "test":
-		return func(a []string) error {
+		f = func(a []string) error {
 			e.chain.Commit()
 			err := e.ExecuteTest(a[0], 0)
 			if err != nil {
@@ -100,13 +103,16 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 				return err
 			}
 			return nil
-		}, 1
+		}
 	case "epm":
-		return e.EPMx, 1
+		f = e.EPMx
+	case "include":
+		f = e.Include
 	default:
-		return func([]string) error { return fmt.Errorf("Unknown command: %s", name) }, 0
-
+		f = func([]string) error { return fmt.Errorf("Unknown command: %s", name) }
+		n = 0
 	}
+	return f, n
 }
 
 var NoChainErr = fmt.Errorf("Chain is nil")
@@ -114,7 +120,7 @@ var NoChainErr = fmt.Errorf("Chain is nil")
 // Job switch
 // Args are still raw input from user (but only 2 or 3)
 func (e *EPM) ExecuteJob(job Job) error {
-	logger.Warnln("Executing job: ", job.cmd, "\targs: ", job.args)
+	logger.Warnln("Executing job: ", job.cmd)
 	f, n := e.resolveFunc(job.cmd)
 	if err := requireErr(job.args, n, job.cmd); err != nil {
 		return err
@@ -142,10 +148,15 @@ func (e *EPM) EPMx(args []string) error {
 		return err
 	}
 
+	if len(args) > 1 {
+		e.varsPrefix = args[1]
+	}
 	err := e.ExecuteJobs()
 	if err != nil {
 		return err
 	}
+	e.varsPrefix = ""
+
 	// return to old jobs
 	e.jobs = oldjobs
 	return nil
@@ -156,6 +167,7 @@ func (e *EPM) Deploy(args []string) error {
 	contract := args[0]
 	key := args[1]
 	contract = strings.Trim(contract, "\"")
+	logger.Debugln("Deploying contract:", contract)
 	var p string
 	// compile contract
 	if filepath.IsAbs(contract) {
@@ -305,6 +317,37 @@ func (e *EPM) Endow(args []string) error {
 	value := args[1]
 	e.chain.Tx(addr, value)
 	logger.Warnf("Endowed %s with %s", addr, value)
+	return nil
+}
+
+func (e *EPM) Include(args []string) error {
+	if len(args)%2 != 0 {
+		return fmt.Errorf("Each include statement must have two args (a path and a label)")
+	}
+	for i := 0; i < len(args)/2; i++ {
+		includePath := args[2*i]
+		varName := args[2*i+1]
+
+		absIncludePath := path.Join(utils.GoPath, "src", includePath)
+		if _, err := os.Stat(absIncludePath); err != nil {
+			// attempt to git clone it
+			logger.Debugf("Package %s does not exist. Attempting to clone it...\n", includePath)
+			cur, _ := os.Getwd()
+			os.Chdir(path.Join(utils.GoPath, "src"))
+			dir := path.Dir(includePath)
+			if _, err := os.Stat(dir); err != nil {
+				os.MkdirAll(dir, 0700)
+			}
+			os.Chdir(dir)
+			cmd := exec.Command("git", "clone", "https://"+includePath)
+			err := cmd.Run()
+			os.Chdir(cur)
+			if err != nil {
+				return fmt.Errorf("Included path %s does not exist.Error on clone: %s", err.Error())
+			}
+		}
+		e.StoreVar(varName, absIncludePath)
+	}
 	return nil
 }
 
