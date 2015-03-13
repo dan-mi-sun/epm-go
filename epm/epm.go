@@ -228,7 +228,12 @@ func (e *EPM) StoreVar(key, val string) {
 	if len(key) > 4 && key[:2] == "{{" && key[len(key)-2:] == "}}" {
 		key = key[2 : len(key)-2]
 	}
-	e.vars[key] = utils.Coerce2Hex(val)
+	// if it's a path, don't coerce
+	if strings.Contains(val, "/") {
+		e.vars[key] = val
+	} else {
+		e.vars[key] = utils.Coerce2Hex(val)
+	}
 	logger.Infof("Stored var %s:%s\n", key, e.vars[key])
 }
 

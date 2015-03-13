@@ -99,6 +99,7 @@ var CommandArgs = map[string]int{
 	"endow":         2,
 	"test":          1,
 	"epm":           1,
+	"include":       2,
 }
 
 // tokens and special chars
