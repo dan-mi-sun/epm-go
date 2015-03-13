@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -322,12 +323,25 @@ func (e *EPM) Include(args []string) error {
 		includePath := args[2*i]
 		varName := args[2*i+1]
 
-		includePath = path.Join(utils.GoPath, "src", includePath)
-		if _, err := os.Stat(includePath); err != nil {
-			// TODO: we should attempt to git clone it
-			return fmt.Errorf("Included path %s does not exist")
+		absIncludePath := path.Join(utils.GoPath, "src", includePath)
+		if _, err := os.Stat(absIncludePath); err != nil {
+			// attempt to git clone it
+			logger.Debugf("Package %s does not exist. Attempting to clone it...\n", includePath)
+			cur, _ := os.Getwd()
+			os.Chdir(path.Join(utils.GoPath, "src"))
+			dir := path.Dir(includePath)
+			if _, err := os.Stat(dir); err != nil {
+				os.MkdirAll(dir, 0700)
+			}
+			os.Chdir(dir)
+			cmd := exec.Command("git", "clone", "https://"+includePath)
+			err := cmd.Run()
+			os.Chdir(cur)
+			if err != nil {
+				return fmt.Errorf("Included path %s does not exist.Error on clone: %s", err.Error())
+			}
 		}
-		e.StoreVar(varName, includePath)
+		e.StoreVar(varName, absIncludePath)
 	}
 	return nil
 }
