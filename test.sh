@@ -4,6 +4,10 @@ rm -f /tmp/success # in case its around
 
 cd $GOPATH/src/github.com/eris-ltd/epm-go
 
+# XXX: set develop lllc server
+epm init
+echo `jq '.lll.url |= "http://ps.erisindustries.com:8092/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
+
 # run the go unit tests
 cd epm && go test -v ./... -race
 cd ../chains && go test -v ./... -race

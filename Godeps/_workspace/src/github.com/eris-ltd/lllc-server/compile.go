@@ -9,7 +9,7 @@ import (
 	"path"
 )
 
-var DefaultUrl = "http://ps.erisindustries.com:8091/compile"
+var DefaultUrl = "http://ps.erisindustries.com:8090/compile"
 
 // Language configuration struct
 // New language capabilities can be added to the server simply by
