@@ -2,11 +2,18 @@
 set -e
 rm -f /tmp/success # in case its around
 
+# install epm
+cd $GOPATH/src/github.com/eris-ltd/epm-go/cmd/epm
+go install
+
 cd $GOPATH/src/github.com/eris-ltd/epm-go
 
 # XXX: set develop lllc server
+export DECERVER=/.decerver
 epm init
 echo `jq '.lll.url |= "http://ps.erisindustries.com:8092/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
+echo `jq '.se.url |= "http://ps.erisindustries.com:8092/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
+echo `jq '.sol.url |= "http://ps.erisindustries.com:8092/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
 
 # run the go unit tests
 cd epm && go test -v ./... -race
@@ -16,10 +23,6 @@ cd ../cmd/epm && go test -v ./... -race # these don't exist yet
 
 # run the base pdx deploy test
 cd ../tests && go test -v ./... -race
-
-# install epm
-cd $GOPATH/src/github.com/eris-ltd/epm-go/cmd/epm
-go install
 
 # test suite of eris-std-lib deploys
 cd $GOPATH/src/github.com/eris-ltd/eris-std-lib/DTT/tests
