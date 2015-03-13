@@ -80,8 +80,9 @@ type Blockchain interface {
 type EPM struct {
 	chain Blockchain
 
-	jobs []Job
-	vars map[string]string
+	jobs       []Job
+	vars       map[string]string
+	varsPrefix string
 
 	pkgdef string
 	Diff   bool
@@ -227,6 +228,9 @@ func (e *EPM) StoreVar(key, val string) {
 	fmt.Println("Storing:", key, val)
 	if len(key) > 4 && key[:2] == "{{" && key[len(key)-2:] == "}}" {
 		key = key[2 : len(key)-2]
+	}
+	if e.varsPrefix != "" {
+		key = e.varsPrefix + "." + key
 	}
 	// if it's a path, don't coerce
 	if strings.Contains(val, "/") {

@@ -196,5 +196,16 @@ func TestInclude(t *testing.T) {
 		t.Error("got:", got, "expected:", "0x5060")
 	}
 	m.Shutdown()
+}
 
+func TestEPMxNamespace(t *testing.T) {
+	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_epmx_deploy.epm"))
+
+	addr := e.Vars()["dep.addr"]
+	e.Commit()
+	got := m.StorageAt(addr, "0x3")
+	if got != "04" {
+		t.Error("got:", got, "expected:", "0x04")
+	}
+	m.Shutdown()
 }

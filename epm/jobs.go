@@ -148,10 +148,15 @@ func (e *EPM) EPMx(args []string) error {
 		return err
 	}
 
+	if len(args) > 1 {
+		e.varsPrefix = args[1]
+	}
 	err := e.ExecuteJobs()
 	if err != nil {
 		return err
 	}
+	e.varsPrefix = ""
+
 	// return to old jobs
 	e.jobs = oldjobs
 	return nil
