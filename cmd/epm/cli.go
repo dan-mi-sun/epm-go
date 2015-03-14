@@ -91,8 +91,9 @@ func cliPlop(c *cli.Context) {
 func cliRefs(c *cli.Context) {
 	r, err := chains.GetRefs()
 	_, h, _ := chains.GetHead()
-	fmt.Printf("%-20s%-60s%-20s\n", "Name:", "Chain:", "Address:")
+	fmt.Printf("%-20s%-60s%-20s\n", "Name:", "Blockchain:", "Address:")
 	for rk, rv := range r {
+		// loop through the known blockchains
 		chainType, chainId, e := chains.ResolveChain(rv)
 		ifExit(e)
 		chainDir, er := chains.ResolveChainDir(chainType, rk, chainId)
@@ -102,18 +103,26 @@ func cliRefs(c *cli.Context) {
 		configPath := path.Join(chainDir, "config.json")
 		err := m.ReadConfig(configPath)
 		ifExit(err)
+
+		// now find the keysession and addresses
 		keyname := m.Property("KeySession").(string)
 		var key []byte
+		var kn string
 		key, err = ioutil.ReadFile(path.Join(chainDir, keyname+".addr"))
 		if err != nil {
 			if strings.Contains(keyname, "-") {
 				key = []byte(strings.Split(keyname, "-")[1])
 			} else {
-				ifExit(err)
+				key = []byte("unset")
 			}
 		}
-		kn := "0x" + string(key)
-		ifExit(err)
+		if string(key) != "unset" {
+			kn = "0x" + string(key)
+		} else {
+			kn = string(key)
+		}
+
+		// display the results
 		if strings.Contains(rv, h) {
 			color.ChangeColor(color.Green, true, color.None, false)
 			fmt.Printf("%-20s%-60s%-20s\n", rk, rv, kn)
