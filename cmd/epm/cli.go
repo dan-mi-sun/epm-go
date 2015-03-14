@@ -1094,3 +1094,42 @@ func cliInstall(c *cli.Context) {
 	err = ioutil.WriteFile(p, b, 0600)
 	ifExit(err)
 }
+
+func cliAccounts(c *cli.Context) {
+	account := ""
+	if len(c.Args()) > 0 {
+		account = c.Args()[0]
+	}
+
+	root, chainType, _, err := resolveRootFlag(c)
+	ifExit(err)
+	chain := loadChain(c, chainType, root)
+
+	if account == "" {
+		// dump list of all accounts
+		world := chain.WorldState()
+		for _, s := range world.Order {
+			a := world.Accounts[s]
+			p := "account"
+			if a.IsScript {
+				p = "contract"
+			}
+			fmt.Println(a.Address, p)
+		}
+	} else {
+		account := chain.Account(account)
+		if account == nil {
+			fmt.Printf("Account %s does not exist\n", account)
+		}
+		fmt.Printf("Balance: %s\n", account.Balance)
+		fmt.Printf("Nonce: %s\n", account.Nonce)
+		if account.IsScript {
+			storage := account.Storage
+			fmt.Printf("Code: %s\n", account.Script)
+			for _, s := range storage.Order {
+				fmt.Printf("%s : %s\n", s, storage.Storage[s])
+			}
+		}
+
+	}
+}

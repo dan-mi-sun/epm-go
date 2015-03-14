@@ -281,4 +281,11 @@ var (
 			contractPathFlag,
 		},
 	}
+
+	accountsCmd = cli.Command{
+		Name:   "accounts",
+		Usage:  "List all accounts, or dump the storage of a specified one",
+		Action: cliAccounts,
+		Flags:  []cli.Flag{},
+	}
 )
