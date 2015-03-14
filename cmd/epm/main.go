@@ -72,6 +72,7 @@ func main() {
 		runCmd,
 		runDappCmd,
 		testCmd,
+		accountsCmd,
 	}
 
 	run(app)
