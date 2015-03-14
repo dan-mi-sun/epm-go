@@ -9,3 +9,4 @@ dependencies:
 test:
   override:
     - fig up --no-color --no-recreate > $CIRCLE_ARTIFACTS/output.log
+    - test -e /tmp/success
