@@ -417,3 +417,10 @@ func ReadAbi(root, to string) (abi.ABI, bool) {
 	}
 	return *a, true
 }
+
+func SetCompilerServer(hostPort string) {
+	for lang, _ := range lllcserver.Languages {
+		lllcserver.SetLanguageURL(lang, hostPort)
+		lllcserver.SetLanguageNet(lang, true)
+	}
+}
