@@ -1,11 +1,10 @@
-package main
+package commands
 
 import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	color "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/daviddengcn/go-colortext"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/decerver/interfaces/dapps"
 	mutils "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkutils"
@@ -28,12 +27,8 @@ import (
 	"time"
 )
 
-var EPMVars = "epm.vars"
-
-// TODO: pull, update
-
-func cliClean(c *cli.Context) {
-	toclean := c.Args().First()
+func Clean(c *Context) {
+	toclean := c.Args()[0]
 	if toclean == "" {
 		exit(fmt.Errorf("You must enter a directory or file to wipe"))
 	}
@@ -42,10 +37,10 @@ func cliClean(c *cli.Context) {
 }
 
 // plop the config or genesis defaults into current dir
-func cliPlop(c *cli.Context) {
+func Plop(c *Context) {
 	root, chainType, chainId, err := resolveRootFlag(c)
 	ifExit(err)
-	toPlop := c.Args().First()
+	toPlop := c.Args()[0]
 	switch toPlop {
 	case "genesis":
 		b, err := ioutil.ReadFile(path.Join(utils.Blockchains, "thelonious", chainId, "0", "genesis.json"))
@@ -66,7 +61,7 @@ func cliPlop(c *cli.Context) {
 		ifExit(err)
 		fmt.Println(string(b))
 	case "key", "addr":
-		rpc := c.GlobalBool("rpc")
+		rpc := c.Bool("rpc")
 		configPath := path.Join(root, "config.json")
 		m := newChain(chainType, rpc)
 		err := m.ReadConfig(configPath)
@@ -88,7 +83,7 @@ func cliPlop(c *cli.Context) {
 }
 
 // list the refs
-func cliRefs(c *cli.Context) {
+func Refs(c *Context) {
 	r, err := chains.GetRefs()
 	_, h, _ := chains.GetHead()
 	fmt.Printf("%-20s%-60s%-20s\n", "Name:", "Blockchain:", "Address:")
@@ -98,7 +93,7 @@ func cliRefs(c *cli.Context) {
 		ifExit(e)
 		chainDir, er := chains.ResolveChainDir(chainType, rk, chainId)
 		ifExit(er)
-		rpc := c.GlobalBool("rpc")
+		rpc := c.Bool("rpc")
 		m := newChain(chainType, rpc)
 		configPath := path.Join(chainDir, "config.json")
 		err := m.ReadConfig(configPath)
@@ -135,7 +130,7 @@ func cliRefs(c *cli.Context) {
 }
 
 // list the keyfiles
-func cliLsKeys(c *cli.Context) {
+func LsKeys(c *Context) {
 	keys, err := ioutil.ReadDir(utils.Keys)
 	ifExit(err)
 	fmt.Printf("%-20s%-60s%-20s\n", "Name:", "Address:", "Key Value:")
@@ -150,7 +145,7 @@ func cliLsKeys(c *cli.Context) {
 }
 
 // print current head
-func cliHead(c *cli.Context) {
+func Head(c *Context) {
 	typ, id, err := chains.GetHead()
 	if err == nil {
 		fmt.Println(path.Join(typ, id))
@@ -159,7 +154,7 @@ func cliHead(c *cli.Context) {
 }
 
 // duplicate a chain
-func cliCp(c *cli.Context) {
+func Cp(c *Context) {
 	args := c.Args()
 	var (
 		root  string
@@ -172,7 +167,7 @@ func cliCp(c *cli.Context) {
 		log.Fatal(`To copy a chain, specify a chain and a new name, \n eg. "cp thel/14c32 chaincopy"`)
 
 	} else if len(args) == 1 {
-		multi = args.Get(0)
+		multi = args[0]
 		// copy the checked out chain
 		typ, id, err = chains.GetHead()
 		ifExit(err)
@@ -181,8 +176,8 @@ func cliCp(c *cli.Context) {
 		}
 		root = chains.ComposeRoot(typ, id)
 	} else {
-		ref := args.Get(0)
-		multi = args.Get(1)
+		ref := args[0]
+		multi = args[1]
 		root, typ, id, err = resolveRoot(ref, false, "")
 		ifExit(err)
 	}
@@ -202,12 +197,12 @@ func cliCp(c *cli.Context) {
 }
 
 // create ~/.decerver tree and drop default monk/gen configs in there
-func cliInit(c *cli.Context) {
+func Init(c *Context) {
 	exit(utils.InitDecerverDir())
 }
 
 // fetch a genesis block and state from a peer server
-func cliFetch(c *cli.Context) {
+func Fetch(c *Context) {
 	if len(c.Args()) == 0 {
 		ifExit(fmt.Errorf("Must specify a peerserver address"))
 	}
@@ -276,12 +271,13 @@ func cliFetch(c *cli.Context) {
 // and install into the global tree (must compute chainId before we know where to put it)
 // possibly checkout the newly deployed
 // chain agnostic!
-func cliNew(c *cli.Context) {
+func New(c *Context) {
+	fmt.Println(c.String("type"))
 	chainType, err := chains.ResolveChainType(c.String("type"))
 	ifExit(err)
 	name := c.String("name")
 	forceName := c.String("force-name")
-	rpc := c.GlobalBool("rpc")
+	rpc := c.Bool("rpc")
 
 	r := make([]byte, 8)
 	rand.Read(r)
@@ -376,7 +372,7 @@ func deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType stri
 }
 
 // change the currently active chain
-func cliCheckout(c *cli.Context) {
+func Checkout(c *Context) {
 	args := c.Args()
 	if len(args) == 0 {
 		exit(fmt.Errorf("Please specify the chain to checkout"))
@@ -394,7 +390,7 @@ func cliCheckout(c *cli.Context) {
 }
 
 // remove a reference from a chainId
-func cliRmRef(c *cli.Context) {
+func RmRef(c *Context) {
 	args := c.Args()
 	if len(args) == 0 {
 		exit(fmt.Errorf("Please specify the ref to remove"))
@@ -408,22 +404,22 @@ func cliRmRef(c *cli.Context) {
 }
 
 // add a new reference to a chainId
-func cliAddRef(c *cli.Context) {
+func AddRef(c *Context) {
 	args := c.Args()
 	var typ string
 	var id string
 	var err error
 	var ref string
 	if len(args) == 1 {
-		ref = args.Get(0)
+		ref = args[0]
 		typ, id, err = chains.GetHead()
 		ifExit(err)
 		if id == "" {
 			log.Fatal(`No chain is checked out. To add a ref, specify both a chainId and a name, \n eg. "epm add thel/14c32 mychain"`)
 		}
 	} else {
-		chain := args.Get(0)
-		ref = args.Get(1)
+		chain := args[0]
+		ref = args[1]
 		typ, id, err = chains.SplitRef(chain)
 
 		if err != nil {
@@ -435,7 +431,7 @@ func cliAddRef(c *cli.Context) {
 }
 
 // run a node on a chain
-func cliRun(c *cli.Context) {
+func Run(c *Context) {
 	root, chainType, chainId, err := resolveRootFlag(c)
 	ifExit(err)
 
@@ -461,8 +457,8 @@ func cliRun(c *cli.Context) {
 
 // TODO: multi types
 // TODO: deprecate in exchange for -dapp flag on run
-func cliRunDapp(c *cli.Context) {
-	dapp := c.Args().First()
+func RunDapp(c *Context) {
+	dapp := c.Args()[0]
 	chainType := "thelonious"
 	chainId, err := chains.ChainIdFromDapp(dapp)
 	ifExit(err)
@@ -472,13 +468,13 @@ func cliRunDapp(c *cli.Context) {
 }
 
 // edit a config value
-func cliConfig(c *cli.Context) {
+func Config(c *Context) {
 	var (
 		root      string
 		chainType string
 		err       error
 	)
-	rpc := c.GlobalBool("rpc")
+	rpc := c.Bool("rpc")
 	root, chainType, _, err = resolveRootFlag(c)
 	ifExit(err)
 
@@ -508,7 +504,7 @@ func cliConfig(c *cli.Context) {
 }
 
 // remove a chain
-func cliRemove(c *cli.Context) {
+func Remove(c *Context) {
 	if len(c.Args()) < 1 {
 		exit(fmt.Errorf("Error: specify the chain ref as an argument"))
 	}
@@ -546,7 +542,7 @@ func cliRemove(c *cli.Context) {
 }
 
 // run a single epm on-chain command (endow, deploy)
-func cliCommand(c *cli.Context) {
+func Command(c *Context) {
 	root, chainType, _, err := resolveRootFlag(c)
 	ifExit(err)
 
@@ -569,7 +565,7 @@ func cliCommand(c *cli.Context) {
 	// set contract path
 	contractPath := c.String("c")
 	if !c.IsSet("c") {
-		contractPath = defaultContractPath
+		contractPath = DefaultContractPath
 	}
 	epm.ContractPath, err = filepath.Abs(contractPath)
 	ifExit(err)
@@ -586,7 +582,7 @@ func cliCommand(c *cli.Context) {
 	e.Commit()
 }
 
-func cliTest(c *cli.Context) {
+func Test(c *Context) {
 	packagePath := "."
 	if len(c.Args()) > 0 {
 		packagePath = c.Args()[0]
@@ -601,7 +597,7 @@ func cliTest(c *cli.Context) {
 	// hierarchy : name > chainId > db > config > HEAD > default
 
 	if !c.IsSet("contracts") {
-		contractPath = defaultContractPath
+		contractPath = DefaultContractPath
 	}
 	epm.ContractPath, err = filepath.Abs(contractPath)
 	ifExit(err)
@@ -681,7 +677,7 @@ func cliTest(c *cli.Context) {
 }
 
 // deploy a pdx file on a chain
-func cliDeploy(c *cli.Context) {
+func Deploy(c *Context) {
 	packagePath := "."
 	if len(c.Args()) > 0 {
 		packagePath = c.Args()[0]
@@ -700,7 +696,7 @@ func cliDeploy(c *cli.Context) {
 	chain = loadChain(c, chainType, chainRoot)
 
 	if !c.IsSet("c") {
-		contractPath = defaultContractPath
+		contractPath = DefaultContractPath
 	}
 	epm.ContractPath, err = filepath.Abs(contractPath)
 	ifExit(err)
@@ -754,7 +750,7 @@ func cliDeploy(c *cli.Context) {
 	}
 }
 
-func cliConsole(c *cli.Context) {
+func Console(c *Context) {
 
 	contractPath := c.String("c")
 	dontClear := c.Bool("dont-clear")
@@ -769,7 +765,7 @@ func cliConsole(c *cli.Context) {
 	chain = loadChain(c, chainType, chainRoot)
 
 	if !c.IsSet("c") {
-		contractPath = defaultContractPath
+		contractPath = DefaultContractPath
 	}
 	epm.ContractPath, err = filepath.Abs(contractPath)
 	ifExit(err)
@@ -796,7 +792,7 @@ func cliConsole(c *cli.Context) {
 	//e.Repl()
 }
 
-func cliKeyImport(c *cli.Context) {
+func KeyImport(c *Context) {
 	logger.Warnln("Note that the key will not be physically copied until the chain is started up again.")
 	if len(c.Args()) == 0 {
 		exit(fmt.Errorf("Please enter path to key to import"))
@@ -805,7 +801,7 @@ func cliKeyImport(c *cli.Context) {
 	useKey(keyFile, c)
 }
 
-func cliKeyUse(c *cli.Context) {
+func KeyUse(c *Context) {
 	if len(c.Args()) == 0 {
 		exit(fmt.Errorf("Please enter a key name to use."))
 	}
@@ -830,12 +826,12 @@ func cliKeyUse(c *cli.Context) {
 	useKey(keyFile, c)
 }
 
-func useKey(keyFile string, c *cli.Context) {
+func useKey(keyFile string, c *Context) {
 
 	name := path.Base(keyFile)
 
 	// set key in chain's config
-	rpc := c.GlobalBool("rpc")
+	rpc := c.Bool("rpc")
 	root, chainType, _, err := resolveRootFlag(c)
 	ifExit(err)
 
@@ -854,7 +850,7 @@ func useKey(keyFile string, c *cli.Context) {
 	logger.Warnln("Using key")
 }
 
-func cliKeyExport(c *cli.Context) {
+func KeyExport(c *Context) {
 	if len(c.Args()) == 0 {
 		exit(fmt.Errorf("Please enter a location to export to"))
 	}
@@ -873,7 +869,7 @@ func cliKeyExport(c *cli.Context) {
 	logger.Warnln("Done")
 }
 
-func cliKeygen(c *cli.Context) {
+func Keygen(c *Context) {
 	if len(c.Args()) == 0 {
 		exit(fmt.Errorf("Please enter a name for your key"))
 	}
@@ -898,7 +894,7 @@ func cliKeygen(c *cli.Context) {
 
 	if !c.Bool("no-import") {
 		// set key in chain's config
-		rpc := c.GlobalBool("rpc")
+		rpc := c.Bool("rpc")
 		root, chainType, _, err := resolveRootFlag(c)
 		ifExit(err)
 
@@ -917,7 +913,7 @@ func cliKeygen(c *cli.Context) {
 	}
 }
 
-func cliInstall(c *cli.Context) {
+func Install(c *Context) {
 	if len(c.Args()) == 0 {
 		ifExit(fmt.Errorf("Please provide a path to the dapp to install"))
 	}
@@ -999,7 +995,7 @@ func cliInstall(c *cli.Context) {
 	chain = loadChain(c, "thelonious", chainRoot)
 
 	if !c.IsSet("c") {
-		// contractPath = defaultContractPath
+		// contractPath = DefaultContractPath
 		contractPath = pdxPath
 	}
 	var err error
@@ -1102,7 +1098,7 @@ func cliInstall(c *cli.Context) {
 	ifExit(err)
 }
 
-func cliAccounts(c *cli.Context) {
+func Accounts(c *Context) {
 	account := ""
 	if len(c.Args()) > 0 {
 		account = c.Args()[0]

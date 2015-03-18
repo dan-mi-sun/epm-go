@@ -1,9 +1,8 @@
-package main
+package commands
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
@@ -188,6 +187,8 @@ func vi(file string) error {
 func exit(err error) {
 	if err != nil {
 		logger.Errorln(err)
+		monklog.Flush()
+		os.Exit(1)
 	}
 	monklog.Flush()
 	os.Exit(0)
@@ -197,7 +198,7 @@ func ifExit(err error) {
 	if err != nil {
 		logger.Errorln(err)
 		monklog.Flush()
-		os.Exit(0)
+		os.Exit(1)
 	}
 }
 
@@ -274,20 +275,20 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 	return nil
 }
 
-func resolveRootFlag(c *cli.Context) (string, string, string, error) {
+func resolveRootFlag(c *Context) (string, string, string, error) {
 	ref := c.String("chain")
-	rpc := c.GlobalBool("rpc")
+	rpc := c.Bool("rpc")
 	multi := c.String("multi")
 	return resolveRoot(ref, rpc, multi)
 }
 
-func resolveRootArg(c *cli.Context) (string, string, string, error) {
+func resolveRootArg(c *Context) (string, string, string, error) {
 	args := c.Args()
 	ref := ""
 	if len(args) > 0 {
 		ref = args[0]
 	}
-	rpc := c.GlobalBool("rpc")
+	rpc := c.Bool("rpc")
 	multi := c.String("multi")
 	return resolveRoot(ref, rpc, multi)
 }

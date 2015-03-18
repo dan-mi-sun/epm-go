@@ -1,4 +1,4 @@
-package main
+package commands
 
 import (
 	"github.com/eris-ltd/epm-go/chains"
@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/eth"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/genblock"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkrpc"
@@ -47,8 +46,8 @@ func newChain(chainType string, rpc bool) epm. // modules
 }
 
 // chainroot is a full path to the dir
-func loadChain(c *cli.Context, chainType, chainRoot string) epm.Blockchain {
-	rpc := c.GlobalBool("rpc")
+func loadChain(c *Context, chainType, chainRoot string) epm.Blockchain {
+	rpc := c.Bool("rpc")
 	logger.Debugln("Loading chain ", c.String("type"))
 
 	chain := newChain(chainType, rpc)
@@ -60,7 +59,7 @@ func loadChain(c *cli.Context, chainType, chainRoot string) epm.Blockchain {
 //   we should copy from the chainroot to db
 // For now, if a chainroot is provided, we use that dir directly
 
-func configureRootDir(c *cli.Context, m epm.Blockchain, chainRoot string) {
+func configureRootDir(c *Context, m epm.Blockchain, chainRoot string) {
 	// we need to overwrite the default monk config with our defaults
 	root, _ := filepath.Abs(defaultDatabase)
 	m.SetProperty("RootDir", root)
@@ -77,7 +76,7 @@ func configureRootDir(c *cli.Context, m epm.Blockchain, chainRoot string) {
 		m.SetProperty("RootDir", chainRoot)
 	}
 
-	if c.GlobalBool("rpc") {
+	if c.Bool("rpc") {
 		r := m.Property("RootDir").(string)
 		last := filepath.Base(r)
 		if last != "rpc" {
@@ -86,7 +85,7 @@ func configureRootDir(c *cli.Context, m epm.Blockchain, chainRoot string) {
 	}
 }
 
-func readConfigFile(c *cli.Context, m epm.Blockchain) {
+func readConfigFile(c *Context, m epm.Blockchain) {
 	// if there's a config file in the root dir, use that
 	// else fall back on default or flag
 	// TODO: switch those priorities around!
@@ -99,8 +98,8 @@ func readConfigFile(c *cli.Context, m epm.Blockchain) {
 	}
 }
 
-func applyFlags(c *cli.Context, m epm.Blockchain) {
-	// then apply cli flags
+func applyFlags(c *Context, m epm.Blockchain) {
+	// then apply flags
 	setLogLevel(c, m)
 	setKeysFile(c, m)
 	setGenesisPath(c, m)
@@ -109,14 +108,14 @@ func applyFlags(c *cli.Context, m epm.Blockchain) {
 	setRpc(c, m)
 }
 
-func setupModule(c *cli.Context, m epm.Blockchain, chainRoot string) {
+func setupModule(c *Context, m epm.Blockchain, chainRoot string) {
 	// TODO: kinda bullshit and useless since we set log level at epm
 	// m.Config.LogLevel = defaultLogLevel
 
 	configureRootDir(c, m, chainRoot)
 	readConfigFile(c, m)
 	applyFlags(c, m)
-	if c.GlobalBool("config") {
+	if c.Bool("config") {
 		// write the config to a temp file, open in editor, reload
 		tempConfig := path.Join(utils.Epm, "tempconfig.json")
 		ifExit(m.WriteConfig(tempConfig))
