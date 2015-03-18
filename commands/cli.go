@@ -270,11 +270,6 @@ func Fetch(c *Context) {
 
 	// update refs
 	updateRefs(chainType, chainID, c.String("force-name"), c.String("name"))
-
-	logger.Warnln("Ready to run chain...")
-	time.Sleep(time.Second * 2)
-	c.Strings["chain"] = "thelonious/" + chainID
-	Run(c)
 }
 
 // deploy the genblock into a random folder in scratch
