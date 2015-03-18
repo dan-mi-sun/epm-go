@@ -40,7 +40,12 @@ func Clean(c *Context) {
 func Plop(c *Context) {
 	root, chainType, chainId, err := resolveRootFlag(c)
 	ifExit(err)
-	toPlop := c.Args()[0]
+	var toPlop string
+	if len(c.Args()) > 0 {
+		toPlop = c.Args()[0]
+	} else {
+		toPlop = ""
+	}
 	switch toPlop {
 	case "genesis":
 		b, err := ioutil.ReadFile(path.Join(utils.Blockchains, "thelonious", chainId, "0", "genesis.json"))
