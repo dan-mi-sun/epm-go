@@ -11,21 +11,7 @@ import (
 	"runtime"
 )
 
-var (
-	GoPath = os.Getenv("GOPATH")
-
-	// epm extensions
-	PkgExt  = "pdx"
-	TestExt = "pdt"
-
-	defaultContractPath = "." //path.Join(utils.ErisLtd, "eris-std-lib")
-	defaultDatabase     = ".chain"
-
-	logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
-)
-
 func main() {
-	logger.Infoln("DEFAULT CONTRACT PATH: ", defaultContractPath)
 
 	app := cli.NewApp()
 	app.Name = "epm"
@@ -33,7 +19,7 @@ func main() {
 	app.Version = "0.8.3"
 	app.Author = "Ethan Buchman"
 	app.Email = "ethan@erisindustries.com"
-	//	app.EnableBashCompletion = true
+	//	app.EnableBashCompletion = true // this is buggy
 
 	app.Before = before
 	app.Flags = []cli.Flag{
@@ -108,4 +94,12 @@ func run(app *cli.App) {
 	}()
 
 	app.Run(os.Args)
+}
+
+func exit(err error) {
+	monklog.Flush()
+	if err != nil {
+		fmt.Println(err)
+	}
+	os.Exit(0)
 }
