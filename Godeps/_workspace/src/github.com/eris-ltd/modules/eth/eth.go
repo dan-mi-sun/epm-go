@@ -27,8 +27,7 @@ import (
 
 var (
 	GoPath = os.Getenv("GOPATH") // error?!
-	usr, _ = user.               //"github.com/eris-ltd/go-ethereum/react"
-		Current()
+	usr, _ = user.Current()
 )
 
 var (

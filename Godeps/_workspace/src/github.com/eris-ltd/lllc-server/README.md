@@ -1,3 +1,5 @@
+[![Circle CI](https://circleci.com/gh/eris-ltd/lllc-server.svg?style=svg)](https://circleci.com/gh/eris-ltd/lllc-server)
+
 lllc-server
 ===========
 
@@ -27,7 +29,7 @@ see the config file at `~/.decerver/languages/config.json`.
 bytecode, err := lllcserver.Compile("mycontract.lll")
 ```
 
-The language is determined automatically from extension. If you want to compile literal expressions, 
+The language is determined automatically from extension. If you want to compile literal expressions,
 you must specify the language explicitly, ie.
 
 ```
@@ -39,12 +41,12 @@ bytecode, err := lllcserver.CompileLiteral("[0x5](+ 4 @0x3)", "lll")
 #### Compile Remotely
 
 ```
-lllc-server compile --host http://lllc.erisindustries.com:8090 test.lll 
+lllc-server compile --host http://lllc.erisindustries.com:8090 test.lll
 ```
 
 Leave out the `--host` flag to default to the url in the config.
 
-#### Compile Locally 
+#### Compile Locally
 Make sure you have the appropriate compiler installed and configured (you may need to adjust the `cmd` field in the config file)
 
 ```
@@ -142,7 +144,7 @@ cmake .. -
 make -j2
 ```
 
-Now the final thing is make sure the configuration paths are properly set. 
+Now the final thing is make sure the configuration paths are properly set.
 Running `epm init` (assuming epm is installed) should create the config file at `~/.decerver/languages/config.json`.
 Edit the `cmd` field for each language to have the correct path.
 

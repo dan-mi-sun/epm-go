@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/eris-ltd/epm-go",
-	"GoVersion": "go1.4.1",
+	"GoVersion": "go1.4.2",
 	"Packages": [
 		"./..."
 	],
@@ -64,7 +64,7 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/eris-std-lib/go-tests",
-			"Rev": "02301c7995cb076cb4980cce103f3c243c9d5b93"
+			"Rev": "42f30021c9d63c4b1a0a65cf39997171fd74eec6"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/cmd/utils",
@@ -163,32 +163,32 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/lllc-server",
-			"Rev": "d482eddefba8db221b7d5031698a54c2127a138d"
+			"Rev": "805beea3b72a97aa7ad2f59e1aaa4b7300abceaa"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/eth",
-			"Rev": "fa9e10cfa91518fbd021e892c5973d945bf968a4"
+			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/genblock",
-			"Rev": "fa9e10cfa91518fbd021e892c5973d945bf968a4"
+			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkrpc",
-			"Rev": "fa9e10cfa91518fbd021e892c5973d945bf968a4"
+			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkutils",
-			"Rev": "fa9e10cfa91518fbd021e892c5973d945bf968a4"
+			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/types",
-			"Rev": "fa9e10cfa91518fbd021e892c5973d945bf968a4"
+			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
-			"Comment": "v0.8-66-g4fecdf6",
-			"Rev": "4fecdf6286ca10fdd192a07e86fb083eab7560fb"
+			"Comment": "v0.8-67-gbaaa993",
+			"Rev": "baaa9938ad9f6efad4da844d19b2206a572f5b69"
 		},
 		{
 			"ImportPath": "github.com/go-martini/martini",
@@ -202,6 +202,10 @@
 		{
 			"ImportPath": "github.com/kardianos/osext",
 			"Rev": "ccfcd0245381f0c94c68f50626665eed3c6b726a"
+		},
+		{
+			"ImportPath": "github.com/martini-contrib/gorelic",
+			"Rev": "f8b0843aa3ab66d8734aa7d9acf399bdc197c65d"
 		},
 		{
 			"ImportPath": "github.com/obscuren/ecies",
@@ -226,6 +230,19 @@
 		{
 			"ImportPath": "github.com/syndtr/gosnappy/snappy",
 			"Rev": "ce8acff4829e0c2458a67ead32390ac0a381c862"
+		},
+		{
+			"ImportPath": "github.com/yvasiyarov/go-metrics",
+			"Rev": "c25f46c4b94079672242ec48a545e7ca9ebe3aec"
+		},
+		{
+			"ImportPath": "github.com/yvasiyarov/gorelic",
+			"Comment": "v0.0.6-14-gb355764",
+			"Rev": "b355764846b999a8a73fc426304f669de56a1a6d"
+		},
+		{
+			"ImportPath": "github.com/yvasiyarov/newrelic_platform_go",
+			"Rev": "13d5af9721f4455a501db543c93827447089bab3"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/pbkdf2",

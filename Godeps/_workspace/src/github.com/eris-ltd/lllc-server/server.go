@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/ebuchman/go-shell-pipes"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/go-martini/martini"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/martini-contrib/gorelic"
 	"github.com/eris-ltd/epm-go/utils"
 	"io/ioutil"
 	"log"
@@ -20,7 +21,11 @@ import (
 	"strings"
 )
 
-//var "" = abi.ABI{}
+var (
+	//"" = abi.ABI{}
+	NEWRELIC_KEY = os.Getenv("NEWRELIC_KEY")
+	NEWRELIC_APP = os.Getenv("NEWRELIC_APP")
+)
 
 // must have compiler installed!
 func homeDir() string {
@@ -240,6 +245,11 @@ func CompileWrapper(filename string, lang string) ([]byte, string, error) {
 func StartServer(addr string) {
 	//martini.Env = martini.Prod
 	srv := martini.Classic()
+
+	// new relic for error reporting
+	gorelic.InitNewrelicAgent(NEWRELIC_KEY, NEWRELIC_APP, true)
+	srv.Use(gorelic.Handler)
+
 	// Static files
 	srv.Use(martini.Static("./web"))
 
