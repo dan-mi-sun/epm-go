@@ -184,6 +184,10 @@ func (self *Miner) mineNewBlock() {
 
 	// check if we should even bother mining (potential energy savings)
 	if !self.thelonious.Protocol().Participate(self.coinbase, parent) {
+		logger.Warnln("We don't have permission to participate in committing blocks.")
+		logger.Warnln("Feel free to take it up with the marmots in head office...")
+		logger.Warnln("In the meantime, why not enjoy some Thelonious Monk while we wait for a block to be committed?")
+		<-self.powQuitChan
 		return
 	}
 

@@ -7,10 +7,10 @@
     "unique":false,
     "private-key":"",
     "consensus":"", 
-    "difficulty":12,
+    "difficulty":20,
     "public:mine":0,
-    "public:create":0,
-    "public:tx":0,
+    "public:create":1,
+    "public:transact":1,
     "maxgastx":"0xfffffffffffffffffffffffff",
     "blocktime":5,
     "vm":{
@@ -83,6 +83,19 @@
                         "transact":1,
                         "mine":0,
                         "create":1
+                    },
+                "stake":3
+            },
+            {
+                "address":"65d822280a622260ece05a7611fbbc990d7b8b29",
+                "name":"Ethan",
+                "balance":"12345678909876543212345678",
+                "permissions":
+                    {
+                        "transact":1,
+                        "mine":1,
+                        "create":1,
+			"doug":1
                     },
                 "stake":3
             }

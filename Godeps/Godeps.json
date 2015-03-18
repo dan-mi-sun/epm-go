@@ -187,8 +187,8 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
-			"Comment": "v0.8-67-gbaaa993",
-			"Rev": "baaa9938ad9f6efad4da844d19b2206a572f5b69"
+			"Comment": "v0.8-68-gb200c08",
+			"Rev": "b200c08a1f3ddc2811fddf37f9bc3a8469690ccb"
 		},
 		{
 			"ImportPath": "github.com/go-martini/martini",

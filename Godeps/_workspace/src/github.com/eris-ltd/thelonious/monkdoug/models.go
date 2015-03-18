@@ -155,7 +155,17 @@ func (m *VmModel) Participate(coinbase []byte, parent *monkchain.Block) bool {
 		// TODO: check not nil
 		return monkutil.BigD(ret).Uint64() > 0
 	}
-	return true
+
+	// get perm from doug
+	doug := state.GetStateObject(m.doug)
+	data := monkutil.PackTxDataArgs2("checkperm", "mine", "0x"+monkutil.Bytes2Hex(coinbase))
+	douglogger.Infoln("Calling permision verify (GENDOUG) contract to check if we should participate")
+	ret := m.EvmCall(doug.Code, data, doug, state, nil, nil, true)
+
+	if monkutil.BigD(ret).Uint64() > 0 {
+		return true
+	}
+	return false
 }
 
 func (m *VmModel) pickCallObjAndCode(addr []byte, state *monkstate.State) (obj *monkstate.StateObject, code []byte) {
