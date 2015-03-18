@@ -43,6 +43,7 @@ func main() {
 	}
 
 	app.Commands = []cli.Command{
+		accountsCmd,
 		checkoutCmd,
 		cleanCmd,
 		commandCmd,
@@ -62,7 +63,6 @@ func main() {
 		runCmd,
 		runDappCmd,
 		testCmd,
-		accountsCmd,
 	}
 
 	run(app)
