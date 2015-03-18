@@ -4,9 +4,9 @@ machine:
 
 dependencies:
   override:
-    - sudo pip install -U fig
+    - sudo pip install -U docker-compose
 
 test:
   override:
-    - fig up --no-color --no-recreate > $CIRCLE_ARTIFACTS/output.log
+    - docker-compose up --no-color --no-recreate > $CIRCLE_ARTIFACTS/output.log
     - test -e /tmp/success

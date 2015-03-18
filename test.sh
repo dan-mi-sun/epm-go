@@ -3,14 +3,14 @@ set -e
 rm -f /tmp/success # in case its around
 
 # install epm
-cd $GOPATH/src/github.com/eris-ltd/epm-go/cmd/epm
-go install
+# cd $GOPATH/src/github.com/eris-ltd/epm-go/cmd/epm
+# go install
+# epm init
 
 cd $GOPATH/src/github.com/eris-ltd/epm-go
 
 # XXX: set develop lllc server
-export DECERVER=/.decerver
-epm init
+export DECERVER=/home/eris/.decerver
 echo `jq '.lll.url |= "http://ps.erisindustries.com:8092/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
 echo `jq '.se.url |= "http://ps.erisindustries.com:8092/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
 echo `jq '.sol.url |= "http://ps.erisindustries.com:8092/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
@@ -37,6 +37,4 @@ epm --log 5 deploy test_solidity.pdx
 
 # fig up doesn't return proper error codes, so this is our hack
 touch /opt/success
-
-
 
