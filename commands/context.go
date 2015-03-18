@@ -86,7 +86,9 @@ func TransformContext(c *cli.Context) *Context {
 		Booleans:  make(map[string]bool),
 		isSet:     make(map[string]struct{}),
 	}
-	copy(c2.Arguments, c.Args())
+	for _, a := range c.Args() {
+		c2.Arguments = append(c2.Arguments, string(a))
+	}
 	flags := c.FlagNames()
 	setFields(c2, flags, c.Generic, c.IsSet)
 	flags = c.GlobalFlagNames()
