@@ -187,6 +187,8 @@ func vi(file string) error {
 func exit(err error) {
 	if err != nil {
 		logger.Errorln(err)
+		monklog.Flush()
+		os.Exit(1)
 	}
 	monklog.Flush()
 	os.Exit(0)
@@ -196,7 +198,7 @@ func ifExit(err error) {
 	if err != nil {
 		logger.Errorln(err)
 		monklog.Flush()
-		os.Exit(0)
+		os.Exit(1)
 	}
 }
 
