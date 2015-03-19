@@ -48,11 +48,11 @@ func Plop(c *Context) {
 	}
 	switch toPlop {
 	case "genesis":
-		b, err := ioutil.ReadFile(path.Join(utils.Blockchains, "thelonious", chainId, "0", "genesis.json"))
+		b, err := ioutil.ReadFile(path.Join(root, "genesis.json"))
 		ifExit(err)
 		fmt.Println(string(b))
 	case "config":
-		b, err := ioutil.ReadFile(path.Join(utils.Blockchains, "thelonious", chainId, "0", "config.json"))
+		b, err := ioutil.ReadFile(path.Join(root, "config.json"))
 		ifExit(err)
 		fmt.Println(string(b))
 	case "chainid":
