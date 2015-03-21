@@ -60,7 +60,18 @@ func Plop(c *Context) {
 	case "vars":
 		b, err := ioutil.ReadFile(path.Join(root, EPMVars))
 		ifExit(err)
-		fmt.Println(string(b))
+		if len(c.Args()) > 1 {
+			// plop only a single var
+			spl := strings.Split(string(b), "\n")
+			for _, s := range spl {
+				ss := strings.Split(s, ":")
+				if ss[0] == c.Args()[1] {
+					fmt.Println(ss[1])
+				}
+			}
+		} else {
+			fmt.Println(string(b))
+		}
 	case "pid":
 		b, err := ioutil.ReadFile(path.Join(root, "pid"))
 		ifExit(err)

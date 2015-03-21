@@ -166,7 +166,6 @@ func ReadJson(config interface{}, config_file string) error {
 		return err
 	}
 	return nil
-
 }
 
 // keeps N bytes of the conversion
