@@ -243,6 +243,7 @@ var (
 			keyUseCmd,
 			keyExportCmd,
 			keyImportCmd,
+			keyPubCmd,
 		},
 	}
 
@@ -258,6 +259,7 @@ var (
 		Action: cliCall(commands.Keygen),
 		Flags: []cli.Flag{
 			noImportFlag,
+			keyTypeFlag,
 		},
 	}
 
@@ -279,6 +281,15 @@ var (
 		Usage:  "import a key file",
 		Action: cliCall(commands.KeyImport),
 		Flags:  []cli.Flag{},
+	}
+
+	keyPubCmd = cli.Command{
+		Name:   "pub",
+		Usage:  "print the public key associated with some address",
+		Action: cliCall(commands.KeyPublic),
+		Flags: []cli.Flag{
+			keyTypeFlag,
+		},
 	}
 
 	testCmd = cli.Command{

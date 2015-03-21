@@ -14,6 +14,7 @@ import (
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
+	"github.com/eris-ltd/tendermint/account" // ed25519 key generation
 	"io/ioutil"
 	"log"
 	"net"
@@ -586,6 +587,7 @@ func Command(c *Context) {
 	epm.ContractPath, err = filepath.Abs(contractPath)
 	ifExit(err)
 
+	epm.ErrMode = epm.ReturnOnErr
 	// load epm
 	e, err := epm.NewEPM(chain, epm.LogFile)
 	ifExit(err)
@@ -593,7 +595,8 @@ func Command(c *Context) {
 
 	// run job
 	e.AddJob(job)
-	e.ExecuteJobs()
+	err = e.ExecuteJobs()
+	ifExit(err)
 	e.WriteVars(path.Join(root, EPMVars))
 	e.Commit()
 }
@@ -885,16 +888,58 @@ func KeyExport(c *Context) {
 	logger.Warnln("Done")
 }
 
+func KeyPublic(c *Context) {
+	if len(c.Args()) == 0 {
+		exit(fmt.Errorf("You must enter a key name/address whose public key we should print"))
+	}
+	keyType := c.String("type")
+	name := c.Args()[0]
+
+	key, err := ioutil.ReadFile(path.Join(utils.Keys, name))
+	ifExit(err)
+	switch keyType {
+	case "secp256k1", "bitcoin", "ethereum", "thelonious":
+		// TODO
+	case "ed25519", "tendermint":
+		// keys are saved appended to public key
+		l := len(key)
+		pubkey := key[l/2:]
+		fmt.Println(string(pubkey))
+	default:
+		exit(fmt.Errorf("Unknown key type: %s", keyType))
+
+	}
+
+}
+
 func Keygen(c *Context) {
 	if len(c.Args()) == 0 {
 		exit(fmt.Errorf("Please enter a name for your key"))
 	}
 	name := c.Args()[0]
 
-	// create a new ecdsa key
-	key := monkcrypto.GenerateNewKeyPair()
-	prv := key.PrivateKey
-	addr := key.Address()
+	// default to secp256k1
+	keyType := c.String("type")
+
+	var (
+		prv  []byte
+		addr []byte
+	)
+
+	switch keyType {
+	case "secp256k1", "bitcoin", "ethereum", "thelonious":
+		// create a new ecdsa key
+		key := monkcrypto.GenerateNewKeyPair()
+		prv = key.PrivateKey
+		addr = key.Address()
+	case "ed25519", "tendermint":
+		privAccount := account.GenPrivAccount()
+		prv = []byte(privAccount.PrivKey.(account.PrivKeyEd25519))
+		addr = privAccount.Address
+	default:
+		exit(fmt.Errorf("Unknown key type: %s", keyType))
+	}
+
 	a := hex.EncodeToString(addr)
 	if name != "" {
 		name += "-"
