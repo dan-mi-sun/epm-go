@@ -2,31 +2,14 @@ package mint
 
 import (
 	"fmt"
-	"io"
-	"log"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/logger"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/confer"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
 	"os"
 	"os/signal"
 	"path"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"time"
-
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto"
-	eth "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/eth"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/ethdb"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/ethutil"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/logger"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/miner"
-
-	//"github.com/eris-ltd/go-ethereum/xeth"
-	//"github.com/eris-ltd/go-ethereum/monkrpc"
-	//"github.com/eris-ltd/modules/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/wire"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/kardianos/osext"
+	"strconv"
 )
-
-// this is basically go-etheruem/utils
-// i think for now we only use StartMining, but there's porbably other goodies...
 
 //var logger = logger.NewLogger("CLI")
 var interruptCallbacks = []func(os.Signal){}
@@ -94,25 +77,6 @@ func InitDataDir(Datadir string) {
 	}
 }
 
-func InitLogging(Datadir string, LogFile string, LogLevel int, DebugFile string) {
-	var writer io.Writer
-	if LogFile == "" {
-		writer = os.Stdout
-	} else {
-		writer = openLogFile(Datadir, LogFile)
-	}
-	logger.AddLogSystem(logger.NewStdLogSystem(writer, log.LstdFlags, logger.LogLevel(LogLevel)))
-	if DebugFile != "" {
-		writer = openLogFile(Datadir, DebugFile)
-		logger.AddLogSystem(logger.NewStdLogSystem(writer, log.LstdFlags, logger.DebugLevel))
-	}
-}
-
-func InitConfig(ConfigFile string, Datadir string, EnvPrefix string) *ethutil.ConfigManager {
-	InitDataDir(Datadir)
-	return ethutil.ReadConfig(ConfigFile, Datadir, EnvPrefix)
-}
-
 func exit(err error) {
 	status := 0
 	if err != nil {
@@ -124,181 +88,55 @@ func exit(err error) {
 	os.Exit(status)
 }
 
-func NewDatabase(dbName string) ethutil.Database {
-	db, err := ethdb.NewLDBDatabase(dbName)
-	if err != nil {
-		exit(err)
-	}
-	return db
-}
-
-/*
-func NewEthereum(db ethutil.Database, clientIdentity wire.ClientIdentity, keyManager *crypto.KeyManager, usePnp bool, OutboundPort string, MaxPeer int) *eth.Thelonious {
-	ethereum, err := eth.New(db, clientIdentity, keyManager, eth.CapDefault, usePnp)
-	if err != nil {
-		logger.Fatalln("eth start err:", err)
-	}
-	ethereum.Port = OutboundPort
-	ethereum.MaxPeers = MaxPeer
-	return ethereum
-}*/
-
-func ShowGenesis(ethereum *eth.Ethereum) {
-	mintlogger.Infoln(ethereum.ChainManager().Genesis())
-	exit(nil)
-}
-
-func NewKeyManager(KeyStore string, Datadir string, db ethutil.Database) *crypto.KeyManager {
-	var keyManager *crypto.KeyManager
-	switch {
-	case KeyStore == "db":
-		keyManager = crypto.NewDBKeyManager(db)
-	case KeyStore == "file":
-		keyManager = crypto.NewFileKeyManager(Datadir)
+func int2Level(i int) string {
+	switch i {
+	case 0:
+		return "crit"
+	case 1:
+		return "error"
+	case 2:
+		return "warn"
+	case 3:
+		return "info"
+	case 4:
+		return "debug"
+	case 5:
+		return "debug"
 	default:
-		exit(fmt.Errorf("unknown keystore type: %s", KeyStore))
-	}
-	return keyManager
-}
-
-func DefaultAssetPath() string {
-	var assetPath string
-	// If the current working directory is the go-ethereum dir
-	// assume a debug build and use the source directory as
-	// asset directory.
-	pwd, _ := os.Getwd()
-	if pwd == path.Join(os.Getenv("GOPATH"), "src", "github.com", "ethereum", "go-ethereum", "ethereal") {
-		assetPath = path.Join(pwd, "assets")
-	} else {
-		switch runtime.GOOS {
-		case "darwin":
-			// Get Binary Directory
-			exedir, _ := osext.ExecutableFolder()
-			assetPath = filepath.Join(exedir, "../Resources")
-		case "linux":
-			assetPath = "/usr/share/ethereal"
-		case "windows":
-			assetPath = "./assets"
-		default:
-			assetPath = "."
-		}
-	}
-	return assetPath
-}
-
-func KeyTasks(keyManager *crypto.KeyManager, KeyRing string, GenAddr bool, SecretFile string, ExportDir string, NonInteractive bool) {
-
-	var err error
-	switch {
-	case GenAddr:
-		if NonInteractive || confirm("This action overwrites your old private key.") {
-			err = keyManager.Init(KeyRing, 0, true)
-		}
-		exit(err)
-	case len(SecretFile) > 0:
-		SecretFile = ethutil.ExpandHomePath(SecretFile)
-
-		if NonInteractive || confirm("This action overwrites your old private key.") {
-			err = keyManager.InitFromSecretsFile(KeyRing, 0, SecretFile)
-		}
-		exit(err)
-	case len(ExportDir) > 0:
-		err = keyManager.Init(KeyRing, 0, false)
-		if err == nil {
-			err = keyManager.Export(ExportDir)
-		}
-		exit(err)
-	default:
-		// Creates a keypair if none exists
-		err = keyManager.Init(KeyRing, 0, false)
-		if err != nil {
-			exit(err)
-		}
+		return "info"
 	}
 }
 
-func StartRpc(ethereum *eth.Ethereum, RpcPort int) {
-	//var err error
-	/*
-		ethereum.RpcServer, err = monkrpc.NewJsonRpcServer(xeth.NewJSPipe(ethereum), RpcPort)
-		if err != nil {
-			mintlogger.Errorf("Could not start RPC interface (port %v): %v", RpcPort, err)
-		} else {
-			go ethereum.RpcServer.Start()
-		}*/
-}
-
-var myMiner *miner.Miner
-
-func GetMiner() *miner.Miner {
-	return myMiner
-}
-
-func StartMining(ethereum *eth.Ethereum) bool {
-
-	if !ethereum.Mining {
-		ethereum.Mining = true
-		addr := ethereum.KeyManager().Address()
-
-		go func() {
-			mintlogger.Infoln("Start mining")
-			if myMiner == nil {
-				myMiner = miner.New(addr, ethereum)
-			}
-			// Give it some time to connect with peers
-			time.Sleep(3 * time.Second)
-			myMiner.Start()
-		}()
-		RegisterInterrupt(func(os.Signal) {
-			StopMining(ethereum)
-		})
-		return true
+func (mod *MintModule) Config2Config() {
+	c := mod.Config
+	app := confer.NewConfig()
+	app.SetDefault("Network", "tendermint_testnet0")
+	app.SetDefault("ListenAddr", c.ListenHost+":"+strconv.Itoa(c.ListenPort))
+	app.SetDefault("DB.Backend", "leveldb")
+	app.SetDefault("DB.Dir", path.Join(c.RootDir, c.DbName))
+	app.SetDefault("Log.Stdout.Level", int2Level(c.LogLevel))
+	app.SetDefault("Log.File.Dir", path.Join(c.RootDir, c.DebugFile))
+	app.SetDefault("Log.File.Level", "debug")
+	app.SetDefault("RPC.HTTP.ListenAddr", c.RpcHost+":"+strconv.Itoa(c.RpcPort))
+	app.SetDefault("Mining", c.Mining)
+	if c.UseSeed {
+		app.SetDefault("SeedNode", c.RemoteHost+":"+strconv.Itoa(c.RemotePort))
 	}
-	return false
+	app.SetDefault("GenesisFile", path.Join(c.RootDir, "genesis.json"))
+	app.SetDefault("AddrBookFile", path.Join(c.RootDir, "addrbook.json"))
+	app.SetDefault("PrivValidatorfile", path.Join(c.RootDir, "priv_validator.json"))
+	config.SetApp(app)
 }
 
-func FormatTransactionData(data string) []byte {
-	d := ethutil.StringToByteFunc(data, func(s string) (ret []byte) {
-		slice := regexp.MustCompile("\\n|\\s").Split(s, 1000000000)
-		for _, dataItem := range slice {
-			d := ethutil.FormatData(dataItem)
-			ret = append(ret, d...)
+func trapSignal(cb func()) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for sig := range c {
+			mintlogger.Infoln(fmt.Sprintf("captured %v, exiting..", sig))
+			cb()
+			os.Exit(1)
 		}
-		return
-	})
-
-	return d
+	}()
+	select {}
 }
-
-func StopMining(ethereum *eth.Ethereum) bool {
-	if ethereum.Mining && myMiner != nil {
-		myMiner.Stop()
-		mintlogger.Infoln("Stopped mining")
-		ethereum.Mining = false
-		myMiner = nil
-		return true
-	}
-
-	return false
-}
-
-// If an address is empty, load er up
-// vestige of ye old key days
-/*
-func CheckZeroBalance(pipe *xeth.Xeth, keyMang *crypto.KeyManager) {
-	keys := keyMang.KeyRing()
-	masterPair := keys.GetKeyPair(0)
-	mintlogger.Infoln("master has ", pipe.Balance(keys.GetKeyPair(keys.Len()-1).Address()))
-	for i := 0; i < keys.Len(); i++ {
-		k := keys.GetKeyPair(i).Address()
-		val := pipe.Balance(k)
-		mintlogger.Infoln("key ", i, " ", ethutil.Bytes2Hex(k), " ", val)
-		v := val.Int()
-		if v < 100 {
-			_, err := pipe.Transact(masterPair, k, ethutil.NewValue(ethutil.Big("10000000000000000000")), ethutil.NewValue(ethutil.Big("1000")), ethutil.NewValue(ethutil.Big("1000")), "")
-			if err != nil {
-				mintlogger.Infoln("Error transfering funds to ", ethutil.Bytes2Hex(k))
-			}
-		}
-	}
-}*/

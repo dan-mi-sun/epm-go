@@ -12,14 +12,14 @@ import (
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/eth"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/genblock"
-	//"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/mint"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/mint"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkrpc"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monk"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkdoug" // modules
-	"github.com/eris-ltd/modules/mint"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkdoug" //"github.com/eris-ltd/modules/mint"
 )
 
-func newChain(chainType string, rpc bool) epm.Blockchain {
+func newChain(chainType string, rpc bool) epm. // modules
+						Blockchain {
 	switch chainType {
 	case "thel", "thelonious", "monk":
 		if rpc {

@@ -1,28 +1,37 @@
 package mint
 
 import (
+	crand "crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"os"
-	"os/signal"
 	"os/user"
 	"path"
 	"strconv"
+	"time"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/logger"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
-	//"github.com/eris-ltd/modules/types"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/tendermint/account"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/tendermint/config"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/tendermint/consensus"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/tendermint/daemon"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/tendermint/p2p"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/confer"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/ed25519"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/account" //"github.com/eris-ltd/modules/types"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/consensus"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/daemon"
+	tmlog "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/logger"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/mempool"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/p2p"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
+	blk "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
+	"github.com/eris-ltd/epm-go/utils"
 )
 
 var (
-	GAS      = "10000"
-	GASPRICE = "500"
+	GASLIMIT = uint64(10000)
+	FEE      = uint64(500)
 )
 
 //Logging
@@ -34,12 +43,16 @@ var mintlogger *logger.Logger = logger.NewLogger("MintLogger")
 type MintModule struct {
 	Config         *ChainConfig
 	ConsensusState *consensus.ConsensusState
-	App            *confer.Config
-	tendermint     *daemon.Node
-	started        bool
+	MempoolReactor *mempool.MempoolReactor
+	//	State      *state.State
+	App        *confer.Config
+	tendermint *daemon.Node
+	started    bool
 
 	node     *daemon.Node
 	listener p2p.Listener
+
+	priv *account.PrivAccount
 }
 
 /*
@@ -53,51 +66,23 @@ func NewMint() *MintModule {
 	return m
 }
 
-func int2Level(i int) string {
-	switch i {
-	case 0:
-		return "crit"
-	case 1:
-		return "error"
-	case 2:
-		return "warn"
-	case 3:
-		return "info"
-	case 4:
-		return "debug"
-	case 5:
-		return "debug"
-	default:
-		return "info"
-	}
-}
-
-func (mod *MintModule) Config2Config() {
-	c := mod.Config
-	app := confer.NewConfig()
-	app.SetDefault("Network", "tendermint_testnet0")
-	app.SetDefault("ListenAddr", c.ListenHost+":"+strconv.Itoa(c.ListenPort))
-	app.SetDefault("DB.Backend", "leveldb")
-	app.SetDefault("DB.Dir", path.Join(c.RootDir, c.DbName))
-	app.SetDefault("Log.Stdout.Level", int2Level(c.LogLevel))
-	app.SetDefault("Log.File.Dir", path.Join(c.RootDir, c.DebugFile))
-	app.SetDefault("Log.File.Level", "debug")
-	app.SetDefault("RPC.HTTP.ListenAddr", c.RpcHost+":"+strconv.Itoa(c.RpcPort))
-	if c.UseSeed {
-		app.SetDefault("SeedNode", c.RemoteHost+":"+strconv.Itoa(c.RemotePort))
-	}
-	app.SetDefault("GenesisFile", path.Join(c.RootDir, "genesis.json"))
-	app.SetDefault("AddrBookFile", path.Join(c.RootDir, "addrbook.json"))
-	app.SetDefault("PrivValidatorfile", path.Join(c.RootDir, "priv_validator.json"))
-	config.SetApp(app)
-}
-
 // initialize an chain
 func (mod *MintModule) Init() error {
 	// config should be loaded by epm
 
 	// transform epm json based config to tendermint config
 	mod.Config2Config()
+
+	tmlog.InitLog()
+
+	prv, err := mod.loadOrCreateKey()
+	if err != nil {
+		return err
+	}
+	mod.priv = prv
+	if err := mod.writeValidatorFile(); err != nil {
+		return err
+	}
 
 	// Create & start node
 	n := daemon.NewNode()
@@ -107,6 +92,8 @@ func (mod *MintModule) Init() error {
 	mod.listener = l
 	mod.node = n
 	mod.App = config.App()
+	mod.ConsensusState = n.ConsensusState()
+	mod.MempoolReactor = n.MempoolReactor()
 
 	return nil
 }
@@ -145,19 +132,6 @@ func (mod *MintModule) WaitForShutdown() {
 	})
 }
 
-func trapSignal(cb func()) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for sig := range c {
-			mintlogger.Infoln(fmt.Sprintf("captured %v, exiting..", sig))
-			cb()
-			os.Exit(1)
-		}
-	}()
-	select {}
-}
-
 // ReadConfig and WriteConfig implemented in config.go
 
 // What module is this?
@@ -176,7 +150,6 @@ func (mint *MintModule) ChainId() (string, error) {
 
 func (mint *MintModule) WorldState() *types.WorldState {
 	stateMap := &types.WorldState{make(map[string]*types.Account), []string{}}
-	var accounts []*types.Account
 	state := mint.ConsensusState.GetState()
 	//blockHeight = state.LastBlockHeight
 	state.GetAccounts().Iterate(func(key interface{}, value interface{}) bool {
@@ -192,10 +165,9 @@ func (mint *MintModule) WorldState() *types.WorldState {
 			//Storage:  storage,
 			//IsScript: isscript,
 		}
-		accounts = append(accounts, accTy)
-		return true
+		stateMap.Accounts[hexAddr] = accTy
+		return false
 	})
-
 	return stateMap
 }
 
@@ -206,51 +178,174 @@ func (mint *MintModule) State() *types.State {
 }
 
 func (mint *MintModule) Storage(addr string) *types.Storage {
+	addr = utils.StripHex(addr)
+	addrBytes, err := hex.DecodeString(addr)
+	if err != nil {
+		return nil
+	}
+	acc := mint.ConsensusState.GetState().GetAccount(addrBytes)
+	_ = acc
+	// TODO: iterate and grab storage
 	return nil
 }
 
 func (mint *MintModule) Account(target string) *types.Account {
-	return nil
+	target = utils.StripHex(target)
+	targetBytes, err := hex.DecodeString(target)
+	if err != nil {
+		return nil
+	}
+	acc := mint.ConsensusState.GetState().GetAccount(targetBytes)
+	return &types.Account{
+		Address: target,
+		Balance: strconv.Itoa(int(acc.Balance)),
+		Nonce:   strconv.Itoa(int(acc.Sequence)),
+		// TODO:
+		//Script:   script,
+		//Storage:  storage,
+		//IsScript: isscript,
+	}
 }
 
 func (mint *MintModule) StorageAt(contract_addr string, storage_addr string) string {
-	return ""
+	contract_addr = utils.StripHex(contract_addr)
+	storage_addr = utils.StripHex(storage_addr)
+	fmt.Println("STORAGE AT:", contract_addr, storage_addr)
+	caddr, err := hex.DecodeString(contract_addr)
+	if err != nil {
+		return ""
+	}
+	saddr, err := hex.DecodeString(storage_addr)
+	if err != nil {
+		return ""
+	}
+	b := mint.MempoolReactor.Mempool.GetState().GetStorage(caddr, saddr)
+	fmt.Printf("CADDR, SADDR, b: %x, %x, %x", caddr, saddr, b)
+	return hex.EncodeToString(b)
 }
 
 func (mint *MintModule) BlockCount() int {
-	return 0
+	return int(mint.ConsensusState.GetState().LastBlockHeight)
 }
 
 func (mint *MintModule) LatestBlock() string {
-	return ""
+	return hex.EncodeToString(mint.ConsensusState.GetState().LastBlockHash)
 }
 
 func (mint *MintModule) Block(hash string) *types.Block {
+	// TODO
 	return nil
 }
 
 func (mint *MintModule) IsScript(target string) bool {
-	return true
+	// TODO
+	return false
 }
 
 // send a tx
 func (mint *MintModule) Tx(addr, amt string) (string, error) {
-	//keys := eth.fetchKeyPair()
-	//addr = ethutil.StripHex(addr)
-	if addr[:2] == "0x" {
-		addr = addr[2:]
+	addr = utils.StripHex(addr)
+	addrB, err := hex.DecodeString(addr)
+	if err != nil {
+		return "", err
 	}
-	return "", nil
+	acc := mint.MempoolReactor.Mempool.GetState().GetAccount(mint.priv.Address)
+	nonce := 0
+	if acc != nil {
+		nonce = int(acc.Sequence) + 1
+	}
+
+	amtInt, err := strconv.Atoi(amt)
+	if err != nil {
+		return "", err
+	}
+	amtUint64 := uint64(amtInt)
+
+	tx := &blk.SendTx{
+		Inputs: []*blk.TxInput{
+			&blk.TxInput{
+				Address:   mint.priv.Address,
+				Amount:    amtUint64,
+				Sequence:  uint(nonce),
+				Signature: account.SignatureEd25519{},
+				PubKey:    mint.priv.PubKey,
+			},
+		},
+		Outputs: []*blk.TxOutput{
+			&blk.TxOutput{
+				Address: addrB,
+				Amount:  amtUint64,
+			},
+		},
+	}
+	tx.Inputs[0].Signature = mint.priv.PrivKey.Sign(account.SignBytes(tx))
+	err = mint.MempoolReactor.BroadcastTx(tx)
+	return hex.EncodeToString(merkle.HashFromBinary(tx)), err
+	return "", err
 }
 
 // send a message to a contract
 // data is prepacked by epm
 func (mint *MintModule) Msg(addr string, data []string) (string, error) {
-	return "", nil
+	packed := data[0]
+	packedBytes, _ := hex.DecodeString(packed)
+	addr = utils.StripHex(addr)
+	addrB, err := hex.DecodeString(addr)
+	if err != nil {
+		return "", err
+	}
+	acc := mint.MempoolReactor.Mempool.GetState().GetAccount(mint.priv.Address)
+	nonce := 0
+	if acc != nil {
+		nonce = int(acc.Sequence) + 1
+	}
+
+	tx := &blk.CallTx{
+		Input: &blk.TxInput{
+			Address:   mint.priv.Address,
+			Amount:    FEE,
+			Sequence:  uint(nonce),
+			Signature: account.SignatureEd25519{},
+			PubKey:    mint.priv.PubKey,
+		},
+		Address:  addrB,
+		GasLimit: GASLIMIT,
+		Fee:      FEE,
+		Data:     packedBytes,
+	}
+	tx.Input.Signature = mint.priv.PrivKey.Sign(account.SignBytes(tx))
+	err = mint.MempoolReactor.BroadcastTx(tx)
+	return hex.EncodeToString(merkle.HashFromBinary(tx)), err
 }
 
 func (mint *MintModule) Script(script string) (string, error) {
-	return "", nil
+	script = utils.StripHex(script)
+	code, err := hex.DecodeString(script)
+	if err != nil {
+		return "", err
+	}
+	acc := mint.MempoolReactor.Mempool.GetState().GetAccount(mint.priv.Address)
+	nonce := 0
+	if acc != nil {
+		nonce = int(acc.Sequence) + 1
+	}
+
+	tx := &blk.CallTx{
+		Input: &blk.TxInput{
+			Address:   mint.priv.Address,
+			Amount:    FEE,
+			Sequence:  uint(nonce),
+			Signature: account.SignatureEd25519{},
+			PubKey:    mint.priv.PubKey,
+		},
+		Address:  nil,
+		GasLimit: GASLIMIT,
+		Fee:      FEE,
+		Data:     code,
+	}
+	tx.Input.Signature = mint.priv.PrivKey.Sign(account.SignBytes(tx))
+	err = mint.MempoolReactor.BroadcastTx(tx)
+	return hex.EncodeToString(state.NewContractAddress(mint.priv.Address, uint64(nonce))), err
 }
 
 // returns a chanel that will fire when address is updated
@@ -263,14 +358,15 @@ func (mint *MintModule) UnSubscribe(name string) {
 
 // Mine a block
 func (m *MintModule) Commit() {
+	time.Sleep(time.Second * 20)
 }
 
 // start and stop continuous mining
 func (m *MintModule) AutoCommit(toggle bool) {
 	if toggle {
-		m.StartMining()
+		// m.StartMining()
 	} else {
-		m.StopMining()
+		// m.StopMining()
 	}
 }
 
@@ -336,6 +432,87 @@ func (mint *MintModule) StopListening() {
 /*
    some key management stuff
 */
+
+func createKey() []byte {
+	// create key
+	privKeyBytes := new([64]byte)
+	b := make([]byte, 32)
+	_, err := crand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	copy(privKeyBytes[:32], b)
+	return privKeyBytes[:]
+}
+
+func (mint *MintModule) writeValidatorFile() error {
+	rootDir := mint.Config.RootDir
+	priv := []byte(mint.priv.PrivKey.(account.PrivKeyEd25519))
+	privKeyBytes := new([64]byte)
+	copy(privKeyBytes[:32], priv)
+	pubKeyBytes := ed25519.MakePublicKey(privKeyBytes)
+	pubKey := account.PubKeyEd25519(pubKeyBytes[:])
+	privKey := account.PrivKeyEd25519(privKeyBytes[:])
+	validator := state.PrivValidator{
+		Address:    pubKey.Address(),
+		PubKey:     pubKey,
+		PrivKey:    privKey,
+		LastHeight: 0,
+		LastRound:  0,
+		LastStep:   0,
+	}
+	jsonBytes := binary.JSONBytes(validator)
+	return ioutil.WriteFile(path.Join(rootDir, "priv_validator.json"), jsonBytes, 0700)
+	return nil
+}
+
+func (mint *MintModule) loadOrCreateKey() (*account.PrivAccount, error) {
+	keySession := mint.Property("KeySession").(string)
+	if keySession == "" {
+		return nil, fmt.Errorf("KeySession may not be empty")
+	}
+	keyFile := mint.Property("KeyFile").(string)
+	rootDir := mint.Property("RootDir").(string)
+	var priv []byte
+	var err error
+	if _, err = os.Stat(path.Join(rootDir, keySession)); err != nil {
+		if _, err := os.Stat(keyFile); err != nil {
+			priv = createKey()
+		} else {
+			privB, err := ioutil.ReadFile(keyFile)
+			if err != nil {
+				return nil, err
+			}
+			priv, err = hex.DecodeString(string(privB))
+			if err != nil {
+				return nil, err
+			}
+		}
+		if err = ioutil.WriteFile(path.Join(rootDir, keySession), []byte(hex.EncodeToString(priv)), 0600); err != nil {
+			return nil, err
+		}
+	} else {
+		privB, err := ioutil.ReadFile(path.Join(rootDir, keySession))
+		if err != nil {
+			return nil, err
+		}
+		priv, err = hex.DecodeString(string(privB))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	privKeyBytes := new([64]byte)
+	copy(privKeyBytes[:32], priv)
+	pubKeyBytes := ed25519.MakePublicKey(privKeyBytes)
+	pubKey := account.PubKeyEd25519(pubKeyBytes[:])
+	privKey := account.PrivKeyEd25519(priv[:])
+	return &account.PrivAccount{
+		Address: pubKey.Address(),
+		PubKey:  pubKey,
+		PrivKey: privKey,
+	}, nil
+}
 
 func (mint *MintModule) fetchPriv() string {
 	return ""
