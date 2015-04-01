@@ -58,7 +58,7 @@ func exit(err error) {
 	os.Exit(status)
 }
 
-// compile LLL file into evm bytecode
+// compile script into evm bytecode
 // returns hex
 func Compile(filename string) string {
 	code, _, err := lllcserver.Compile(filename)
