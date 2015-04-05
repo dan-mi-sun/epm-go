@@ -167,28 +167,28 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/eth",
-			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
+			"Rev": "63d02f02dbb59332d2e82591d1100db3579f6bba"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/genblock",
-			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
+			"Rev": "63d02f02dbb59332d2e82591d1100db3579f6bba"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkrpc",
-			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
+			"Rev": "63d02f02dbb59332d2e82591d1100db3579f6bba"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkutils",
-			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
+			"Rev": "63d02f02dbb59332d2e82591d1100db3579f6bba"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/types",
-			"Rev": "11c4d79d6005bb4d60821984f57ffe17d6ba8f29"
+			"Rev": "63d02f02dbb59332d2e82591d1100db3579f6bba"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
-			"Comment": "v0.8-68-gb200c08",
-			"Rev": "b200c08a1f3ddc2811fddf37f9bc3a8469690ccb"
+			"Comment": "v0.8-72-g6f7a931",
+			"Rev": "6f7a9312a8a68a92c9744a65e096d36425dab402"
 		},
 		{
 			"ImportPath": "github.com/go-martini/martini",

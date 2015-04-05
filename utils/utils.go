@@ -155,6 +155,14 @@ func WriteJson(config interface{}, config_file string) error {
 	return err
 }
 
+func ReadJson(config interface{}, config_file string) error {
+	b, err := ioutil.ReadFile(config_file)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, config)
+}
+
 // keeps N bytes of the conversion
 func NumberToBytes(num interface{}, N int) []byte {
 	buf := new(bytes.Buffer)

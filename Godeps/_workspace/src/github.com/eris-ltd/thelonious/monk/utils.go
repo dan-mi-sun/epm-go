@@ -622,7 +622,7 @@ func PrettyPrintBlockAccounts(block *monkchain.Block) {
 
 // print all accounts and storage in the latest block
 func PrettyPrintChainAccounts(mod *MonkModule) {
-	curchain := mod.monk.thelonious.ChainManager()
+	curchain := mod.thelonious.ChainManager()
 	block := curchain.CurrentBlock()
 	PrettyPrintBlockAccounts(block)
 }

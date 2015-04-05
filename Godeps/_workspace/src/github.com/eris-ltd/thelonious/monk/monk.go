@@ -24,31 +24,27 @@ import (
 	utils "github.com/eris-ltd/epm-go/utils" //Logging
 )
 
-var logger *monklog.Logger = monklog.NewLogger("MONK")
+var logger *monklog.Logger = monklog. // figure to remove this ...
+NewLogger("MONK")
 
 func init() {
 	utils.InitDecerverDir()
 }
 
 // implements epm.Blockchain
-type MonkModule struct {
-	monk          *Monk
-	Config        *ChainConfig
-	GenesisConfig *monkdoug.GenesisConfig
-}
-
-// implements decerver-interfaces Blockchain
 // this will get passed to Otto (javascript vm)
 // as such, it does not have "administrative" methods
-type Monk struct {
-	config     *ChainConfig
-	genConfig  *monkdoug.GenesisConfig
-	thelonious *thelonious.Thelonious
-	pipe       *monkpipe.Pipe
-	keyManager *monkcrypto.KeyManager
-	reactor    *monkreact.ReactorEngine
-	started    bool
-	db         monkutil.Database
+type MonkModule struct {
+	//config     *ChainConfig
+	//genConfig  *monkdoug.GenesisConfig
+	Config        *ChainConfig
+	GenesisConfig *monkdoug.GenesisConfig
+	thelonious    *thelonious.Thelonious
+	pipe          *monkpipe.Pipe
+	keyManager    *monkcrypto.KeyManager
+	reactor       *monkreact.ReactorEngine
+	started       bool
+	db            monkutil.Database
 
 	chans map[string]Chan
 }
@@ -72,16 +68,13 @@ type Chan struct {
 // so you can adjust configs before calling `Init()`
 func NewMonk(th *thelonious.Thelonious) *MonkModule {
 	mm := new(MonkModule)
-	m := new(Monk)
 	// Here we load default config and leave it to caller
 	// to overwrite with config file or directly
 	mm.Config = DefaultConfig
-	m.config = mm.Config
 	if th != nil {
-		m.thelonious = th
+		mm.thelonious = th
 	}
-	m.started = false
-	mm.monk = m
+	mm.started = false
 	return mm
 }
 
@@ -116,7 +109,6 @@ func (mod *MonkModule) ConfigureGenesis() {
 			return epmDeploy(block, mod.GenesisConfig.Pdx)
 		})
 	}
-	mod.monk.genConfig = mod.GenesisConfig
 }
 
 // Initialize a monkchain
@@ -124,14 +116,8 @@ func (mod *MonkModule) ConfigureGenesis() {
 // Gives you a pipe, local keyMang, and reactor
 // NewMonk must have been called first
 func (mod *MonkModule) Init() error {
-	m := mod.monk
-
-	if m == nil {
-		return fmt.Errorf("NewMonk has not been called")
-	}
-
 	// set epm contract path
-	setEpmContractPath(m.config.ContractPath)
+	setEpmContractPath(mod.Config.ContractPath)
 	// set the root
 	// name > chainId > rootDir > default
 	mod.setRootDir()
@@ -139,24 +125,24 @@ func (mod *MonkModule) Init() error {
 	mod.ConfigureGenesis()
 	logger.Infoln("Loaded genesis configuration from: ", mod.Config.GenesisConfig)
 
-	if !m.config.UseCheckpoint {
-		m.config.LatestCheckpoint = ""
+	if !mod.Config.UseCheckpoint {
+		mod.Config.LatestCheckpoint = ""
 	}
 
 	monkdoug.Adversary = mod.Config.Adversary
 
 	// if no thelonious instance
-	if m.thelonious == nil {
+	if mod.thelonious == nil {
 		mod.thConfig()
-		m.newThelonious()
+		mod.newThelonious()
 	}
 
-	m.pipe = monkpipe.New(m.thelonious)
-	m.keyManager = m.thelonious.KeyManager()
-	m.reactor = m.thelonious.Reactor()
+	mod.pipe = monkpipe.New(mod.thelonious)
+	mod.keyManager = mod.thelonious.KeyManager()
+	mod.reactor = mod.thelonious.Reactor()
 
 	// subscribe to the new block
-	m.chans = make(map[string]Chan)
+	mod.chans = make(map[string]Chan)
 
 	return nil
 }
@@ -165,27 +151,26 @@ func (mod *MonkModule) Init() error {
 func (mod *MonkModule) Start() (err error) {
 	startChan := mod.Subscribe("chainReady", "chainReady", "")
 
-	m := mod.monk
 	seed := ""
 	if mod.Config.UseSeed {
-		seed = m.config.RemoteHost + ":" + strconv.Itoa(m.config.RemotePort)
+		seed = mod.Config.RemoteHost + ":" + strconv.Itoa(mod.Config.RemotePort)
 	}
-	m.thelonious.Start(mod.Config.Listen, seed)
+	mod.thelonious.Start(mod.Config.Listen, seed)
 	RegisterInterrupt(func(sig os.Signal) {
-		m.thelonious.Stop()
+		mod.thelonious.Stop()
 		monklog.Flush()
 	})
-	m.started = true
+	mod.started = true
 
-	if m.config.Mining {
-		StartMining(m.thelonious)
+	if mod.Config.Mining {
+		StartMining(mod.thelonious)
 	}
 
-	if m.config.ServeRpc {
-		StartRpc(m.thelonious, m.config.RpcHost, m.config.RpcPort)
+	if mod.Config.ServeRpc {
+		StartRpc(mod.thelonious, mod.Config.RpcHost, mod.Config.RpcPort)
 	}
 
-	m.Subscribe("newBlock", "newBlock", "")
+	mod.Subscribe("newBlock", "newBlock", "")
 
 	// wait for startup to finish
 	// XXX: note for checkpoints this means waiting until
@@ -196,17 +181,28 @@ func (mod *MonkModule) Start() (err error) {
 	return nil
 }
 
-func (mod *MonkModule) Shutdown() error {
-	mod.monk.Stop()
+func (monk *MonkModule) Shutdown() error {
+	if !monk.started {
+		if monk.db != nil {
+			monk.db.Close()
+		}
+		return nil
+	}
+	monk.StopMining()
+	monk.thelonious.Stop()
+	time.Sleep(time.Second)
+	for n, _ := range monk.chans {
+		monk.UnSubscribe(n)
+	}
+	monk = &MonkModule{Config: monk.Config}
+	monklog.Reset()
+	monk.started = false
+	logger.Warnln("Shutdown monk")
 	return nil
 }
 
-func (mod *MonkModule) ChainId() (string, error) {
-	return mod.monk.ChainId()
-}
-
 func (mod *MonkModule) WaitForShutdown() {
-	mod.monk.thelonious.WaitForShutdown()
+	mod.thelonious.WaitForShutdown()
 }
 
 // ReadConfig and WriteConfig implemented in config.go
@@ -214,119 +210,6 @@ func (mod *MonkModule) WaitForShutdown() {
 // What module is this?
 func (mod *MonkModule) Name() string {
 	return "monk"
-}
-
-/*
-   Wrapper so module satisfies Blockchain
-*/
-
-func (mod *MonkModule) WorldState() *types.WorldState {
-	return mod.monk.WorldState()
-}
-
-func (mod *MonkModule) State() *types.State {
-	return mod.monk.State()
-}
-
-func (mod *MonkModule) Storage(target string) *types.Storage {
-	return mod.monk.Storage(target)
-}
-
-func (mod *MonkModule) Account(target string) *types.Account {
-	return mod.monk.Account(target)
-}
-
-func (mod *MonkModule) StorageAt(target, storage string) string {
-	return mod.monk.StorageAt(target, storage)
-}
-
-func (mod *MonkModule) BlockCount() int {
-	return mod.monk.BlockCount()
-}
-
-func (mod *MonkModule) LatestBlock() string {
-	return mod.monk.LatestBlock()
-}
-
-func (mod *MonkModule) Block(hash string) *types.Block {
-	return mod.monk.Block(hash)
-}
-
-func (mod *MonkModule) IsScript(target string) bool {
-	return mod.monk.IsScript(target)
-}
-
-func (mod *MonkModule) Tx(addr, amt string) (string, error) {
-	return mod.monk.Tx(addr, amt)
-}
-
-func (mod *MonkModule) Msg(addr string, data []string) (string, error) {
-	return mod.monk.Msg(addr, data)
-}
-
-func (mod *MonkModule) Script(code string) (string, error) {
-	return mod.monk.Script(code)
-}
-
-func (mod *MonkModule) Transact(addr, value, gas, gasprice, data string) (string, error) {
-	return mod.monk.Transact(addr, value, gas, gasprice, data)
-}
-
-func (mod *MonkModule) Subscribe(name, event, target string) chan types.Event {
-	return mod.monk.Subscribe(name, event, target)
-}
-
-func (mod *MonkModule) UnSubscribe(name string) {
-	mod.monk.UnSubscribe(name)
-}
-
-func (mod *MonkModule) Commit() {
-	mod.monk.Commit()
-}
-
-func (mod *MonkModule) AutoCommit(toggle bool) {
-	mod.monk.AutoCommit(toggle)
-}
-
-func (mod *MonkModule) IsAutocommit() bool {
-	return mod.monk.IsAutocommit()
-}
-
-/*
-   Module should also satisfy KeyManager
-*/
-
-func (mod *MonkModule) ActiveAddress() string {
-	return mod.monk.ActiveAddress()
-}
-
-func (mod *MonkModule) Address(n int) (string, error) {
-	return mod.monk.Address(n)
-}
-
-func (mod *MonkModule) SetAddress(addr string) error {
-	return mod.monk.SetAddress(addr)
-}
-
-func (mod *MonkModule) SetAddressN(n int) error {
-	return mod.monk.SetAddressN(n)
-}
-
-func (mod *MonkModule) NewAddress(set bool) string {
-	return mod.monk.NewAddress(set)
-}
-
-func (mod *MonkModule) AddressCount() int {
-	return mod.monk.AddressCount()
-}
-
-/*
-   Module should satisfy a P2P interface
-   Not in decerver-interfaces yet but prototyping here
-*/
-
-func (mod *MonkModule) Listen(should bool) {
-	mod.monk.Listen(should)
 }
 
 /*
@@ -348,14 +231,14 @@ func (mod *MonkModule) SetGenesis(genJson *monkdoug.GenesisConfig) {
 }
 
 func (mod *MonkModule) MonkState() *monkstate.State {
-	return mod.monk.pipe.World().State()
+	return mod.pipe.World().State()
 }
 
 /*
    Implement Blockchain
 */
 
-func (monk *Monk) ChainId() (string, error) {
+func (monk *MonkModule) ChainId() (string, error) {
 	// get the chain id
 	data, err := monkutil.Config.Db.Get([]byte("ChainID"))
 	if err != nil {
@@ -367,7 +250,7 @@ func (monk *Monk) ChainId() (string, error) {
 	return chainId, nil
 }
 
-func (monk *Monk) WorldState() *types.WorldState {
+func (monk *MonkModule) WorldState() *types.WorldState {
 	state := monk.pipe.World().State()
 	stateMap := &types.WorldState{make(map[string]*types.Account), []string{}}
 
@@ -381,7 +264,7 @@ func (monk *Monk) WorldState() *types.WorldState {
 	return stateMap
 }
 
-func (monk *Monk) State() *types.State {
+func (monk *MonkModule) State() *types.State {
 	state := monk.pipe.World().State()
 	stateMap := &types.State{make(map[string]*types.Storage), []string{}}
 
@@ -395,7 +278,7 @@ func (monk *Monk) State() *types.State {
 	return stateMap
 }
 
-func (monk *Monk) Storage(addr string) *types.Storage {
+func (monk *MonkModule) Storage(addr string) *types.Storage {
 	w := monk.pipe.World()
 	obj := w.SafeGet(monkutil.UserHex2Bytes(addr)).StateObject
 	ret := &types.Storage{make(map[string]string), []string{}}
@@ -409,7 +292,7 @@ func (monk *Monk) Storage(addr string) *types.Storage {
 	return ret
 }
 
-func (monk *Monk) Account(target string) *types.Account {
+func (monk *MonkModule) Account(target string) *types.Account {
 	w := monk.pipe.World()
 	obj := w.SafeGet(monkutil.UserHex2Bytes(target)).StateObject
 
@@ -429,7 +312,7 @@ func (monk *Monk) Account(target string) *types.Account {
 	}
 }
 
-func (monk *Monk) StorageAt(contract_addr string, storage_addr string) string {
+func (monk *MonkModule) StorageAt(contract_addr string, storage_addr string) string {
 	var saddr *big.Int
 	if monkutil.IsHex(storage_addr) {
 		saddr = monkutil.BigD(monkutil.Hex2Bytes(monkutil.StripHex(storage_addr)))
@@ -447,21 +330,21 @@ func (monk *Monk) StorageAt(contract_addr string, storage_addr string) string {
 	return monkutil.Bytes2Hex(ret.Bytes())
 }
 
-func (monk *Monk) BlockCount() int {
+func (monk *MonkModule) BlockCount() int {
 	return int(monk.thelonious.ChainManager().CurrentBlockNumber())
 }
 
-func (monk *Monk) LatestBlock() string {
+func (monk *MonkModule) LatestBlock() string {
 	return monkutil.Bytes2Hex(monk.thelonious.ChainManager().CurrentBlockHash())
 }
 
-func (monk *Monk) Block(hash string) *types.Block {
+func (monk *MonkModule) Block(hash string) *types.Block {
 	hashBytes := monkutil.Hex2Bytes(hash)
 	block := monk.thelonious.ChainManager().GetBlock(hashBytes)
 	return convertBlock(block)
 }
 
-func (monk *Monk) IsScript(target string) bool {
+func (monk *MonkModule) IsScript(target string) bool {
 	// is contract if storage is empty and no bytecode
 	obj := monk.Account(target)
 	storage := obj.Storage
@@ -472,7 +355,7 @@ func (monk *Monk) IsScript(target string) bool {
 }
 
 // send a tx
-func (monk *Monk) Tx(addr, amt string) (string, error) {
+func (monk *MonkModule) Tx(addr, amt string) (string, error) {
 	keys := monk.fetchKeyPair()
 	addr = monkutil.StripHex(addr)
 	if addr[:2] == "0x" {
@@ -492,11 +375,11 @@ func (monk *Monk) Tx(addr, amt string) (string, error) {
 }
 
 func (monk *MonkModule) Reactor() bool {
-	return monk.monk.reactor.Running()
+	return monk.reactor.Running()
 }
 
 // send a message to a contract
-func (monk *Monk) Msg(addr string, data []string) (string, error) {
+func (monk *MonkModule) Msg(addr string, data []string) (string, error) {
 	packed := PackTxDataArgs(data...)
 	keys := monk.fetchKeyPair()
 	addr = monkutil.StripHex(addr)
@@ -508,7 +391,7 @@ func (monk *Monk) Msg(addr string, data []string) (string, error) {
 	return monkutil.Bytes2Hex(hash), nil
 }
 
-func (monk *Monk) Script(code string) (string, error) {
+func (monk *MonkModule) Script(code string) (string, error) {
 	code = monkutil.StripHex(code)
 
 	keys := monk.fetchKeyPair()
@@ -521,7 +404,7 @@ func (monk *Monk) Script(code string) (string, error) {
 	return monkutil.Bytes2Hex(contract_addr), nil
 }
 
-func (monk *Monk) Transact(addr, amt, gas, gasprice, data string) (string, error) {
+func (monk *MonkModule) Transact(addr, amt, gas, gasprice, data string) (string, error) {
 	keys := monk.fetchKeyPair()
 	addr = monkutil.StripHex(addr)
 	byte_addr := monkutil.Hex2Bytes(addr)
@@ -533,7 +416,7 @@ func (monk *Monk) Transact(addr, amt, gas, gasprice, data string) (string, error
 }
 
 // returns a chanel that will fire when address is updated
-func (monk *Monk) Subscribe(name, event, target string) chan types.Event {
+func (monk *MonkModule) Subscribe(name, event, target string) chan types.Event {
 	th_ch := make(chan monkreact.Event, 1)
 	if target != "" {
 		addr := string(monkutil.Hex2Bytes(target))
@@ -588,7 +471,7 @@ func (monk *Monk) Subscribe(name, event, target string) chan types.Event {
 	return ch
 }
 
-func (monk *Monk) UnSubscribe(name string) {
+func (monk *MonkModule) UnSubscribe(name string) {
 	if c, ok := monk.chans[name]; ok {
 		monk.reactor.Unsubscribe(c.event, c.reactCh)
 		// drain channels
@@ -608,7 +491,7 @@ func (monk *Monk) UnSubscribe(name string) {
 }
 
 // Mine a block
-func (m *Monk) Commit() {
+func (m *MonkModule) Commit() {
 	m.StartMining()
 	_ = <-m.chans["newBlock"].ch
 	v := false
@@ -622,7 +505,7 @@ func (m *Monk) Commit() {
 }
 
 // start and stop continuous mining
-func (m *Monk) AutoCommit(toggle bool) {
+func (m *MonkModule) AutoCommit(toggle bool) {
 	if toggle {
 		m.StartMining()
 	} else {
@@ -630,7 +513,7 @@ func (m *Monk) AutoCommit(toggle bool) {
 	}
 }
 
-func (m *Monk) IsAutocommit() bool {
+func (m *MonkModule) IsAutocommit() bool {
 	return m.thelonious.IsMining()
 }
 
@@ -640,14 +523,14 @@ func (m *Monk) IsAutocommit() bool {
 */
 
 // Return the active address
-func (monk *Monk) ActiveAddress() string {
+func (monk *MonkModule) ActiveAddress() string {
 	keypair := monk.keyManager.KeyPair()
 	addr := monkutil.Bytes2Hex(keypair.Address())
 	return addr
 }
 
 // Return the nth address in the ring
-func (monk *Monk) Address(n int) (string, error) {
+func (monk *MonkModule) Address(n int) (string, error) {
 	ring := monk.keyManager.KeyRing()
 	if n >= ring.Len() {
 		return "", fmt.Errorf("cursor %d out of range (0..%d)", n, ring.Len())
@@ -658,7 +541,7 @@ func (monk *Monk) Address(n int) (string, error) {
 }
 
 // Set the address
-func (monk *Monk) SetAddress(addr string) error {
+func (monk *MonkModule) SetAddress(addr string) error {
 	n := -1
 	i := 0
 	ring := monk.keyManager.KeyRing()
@@ -676,12 +559,12 @@ func (monk *Monk) SetAddress(addr string) error {
 }
 
 // Set the address to be the nth in the ring
-func (monk *Monk) SetAddressN(n int) error {
+func (monk *MonkModule) SetAddressN(n int) error {
 	return monk.keyManager.SetCursor(n)
 }
 
 // Generate a new address
-func (monk *Monk) NewAddress(set bool) string {
+func (monk *MonkModule) NewAddress(set bool) string {
 	newpair := monkcrypto.GenerateNewKeyPair()
 	addr := monkutil.Bytes2Hex(newpair.Address())
 	ring := monk.keyManager.KeyRing()
@@ -693,7 +576,7 @@ func (monk *Monk) NewAddress(set bool) string {
 }
 
 // Return the number of available addresses
-func (monk *Monk) AddressCount() int {
+func (monk *MonkModule) AddressCount() int {
 	return monk.keyManager.KeyRing().Len()
 }
 
@@ -702,7 +585,7 @@ func (monk *Monk) AddressCount() int {
 */
 
 // Start and stop listening on the port
-func (monk *Monk) Listen(should bool) {
+func (monk *MonkModule) Listen(should bool) {
 	if should {
 		monk.StartListening()
 	} else {
@@ -717,24 +600,24 @@ func (monk *Monk) Listen(should bool) {
 // create a new thelonious instance
 // expects thConfig to already have been called!
 // init db, nat/upnp, thelonious struct, reactorEngine, txPool, blockChain, stateManager
-func (m *Monk) newThelonious() {
-	db := mutils.NewDatabase(m.config.DbName, m.config.DbMem)
+func (m *MonkModule) newThelonious() {
+	db := mutils.NewDatabase(m.Config.DbName, m.Config.DbMem)
 	m.db = db
 
-	keyManager := mutils.NewKeyManager(m.config.KeyStore, m.config.RootDir, db)
-	err := keyManager.Init(m.config.KeySession, m.config.KeyCursor, false)
+	keyManager := mutils.NewKeyManager(m.Config.KeyStore, m.Config.RootDir, db)
+	err := keyManager.Init(m.Config.KeySession, m.Config.KeyCursor, false)
 	if err != nil {
 		log.Fatal(err)
 	}
 	m.keyManager = keyManager
 
-	clientIdentity := mutils.NewClientIdentity(m.config.ClientIdentifier, m.config.Version, m.config.Identifier)
+	clientIdentity := mutils.NewClientIdentity(m.Config.ClientIdentifier, m.Config.Version, m.Config.Identifier)
 	logger.Infoln("Identity created")
 
-	checkpoint := monkutil.UserHex2Bytes(m.config.LatestCheckpoint)
+	checkpoint := monkutil.UserHex2Bytes(m.Config.LatestCheckpoint)
 
 	// create the thelonious obj
-	th, err := thelonious.New(db, clientIdentity, m.keyManager, thelonious.CapDefault, false, m.config.FetchPort, checkpoint, m.genConfig)
+	th, err := thelonious.New(db, clientIdentity, m.keyManager, thelonious.CapDefault, false, m.Config.FetchPort, checkpoint, m.GenesisConfig)
 
 	if err != nil {
 		log.Fatal("Could not start node: %s\n", err)
@@ -742,31 +625,31 @@ func (m *Monk) newThelonious() {
 
 	logger.Infoln("Created thelonious node")
 
-	th.Port = strconv.Itoa(m.config.ListenPort)
-	th.MaxPeers = m.config.MaxPeers
+	th.Port = strconv.Itoa(m.Config.ListenPort)
+	th.MaxPeers = m.Config.MaxPeers
 
 	m.thelonious = th
 }
 
 // returns hex addr of gendoug
 /*
-func (monk *Monk) GenDoug() string {
+func (monk *MonkModule) GenDoug() string {
 	return monkutil.Bytes2Hex(monkdoug.GenDougByteAddr)
 }*/
 
-func (monk *Monk) StartMining() bool {
+func (monk *MonkModule) StartMining() bool {
 	return StartMining(monk.thelonious)
 }
 
-func (monk *Monk) StopMining() bool {
+func (monk *MonkModule) StopMining() bool {
 	return StopMining(monk.thelonious)
 }
 
-func (monk *Monk) StartListening() {
+func (monk *MonkModule) StartListening() {
 	monk.thelonious.StartListening()
 }
 
-func (monk *Monk) StopListening() {
+func (monk *MonkModule) StopListening() {
 	monk.thelonious.StopListening()
 }
 
@@ -774,19 +657,19 @@ func (monk *Monk) StopListening() {
    some key management stuff
 */
 
-func (monk *Monk) fetchPriv() string {
+func (monk *MonkModule) fetchPriv() string {
 	keypair := monk.keyManager.KeyPair()
 	priv := monkutil.Bytes2Hex(keypair.PrivateKey)
 	return priv
 }
 
-func (monk *Monk) fetchKeyPair() *monkcrypto.KeyPair {
+func (monk *MonkModule) fetchKeyPair() *monkcrypto.KeyPair {
 	return monk.keyManager.KeyPair()
 }
 
 // this is bad but I need it for testing
 // TODO: deprecate!
-func (monk *Monk) FetchPriv() string {
+func (monk *MonkModule) FetchPriv() string {
 	return monk.fetchPriv()
 }
 
@@ -795,10 +678,9 @@ func (mod *MonkModule) Restart() error {
 		return err
 	}
 
-	mk := mod.monk
+	cfg := mod.Config
 	mod = NewMonk(nil)
-	mod.monk = mk
-	mod.Config = mk.config
+	mod.Config = cfg
 
 	if err := mod.Init(); err != nil {
 		return err
@@ -809,26 +691,6 @@ func (mod *MonkModule) Restart() error {
 
 	return nil
 
-}
-
-func (monk *Monk) Stop() {
-	if !monk.started {
-		logger.Infoln("can't stop: haven't even started...")
-		if monk.db != nil {
-			monk.db.Close()
-		}
-		return
-	}
-	monk.StopMining()
-	monk.thelonious.Stop()
-	time.Sleep(time.Second)
-	for n, _ := range monk.chans {
-		monk.UnSubscribe(n)
-	}
-	monk = &Monk{config: monk.config}
-	monklog.Reset()
-	monk.started = false
-	logger.Warnln("Shutdown monk")
 }
 
 // Set the root. If it's already set, check if the

@@ -13,8 +13,8 @@ import (
 	ethutils "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/cmd/utils"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/core"
 	ethtypes "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/core/types"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto" //"github.com/eris-ltd/go-ethereum/chain"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/eth"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/eth" //"github.com/eris-ltd/go-ethereum/chain"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/ethutil"
 	ethevent "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/event"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/logger"
@@ -38,17 +38,11 @@ var (
 //Logging
 var ethlogger *logger.Logger = logger.NewLogger("EthGlue")
 
-// implements decerver-interfaces Module
-type EthModule struct {
-	eth    *Eth
-	Config *ChainConfig
-}
-
-// implements decerver-interfaces Blockchain
+// implements epm Blockchain
 // this will get passed to Otto (javascript vm)
 // as such, it does not have "administrative" methods
-type Eth struct {
-	config      *ChainConfig
+type EthModule struct {
+	Config      *ChainConfig
 	ethereum    *eth.Ethereum
 	pipe        *xeth.XEth
 	keyManager  *crypto.KeyManager
@@ -70,84 +64,79 @@ type Eth struct {
 // interface into the same chain.
 // It will not initialize a ethereum object for you,
 // giving you a chance to adjust configs before calling `Init()`
-func NewEth(th *eth.Ethereum) *EthModule {
-	mm := new(EthModule)
-	m := new(Eth)
+func NewEth(et *eth.Ethereum) *EthModule {
+	em := new(EthModule)
 	// Here we load default config and leave it to caller
 	// to read a config file to overwrite
-	mm.Config = DefaultConfig
-	m.config = mm.Config
-	if th != nil {
-		m.ethereum = th
+	em.Config = DefaultConfig
+	if et != nil {
+		em.ethereum = et
 	}
 
-	m.started = false
-	mm.eth = m
-	return mm
+	em.started = false
+	return em
 }
 
 // initialize an chain
 // it may or may not already have a ethereum instance
 // basically gives you a pipe, local keyMang, and reactor
 func (mod *EthModule) Init() error {
-	m := mod.eth
 	// if didn't call NewEth
-	if m.config == nil {
-		m.config = DefaultConfig
+	if mod.Config == nil {
+		mod.Config = DefaultConfig
 	}
 
 	//ethdoug.Adversary = mod.Config.Adversary
 
 	// if no ethereum instance
-	if m.ethereum == nil {
-		m.ethConfig()
-		m.newEthereum()
+	if mod.ethereum == nil {
+		mod.ethConfig()
+		mod.newEthereum()
 	}
 
 	// public interface
-	pipe := xeth.New(m.ethereum)
+	pipe := xeth.New(mod.ethereum)
 	// load keys from file. genesis block keys. convenient for testing
 
-	m.pipe = pipe
-	m.keyManager = m.ethereum.KeyManager()
-	m.eventMux = m.ethereum.EventMux()
+	mod.pipe = pipe
+	mod.keyManager = mod.ethereum.KeyManager()
+	mod.eventMux = mod.ethereum.EventMux()
 
 	// subscribe to the new block
-	m.chans = make(map[string]chan types.Event)
-	m.subscribers = make(map[string]ethevent.Subscription) //<-chan interface{})
-	//m.Subscribe("newBlock", "newBlock", "")
-	//m.newBlockSub = m.eventMux.Subscribe(core.NewBlockEvent{})
+	mod.chans = make(map[string]chan types.Event)
+	mod.subscribers = make(map[string]ethevent.Subscription) //<-chan interface{})
+	//mod.Subscribe("newBlock", "newBlock", "")
+	//mod.newBlockSub = mod.eventMux.Subscribe(core.NewBlockEvent{})
 
 	return nil
 }
 
 // start the ethereum node
 func (mod *EthModule) Start() error {
-	m := mod.eth
 	seed := ""
-	if m.config.UseSeed {
-		seed = m.config.SeedAddr
+	if mod.Config.UseSeed {
+		seed = mod.Config.SeedAddr
 	}
-	m.ethereum.Start(seed) // peer seed
-	m.started = true
+	mod.ethereum.Start(seed) // peer seed
+	mod.started = true
 
-	if m.config.Mining {
-		ethutils.StartMining(m.ethereum)
+	if mod.Config.Mining {
+		ethutils.StartMining(mod.ethereum)
 	}
 	return nil
 }
 
-func (mod *EthModule) Shutdown() error {
-	mod.eth.Stop()
+func (eth *EthModule) Shutdown() error {
+	if !eth.started {
+		return nil
+	}
+	eth.StopMining()
+	fmt.Println("stopped mining")
+	eth.ethereum.Stop()
+	fmt.Println("stopped ethereum")
+	eth = &EthModule{Config: eth.Config}
+	logger.Reset()
 	return nil
-}
-
-func (mod *EthModule) ChainId() (string, error) {
-	return mod.eth.ChainId()
-}
-
-func (mod *EthModule) WaitForShutdown() {
-	mod.eth.ethereum.WaitForShutdown()
 }
 
 // ReadConfig and WriteConfig implemented in config.go
@@ -158,124 +147,28 @@ func (mod *EthModule) Name() string {
 }
 
 /*
-   Wrapper so module satisfies Blockchain
-*/
-
-func (mod *EthModule) WorldState() *types.WorldState {
-	return mod.eth.WorldState()
-}
-
-func (mod *EthModule) State() *types.State {
-	return mod.eth.State()
-}
-
-func (mod *EthModule) Storage(target string) *types.Storage {
-	return mod.eth.Storage(target)
-}
-
-func (mod *EthModule) Account(target string) *types.Account {
-	return mod.eth.Account(target)
-}
-
-func (mod *EthModule) StorageAt(target, storage string) string {
-	return mod.eth.StorageAt(target, storage)
-}
-
-func (mod *EthModule) BlockCount() int {
-	return mod.eth.BlockCount()
-}
-
-func (mod *EthModule) LatestBlock() string {
-	return mod.eth.LatestBlock()
-}
-
-func (mod *EthModule) Block(hash string) *types.Block {
-	return mod.eth.Block(hash)
-}
-
-func (mod *EthModule) IsScript(target string) bool {
-	return mod.eth.IsScript(target)
-}
-
-func (mod *EthModule) Tx(addr, amt string) (string, error) {
-	return mod.eth.Tx(addr, amt)
-}
-
-func (mod *EthModule) Msg(addr string, data []string) (string, error) {
-	return mod.eth.Msg(addr, data)
-}
-
-func (mod *EthModule) Script(code string) (string, error) {
-	return mod.eth.Script(code)
-}
-
-func (mod *EthModule) Subscribe(name, event, target string) chan types.Event {
-	return mod.eth.Subscribe(name, event, target)
-}
-
-func (mod *EthModule) UnSubscribe(name string) {
-	mod.eth.UnSubscribe(name)
-}
-
-func (mod *EthModule) Commit() {
-	mod.eth.Commit()
-}
-
-func (mod *EthModule) AutoCommit(toggle bool) {
-	mod.eth.AutoCommit(toggle)
-}
-
-func (mod *EthModule) IsAutocommit() bool {
-	return mod.eth.IsAutocommit()
-}
-
-/*
-   Module should also satisfy KeyManager
-*/
-
-func (mod *EthModule) ActiveAddress() string {
-	return mod.eth.ActiveAddress()
-}
-
-func (mod *EthModule) Address(n int) (string, error) {
-	return mod.eth.Address(n)
-}
-
-func (mod *EthModule) SetAddress(addr string) error {
-	return mod.eth.SetAddress(addr)
-}
-
-func (mod *EthModule) SetAddressN(n int) error {
-	return mod.eth.SetAddressN(n)
-}
-
-func (mod *EthModule) NewAddress(set bool) string {
-	return mod.eth.NewAddress(set)
-}
-
-func (mod *EthModule) AddressCount() int {
-	return mod.eth.AddressCount()
-}
-
-/*
    Non-interface functions that otherwise prove useful
     in standalone applications, testing, and debuging
 */
 
 func (mod *EthModule) EthState() *state.StateDB {
-	return mod.eth.pipe.State().State()
+	return mod.pipe.State().State()
 }
 
 /*
    Implement Blockchain
 */
 
-func (eth *Eth) ChainId() (string, error) {
+func (eth *EthModule) ChainId() (string, error) {
 	// TODO: implement  BlockN() !
 	return "default", nil
 }
 
-func (eth *Eth) WorldState() *types.WorldState {
+func (mod *EthModule) WaitForShutdown() {
+	mod.ethereum.WaitForShutdown()
+}
+
+func (eth *EthModule) WorldState() *types.WorldState {
 	state := eth.pipe.State().State()
 	stateMap := &types.WorldState{make(map[string]*types.Account), []string{}}
 
@@ -291,7 +184,7 @@ func (eth *Eth) WorldState() *types.WorldState {
 	return stateMap
 }
 
-func (eth *Eth) State() *types.State {
+func (eth *EthModule) State() *types.State {
 	state := eth.pipe.State().State()
 	stateMap := &types.State{make(map[string]*types.Storage), []string{}}
 
@@ -307,7 +200,7 @@ func (eth *Eth) State() *types.State {
 	return stateMap
 }
 
-func (eth *Eth) Storage(addr string) *types.Storage {
+func (eth *EthModule) Storage(addr string) *types.Storage {
 	w := eth.pipe.State()
 	obj := w.SafeGet(addr).StateObject
 	ret := &types.Storage{make(map[string]string), []string{}}
@@ -320,7 +213,7 @@ func (eth *Eth) Storage(addr string) *types.Storage {
 	return ret
 }
 
-func (eth *Eth) Account(target string) *types.Account {
+func (eth *EthModule) Account(target string) *types.Account {
 	w := eth.pipe.State()
 	obj := w.SafeGet(target).StateObject
 
@@ -340,7 +233,7 @@ func (eth *Eth) Account(target string) *types.Account {
 	}
 }
 
-func (eth *Eth) StorageAt(contract_addr string, storage_addr string) string {
+func (eth *EthModule) StorageAt(contract_addr string, storage_addr string) string {
 	var saddr *big.Int
 	if ethutil.IsHex(storage_addr) {
 		saddr = ethutil.BigD(ethutil.Hex2Bytes(utils.StripHex(storage_addr)))
@@ -357,21 +250,21 @@ func (eth *Eth) StorageAt(contract_addr string, storage_addr string) string {
 	return ethutil.Bytes2Hex(ret.Bytes())
 }
 
-func (eth *Eth) BlockCount() int {
+func (eth *EthModule) BlockCount() int {
 	return int(eth.ethereum.ChainManager().LastBlockNumber())
 }
 
-func (eth *Eth) LatestBlock() string {
+func (eth *EthModule) LatestBlock() string {
 	return ethutil.Bytes2Hex(eth.ethereum.ChainManager().CurrentBlock().Hash())
 }
 
-func (eth *Eth) Block(hash string) *types.Block {
+func (eth *EthModule) Block(hash string) *types.Block {
 	hashBytes := ethutil.Hex2Bytes(hash)
 	block := eth.ethereum.ChainManager().GetBlock(hashBytes)
 	return convertBlock(block)
 }
 
-func (eth *Eth) IsScript(target string) bool {
+func (eth *EthModule) IsScript(target string) bool {
 	// is contract if storage is empty and no bytecode
 	obj := eth.Account(target)
 	storage := obj.Storage
@@ -382,7 +275,7 @@ func (eth *Eth) IsScript(target string) bool {
 }
 
 // send a tx
-func (eth *Eth) Tx(addr, amt string) (string, error) {
+func (eth *EthModule) Tx(addr, amt string) (string, error) {
 	//keys := eth.fetchKeyPair()
 	//addr = ethutil.StripHex(addr)
 	if addr[:2] == "0x" {
@@ -402,7 +295,7 @@ func (eth *Eth) Tx(addr, amt string) (string, error) {
 
 // send a message to a contract
 // data is prepacked by epm
-func (eth *Eth) Msg(addr string, data []string) (string, error) {
+func (eth *EthModule) Msg(addr string, data []string) (string, error) {
 	packed := data[0]
 	//packed := PackTxDataArgs(data...)
 	//packed = abi + packed[2:]
@@ -417,7 +310,7 @@ func (eth *Eth) Msg(addr string, data []string) (string, error) {
 }
 
 // TODO: implement CompileLLL
-func (eth *Eth) Script(script string) (string, error) {
+func (eth *EthModule) Script(script string) (string, error) {
 	/*var script string
 	if lang == "lll-literal" {
 		script = CompileLLL(file, true)
@@ -444,7 +337,7 @@ func (eth *Eth) Script(script string) (string, error) {
 }
 
 // returns a chanel that will fire when address is updated
-func (eth *Eth) Subscribe(name, event, target string) chan types.Event {
+func (eth *EthModule) Subscribe(name, event, target string) chan types.Event {
 	var eventObj interface{}
 	var subscriber ethevent.Subscription
 	switch event {
@@ -497,7 +390,7 @@ func (eth *Eth) Subscribe(name, event, target string) chan types.Event {
 	return nil
 }
 
-func (eth *Eth) UnSubscribe(name string) {
+func (eth *EthModule) UnSubscribe(name string) {
 	if c, ok := eth.subscribers[name]; ok {
 		c.Unsubscribe()
 		delete(eth.subscribers, name)
@@ -509,7 +402,7 @@ func (eth *Eth) UnSubscribe(name string) {
 }
 
 // Mine a block
-func (m *Eth) Commit() {
+func (m *EthModule) Commit() {
 	c := m.eventMux.Subscribe(core.NewBlockEvent{})
 	m.StartMining()
 	_ = <-c.Chan()
@@ -518,7 +411,7 @@ func (m *Eth) Commit() {
 }
 
 // start and stop continuous mining
-func (m *Eth) AutoCommit(toggle bool) {
+func (m *EthModule) AutoCommit(toggle bool) {
 	if toggle {
 		m.StartMining()
 	} else {
@@ -526,7 +419,7 @@ func (m *Eth) AutoCommit(toggle bool) {
 	}
 }
 
-func (m *Eth) IsAutocommit() bool {
+func (m *EthModule) IsAutocommit() bool {
 	return m.ethereum.IsMining()
 }
 
@@ -536,14 +429,14 @@ func (m *Eth) IsAutocommit() bool {
 */
 
 // Return the active address
-func (eth *Eth) ActiveAddress() string {
+func (eth *EthModule) ActiveAddress() string {
 	keypair := eth.keyManager.KeyPair()
 	addr := ethutil.Bytes2Hex(keypair.Address())
 	return addr
 }
 
 // Return the nth address in the ring
-func (eth *Eth) Address(n int) (string, error) {
+func (eth *EthModule) Address(n int) (string, error) {
 	ring := eth.keyManager.KeyRing()
 	if n >= ring.Len() {
 		return "", fmt.Errorf("cursor %d out of range (0..%d)", n, ring.Len())
@@ -554,7 +447,7 @@ func (eth *Eth) Address(n int) (string, error) {
 }
 
 // Set the address
-func (eth *Eth) SetAddress(addr string) error {
+func (eth *EthModule) SetAddress(addr string) error {
 	n := -1
 	i := 0
 	ring := eth.keyManager.KeyRing()
@@ -572,12 +465,12 @@ func (eth *Eth) SetAddress(addr string) error {
 }
 
 // Set the address to be the nth in the ring
-func (eth *Eth) SetAddressN(n int) error {
+func (eth *EthModule) SetAddressN(n int) error {
 	return eth.keyManager.SetCursor(n)
 }
 
 // Generate a new address
-func (eth *Eth) NewAddress(set bool) string {
+func (eth *EthModule) NewAddress(set bool) string {
 	newpair := crypto.GenerateNewKeyPair()
 	addr := ethutil.Bytes2Hex(newpair.Address())
 	ring := eth.keyManager.KeyRing()
@@ -589,7 +482,7 @@ func (eth *Eth) NewAddress(set bool) string {
 }
 
 // Return the number of available addresses
-func (eth *Eth) AddressCount() int {
+func (eth *EthModule) AddressCount() int {
 	return eth.keyManager.KeyRing().Len()
 }
 
@@ -600,11 +493,11 @@ func (eth *Eth) AddressCount() int {
 // create a new ethereum instance
 // expects ethConfig to already have been called!
 // init db, nat/upnp, ethereum struct, reactorEngine, txPool, blockChain, stateManager
-func (m *Eth) newEthereum() {
-	db := NewDatabase(m.config.DbName)
+func (m *EthModule) newEthereum() {
+	db := NewDatabase(m.Config.DbName)
 
-	keyManager := NewKeyManager(m.config.KeyStore, m.config.RootDir, db)
-	err := keyManager.Init(m.config.KeySession, m.config.KeyCursor, false)
+	keyManager := NewKeyManager(m.Config.KeyStore, m.Config.RootDir, db)
+	err := keyManager.Init(m.Config.KeySession, m.Config.KeyCursor, false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -624,17 +517,17 @@ func (m *Eth) newEthereum() {
 	m.ethereum = th
 }
 
-func (m *Eth) fillConfig(c *eth.Config) {
-	c.Port = strconv.Itoa(m.config.Port)
-	//c.Name = m.config.
-	c.Version = m.config.Version
-	c.Identifier = m.config.ClientIdentifier
-	c.KeyStore = m.config.KeyStore
-	c.DataDir = m.config.RootDir
-	c.LogFile = m.config.LogFile
-	c.LogLevel = m.config.LogLevel
-	c.KeyRing = m.config.KeySession
-	c.MaxPeers = m.config.MaxPeers
+func (m *EthModule) fillConfig(c *eth.Config) {
+	c.Port = strconv.Itoa(m.Config.Port)
+	//c.Name = m.Config.
+	c.Version = m.Config.Version
+	c.Identifier = m.Config.ClientIdentifier
+	c.KeyStore = m.Config.KeyStore
+	c.DataDir = m.Config.RootDir
+	c.LogFile = m.Config.LogFile
+	c.LogLevel = m.Config.LogLevel
+	c.KeyRing = m.Config.KeySession
+	c.MaxPeers = m.Config.MaxPeers
 	//c.NATType =
 	//c.PMPGateway
 	c.Shh = false
@@ -643,11 +536,11 @@ func (m *Eth) fillConfig(c *eth.Config) {
 
 // returns hex addr of gendoug
 /*
-func (eth *Eth) GenDoug() string {
+func (eth *EthModule) GenDoug() string {
 	return ethutil.Bytes2Hex(ethdoug.GenDougByteAddr)
 }*/
 
-func (eth *Eth) StartMining() bool {
+func (eth *EthModule) StartMining() bool {
 	if !eth.ethereum.Mining {
 		eth.ethereum.Mining = true
 		addr := eth.ethereum.KeyManager().Address()
@@ -670,7 +563,7 @@ func (eth *Eth) StartMining() bool {
 	return false
 }
 
-func (eth *Eth) StopMining() bool {
+func (eth *EthModule) StopMining() bool {
 	if eth.ethereum.Mining && eth.miner != nil {
 		eth.miner.Stop()
 		ethlogger.Infoln("Stopped mining")
@@ -681,11 +574,11 @@ func (eth *Eth) StopMining() bool {
 	return false
 }
 
-func (eth *Eth) StartListening() {
+func (eth *EthModule) StartListening() {
 	//eth.ethereum.StartListening()
 }
 
-func (eth *Eth) StopListening() {
+func (eth *EthModule) StopListening() {
 	//eth.ethereum.StopListening()
 }
 
@@ -693,33 +586,20 @@ func (eth *Eth) StopListening() {
    some key management stuff
 */
 
-func (eth *Eth) fetchPriv() string {
+func (eth *EthModule) fetchPriv() string {
 	keypair := eth.keyManager.KeyPair()
 	priv := ethutil.Bytes2Hex(keypair.PrivateKey)
 	return priv
 }
 
-func (eth *Eth) fetchKeyPair() *crypto.KeyPair {
+func (eth *EthModule) fetchKeyPair() *crypto.KeyPair {
 	return eth.keyManager.KeyPair()
 }
 
 // this is bad but I need it for testing
 // TODO: deprecate!
-func (eth *Eth) FetchPriv() string {
+func (eth *EthModule) FetchPriv() string {
 	return eth.fetchPriv()
-}
-
-func (eth *Eth) Stop() {
-	if !eth.started {
-		fmt.Println("can't stop: haven't even started...")
-		return
-	}
-	eth.StopMining()
-	fmt.Println("stopped mining")
-	eth.ethereum.Stop()
-	fmt.Println("stopped ethereum")
-	eth = &Eth{config: eth.config}
-	logger.Reset()
 }
 
 // compile LLL file into evm bytecode
