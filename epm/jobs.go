@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -224,15 +225,12 @@ func (e *EPM) ModifyDeploy(args []string) error {
 func (e *EPM) Transact(args []string) (err error) {
 	to := args[0]
 	data := args[1:]
-	//data := strings.Split(dataS, " ")
-	//data = DoMath(data)
 
 	packed := []string{}
 	// check for abi
 	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
 	if ok {
-		//h, _ := hex.DecodeString(utils.StripHex(data[0]))
-		funcName := data[0] //string(h)
+		funcName := data[0]
 		args = data[1:]
 
 		fmt.Println("ABI Spec", abiSpec)
@@ -251,7 +249,13 @@ func (e *EPM) Transact(args []string) (err error) {
 	} else {
 		for _, aa := range data {
 			if !utils.IsHex(aa) {
-				aa = "0x" + fmt.Sprintf("%x", aa)
+				//first try and convert to int
+				n, err := strconv.Atoi(aa)
+				if err != nil {
+					aa = "0x" + fmt.Sprintf("%x", aa)
+				} else {
+					aa = "0x" + fmt.Sprintf("%x", n)
+				}
 			}
 			packed = append(packed, aa)
 		}
