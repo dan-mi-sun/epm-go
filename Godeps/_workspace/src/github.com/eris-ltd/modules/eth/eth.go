@@ -309,6 +309,16 @@ func (eth *EthModule) Msg(addr string, data []string) (string, error) {
 	return tx, nil
 }
 
+// simulate sending msg to contract
+func (eth *EthModule) Call(addr string, data []string) (string, error) {
+	packed := data[0]
+	tx, err := eth.pipe.Call(addr, "0", GAS, GASPRICE, packed)
+	if err != nil {
+		return "", err
+	}
+	return tx, nil
+}
+
 // TODO: implement CompileLLL
 func (eth *EthModule) Script(script string) (string, error) {
 	/*var script string

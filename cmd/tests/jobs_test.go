@@ -6,7 +6,7 @@ import (
 	"github.com/eris-ltd/epm-go/epm"
 	"path"
 	"testing"
-	//"github.com/eris-ltd/thelonious/monkutil"
+	//"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkutil"
 	"os"
 )
 

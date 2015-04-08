@@ -65,6 +65,7 @@ type Blockchain interface {
 	IsScript(target string) bool
 	Tx(addr, amt string) (string, error)
 	Msg(addr string, data []string) (string, error)
+	Call(addr string, data []string) (string, error)
 	Script(code string) (string, error)
 	Subscribe(name, event, target string) chan types.Event
 	UnSubscribe(name string)
