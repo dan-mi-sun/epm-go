@@ -191,6 +191,11 @@ func (mod *MonkRpcModule) Msg(addr string, data []string) (string, error) {
 	return mod.rpcRemoteTxCall(args)
 }
 
+func (mod *MonkRpcModule) Call(addr string, data []string) (string, error) {
+	// not implemented yet ...
+	return "", nil
+}
+
 // Deploy a new contract.
 func (mod *MonkRpcModule) Script(scriptHex string) (string, error) {
 	//logger.Debugln("Deploying script: ", file)

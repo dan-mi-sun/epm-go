@@ -87,6 +87,8 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 		f = e.ModifyDeploy
 	case "transact":
 		f = e.Transact
+	case "call":
+		f = e.Call
 	case "query":
 		f = e.Query
 	case "log":
@@ -97,7 +99,7 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 		f = e.Endow
 	case "test":
 		f = func(a []string) error {
-			e.chain.Commit()
+			e.Commit()
 			err := e.ExecuteTest(a[0], 0)
 			if err != nil {
 				logger.Errorln(err)
@@ -219,19 +221,13 @@ func (e *EPM) ModifyDeploy(args []string) error {
 	return e.Deploy([]string{newName, key})
 }
 
-// Send a transaction with data to a contract
-// Data should be list of strings/hex/numeric
-// already resolved
-func (e *EPM) Transact(args []string) (err error) {
-	to := args[0]
-	data := args[1:]
-
+func (e *EPM) packArgsABI(to string, data ...string) ([]string, error) {
 	packed := []string{}
 	// check for abi
 	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
 	if ok {
 		funcName := data[0]
-		args = data[1:]
+		args := data[1:]
 
 		fmt.Println("ABI Spec", abiSpec)
 		a := []interface{}{}
@@ -242,7 +238,7 @@ func (e *EPM) Transact(args []string) (err error) {
 		}
 		packedBytes, err := abiSpec.Pack(funcName, a...)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		packed = []string{hex.EncodeToString(packedBytes)}
 
@@ -260,11 +256,48 @@ func (e *EPM) Transact(args []string) (err error) {
 			packed = append(packed, aa)
 		}
 	}
+	return packed, nil
+}
+
+// Send a transaction with data to a contract
+// Data should be list of strings/hex/numeric
+// already resolved
+func (e *EPM) Transact(args []string) (err error) {
+	to := args[0]
+	data := args[1:]
+
+	packed, err := e.packArgsABI(to, data...)
+	if err != nil {
+		return
+	}
 
 	if _, err = e.chain.Msg(to, packed); err != nil {
 		return
 	}
 	logger.Warnf("Sent %s to %s", data, to)
+	return
+}
+
+// Simulate sending a transaction with data to a contract
+// Data should be list of strings/hex/numeric
+// already resolved
+func (e *EPM) Call(args []string) (err error) {
+	to := args[0]
+	data := args[1 : len(args)-1]
+	varName := args[len(args)-1]
+
+	packed, err := e.packArgsABI(to, data...)
+	if err != nil {
+		return err
+	}
+
+	ret, err := e.chain.Call(to, packed)
+	if err != nil {
+		return
+	}
+	logger.Warnf("Sent %s to %s", data, to)
+	e.StoreVar(varName, ret)
+	logger.Warnf("Result: %s", ret)
 	return
 }
 
@@ -390,8 +423,6 @@ func (e *EPM) Modify(contract string, args []string) (string, error) {
 		lll = strings.Replace(lll, sub, rep, -1)
 		args = args[2:]
 	}
-
-	fmt.Println("NEW LLL:", lll)
 
 	hash := sha256.Sum256([]byte(lll))
 	newPath := path.Join(EpmDir, dir, hex.EncodeToString(hash[:])+".lll")

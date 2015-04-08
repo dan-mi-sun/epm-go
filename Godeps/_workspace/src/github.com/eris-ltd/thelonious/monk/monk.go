@@ -391,6 +391,18 @@ func (monk *MonkModule) Msg(addr string, data []string) (string, error) {
 	return monkutil.Bytes2Hex(hash), nil
 }
 
+// simulate sending a message to a contract using the active keypair in the keymanager
+func (monk *MonkModule) Call(addr string, data []string) (string, error) {
+	packed := PackTxDataArgs(data...)
+	addr = monkutil.StripHex(addr)
+	byte_addr := monkutil.Hex2Bytes(addr)
+	ret, err := monk.pipe.Execute(byte_addr, monkutil.Hex2Bytes(packed), monkutil.NewValue(monkutil.Big("0")), monkutil.NewValue(monkutil.Big("200000000000000")), monkutil.NewValue(monkutil.Big("0")))
+	if err != nil {
+		return "", err
+	}
+	return monkutil.Bytes2Hex(ret), nil
+}
+
 func (monk *MonkModule) Script(code string) (string, error) {
 	code = monkutil.StripHex(code)
 

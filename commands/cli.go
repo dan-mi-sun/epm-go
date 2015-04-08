@@ -595,7 +595,9 @@ func Command(c *Context) {
 	e.AddJob(job)
 	e.ExecuteJobs()
 	e.WriteVars(path.Join(root, EPMVars))
-	e.Commit()
+	if cmd != "call" {
+		e.Commit()
+	}
 }
 
 func Test(c *Context) {
