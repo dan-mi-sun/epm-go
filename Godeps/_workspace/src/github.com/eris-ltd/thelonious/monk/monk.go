@@ -396,7 +396,7 @@ func (monk *MonkModule) Call(addr string, data []string) (string, error) {
 	packed := PackTxDataArgs(data...)
 	addr = monkutil.StripHex(addr)
 	byte_addr := monkutil.Hex2Bytes(addr)
-	ret, err := monk.pipe.Execute(byte_addr, monkutil.Hex2Bytes(packed), monkutil.NewValue(monkutil.Big("0")), monkutil.NewValue(monkutil.Big("200000000000000")), monkutil.NewValue(monkutil.Big("0")))
+	ret, err := monk.pipe.Execute(byte_addr, monkutil.Hex2Bytes(utils.StripHex(packed)), monkutil.NewValue(monkutil.Big("0")), monkutil.NewValue(monkutil.Big("200000000000000")), monkutil.NewValue(monkutil.Big("0")))
 	if err != nil {
 		return "", err
 	}
