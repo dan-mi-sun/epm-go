@@ -34,6 +34,7 @@ type Method struct {
 //
 // Please note that "int" is substitute for its canonical representation "int256"
 func (m Method) String() (out string) {
+	return m.Name
 	out += m.Name
 	types := make([]string, len(m.Input))
 	i := 0
@@ -139,7 +140,8 @@ func (abi *ABI) UnmarshalJSON(data []byte) error {
 
 	abi.Methods = make(map[string]Method)
 	for _, method := range methods {
-		abi.Methods[method.Name] = method
+		spl := strings.SplitN(method.Name, "(", 2)
+		abi.Methods[spl[0]] = method
 	}
 
 	return nil

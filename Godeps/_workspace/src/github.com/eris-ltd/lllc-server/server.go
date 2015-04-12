@@ -246,15 +246,18 @@ func StartServer(addr string) {
 	//martini.Env = martini.Prod
 	srv := martini.Classic()
 
-	// new relic for error reporting
-	gorelic.InitNewrelicAgent(NEWRELIC_KEY, NEWRELIC_APP, true)
-	srv.Use(gorelic.Handler)
-
 	// Static files
 	srv.Use(martini.Static("./web"))
 
 	srv.Post("/compile", CompileHandler)
 	srv.Post("/compile2", CompileHandlerJs)
+
+	// new relic for error reporting
+	if NEWRELIC_KEY != "" {
+		logger.Infoln("Starting new relic.")
+		gorelic.InitNewrelicAgent(NEWRELIC_KEY, NEWRELIC_APP, false)
+		srv.Use(gorelic.Handler)
+	}
 
 	srv.RunOnAddr(addr)
 }

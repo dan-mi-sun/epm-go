@@ -5,7 +5,6 @@ import (
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/utils"
-	//	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -97,8 +96,6 @@ type EPM struct {
 
 // New empty EPM
 func NewEPM(chain Blockchain, log string) (*EPM, error) {
-	//lllcserver.URL = LLLURL
-	//logger.Infoln("url: ", LLLURL)
 	e := &EPM{
 		chain:     chain,
 		jobs:      []Job{},
