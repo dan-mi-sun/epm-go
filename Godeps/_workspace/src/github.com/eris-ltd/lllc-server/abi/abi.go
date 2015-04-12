@@ -34,7 +34,9 @@ type Method struct {
 //
 // Please note that "int" is substitute for its canonical representation "int256"
 func (m Method) String() (out string) {
-	return m.Name
+	if strings.Contains(m.Name, "(") && strings.Contains(m.Name, ")") {
+		return m.Name
+	}
 	out += m.Name
 	types := make([]string, len(m.Input))
 	i := 0
