@@ -163,27 +163,27 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/lllc-server",
-			"Rev": "2e381b763033375161a7d737770d33609156cc2d"
+			"Rev": "3f197125ede22fef1a05b1e3b19620d79c160e97"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/eth",
-			"Rev": "b86e9f50bd6d72394239597af11cab69b147c4a0"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/genblock",
-			"Rev": "b86e9f50bd6d72394239597af11cab69b147c4a0"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkrpc",
-			"Rev": "b86e9f50bd6d72394239597af11cab69b147c4a0"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkutils",
-			"Rev": "b86e9f50bd6d72394239597af11cab69b147c4a0"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/types",
-			"Rev": "b86e9f50bd6d72394239597af11cab69b147c4a0"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",

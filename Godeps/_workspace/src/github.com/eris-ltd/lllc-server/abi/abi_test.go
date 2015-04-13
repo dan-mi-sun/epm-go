@@ -13,24 +13,24 @@ import (
 const jsondata = `
 [
 	{ "name" : "balance", "const" : true },
-	{ "name" : "send", "const" : false, "input" : [ { "name" : "amount", "type" : "uint256" } ] }
+	{ "name" : "send", "const" : false, "inputs" : [ { "name" : "amount", "type" : "uint256" } ] }
 ]`
 
 const jsondata2 = `
 [
 	{ "name" : "balance", "const" : true },
-	{ "name" : "send", "const" : false, "input" : [ { "name" : "amount", "type" : "uint256" } ] },
-	{ "name" : "test", "const" : false, "input" : [ { "name" : "number", "type" : "uint32" } ] },
-	{ "name" : "string", "const" : false, "input" : [ { "name" : "input", "type" : "string" } ] },
-	{ "name" : "bool", "const" : false, "input" : [ { "name" : "input", "type" : "bool" } ] },
-	{ "name" : "address", "const" : false, "input" : [ { "name" : "input", "type" : "address" } ] },
-	{ "name" : "string32", "const" : false, "input" : [ { "name" : "input", "type" : "string32" } ] },
-	{ "name" : "uint64[2]", "const" : false, "input" : [ { "name" : "input", "type" : "uint64[2]" } ] },
-	{ "name" : "uint64[]", "const" : false, "input" : [ { "name" : "input", "type" : "uint64[]" } ] },
-	{ "name" : "foo", "const" : false, "input" : [ { "name" : "input", "type" : "uint32" } ] },
-	{ "name" : "bar", "const" : false, "input" : [ { "name" : "input", "type" : "uint32" }, { "name" : "string", "type" : "uint16" } ] },
-	{ "name" : "slice", "const" : false, "input" : [ { "name" : "input", "type" : "uint32[2]" } ] },
-	{ "name" : "slice256", "const" : false, "input" : [ { "name" : "input", "type" : "uint256[2]" } ] }
+	{ "name" : "send", "const" : false, "inputs" : [ { "name" : "amount", "type" : "uint256" } ] },
+	{ "name" : "test", "const" : false, "inputs" : [ { "name" : "number", "type" : "uint32" } ] },
+	{ "name" : "string", "const" : false, "inputs" : [ { "name" : "input", "type" : "string" } ] },
+	{ "name" : "bool", "const" : false, "inputs" : [ { "name" : "input", "type" : "bool" } ] },
+	{ "name" : "address", "const" : false, "inputs" : [ { "name" : "input", "type" : "address" } ] },
+	{ "name" : "string32", "const" : false, "inputs" : [ { "name" : "input", "type" : "string32" } ] },
+	{ "name" : "uint64[2]", "const" : false, "inputs" : [ { "name" : "input", "type" : "uint64[2]" } ] },
+	{ "name" : "uint64[]", "const" : false, "inputs" : [ { "name" : "input", "type" : "uint64[]" } ] },
+	{ "name" : "foo", "const" : false, "inputs" : [ { "name" : "input", "type" : "uint32" } ] },
+	{ "name" : "bar", "const" : false, "inputs" : [ { "name" : "input", "type" : "uint32" }, { "name" : "string", "type" : "uint16" } ] },
+	{ "name" : "slice", "const" : false, "inputs" : [ { "name" : "input", "type" : "uint32[2]" } ] },
+	{ "name" : "slice256", "const" : false, "inputs" : [ { "name" : "input", "type" : "uint256[2]" } ] }
 ]`
 
 func TestType(t *testing.T) {

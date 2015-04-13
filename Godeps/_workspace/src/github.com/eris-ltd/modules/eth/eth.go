@@ -31,7 +31,7 @@ var (
 )
 
 var (
-	GAS      = "10000"
+	GAS      = "500000"
 	GASPRICE = "500"
 )
 

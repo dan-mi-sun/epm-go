@@ -40,6 +40,7 @@ type Type struct {
 //      string32   int8      uint8      uint[]
 //      address    int256    uint256    real[2]
 func NewType(t string) (typ Type, err error) {
+	// parse eg. uint32 || uint32[] || uint32[20]
 	// 1. full string 2. type 3. (opt.) is slice 4. (opt.) size
 	freg, err := regexp.Compile("([a-zA-Z0-9]+)(\\[([0-9]*)?\\])?")
 	if err != nil {
@@ -62,6 +63,7 @@ func NewType(t string) (typ Type, err error) {
 		return Type{}, fmt.Errorf("type parse error for `%s`", t)
 	}
 
+	// parse eg. uint32 || uint
 	treg, err := regexp.Compile("([a-zA-Z]+)([0-9]*)?")
 	if err != nil {
 		return Type{}, err
@@ -108,7 +110,7 @@ func NewType(t string) (typ Type, err error) {
 			typ.Type = byte_ts
 			typ.Size = 20
 			typ.T = AddressTy
-		case "string":
+		case "string", "bytes":
 			typ.Kind = reflect.String
 			typ.Size = -1
 			if vsize > 0 {
