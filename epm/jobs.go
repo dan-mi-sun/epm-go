@@ -222,13 +222,17 @@ func (e *EPM) ModifyDeploy(args []string) error {
 	return e.Deploy([]string{newName, key})
 }
 
-func coerceHex(aa string) string {
+func coerceHex(aa string, padright bool) string {
 	if !utils.IsHex(aa) {
 		//first try and convert to int
 		n, err := strconv.Atoi(aa)
 		if err != nil {
 			// right pad strings
-			aa = "0x" + fmt.Sprintf("%x", aa) + fmt.Sprintf("%0"+strconv.Itoa(64-len(aa)*2)+"s", "")
+			if padright {
+				aa = "0x" + fmt.Sprintf("%x", aa) + fmt.Sprintf("%0"+strconv.Itoa(64-len(aa)*2)+"s", "")
+			} else {
+				aa = "0x" + fmt.Sprintf("%x", aa)
+			}
 		} else {
 			aa = "0x" + fmt.Sprintf("%x", n)
 		}
@@ -247,7 +251,7 @@ func (e *EPM) packArgsABI(to string, data ...string) ([]string, error) {
 		fmt.Println("ABI Spec", abiSpec)
 		a := []interface{}{}
 		for _, aa := range args {
-			aa = coerceHex(aa)
+			aa = coerceHex(aa, true)
 			bb, _ := hex.DecodeString(utils.StripHex(aa))
 			a = append(a, bb)
 		}
@@ -259,7 +263,7 @@ func (e *EPM) packArgsABI(to string, data ...string) ([]string, error) {
 
 	} else {
 		for _, aa := range data {
-			aa = coerceHex(aa)
+			aa = coerceHex(aa, false)
 			packed = append(packed, aa)
 		}
 	}
