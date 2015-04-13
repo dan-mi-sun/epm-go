@@ -160,6 +160,7 @@ var (
 		Action: cliCall(commands.Remove),
 		Flags: []cli.Flag{
 			multiFlag,
+			forceRmFlag,
 		},
 	}
 
@@ -185,6 +186,15 @@ var (
 			mineFlag,
 			multiFlag,
 		},
+	}
+
+	serveCmd = cli.Command{
+		Name: "serve",
+		Usage: "run and serve a blockchain",
+		Action: serve,
+		Flags: []cli.Flag{
+
+			},
 	}
 
 	//

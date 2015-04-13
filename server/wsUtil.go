@@ -4,7 +4,7 @@
 package server
 
 import (
-	"github.com/gorilla/websocket"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/gorilla/websocket"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -68,12 +68,12 @@ func reader(ss *Session) {
 		if mType == websocket.TextMessage {
 			rpcReq, err := ioutil.ReadAll(message)
 			if err != nil {
-				logger.Println("Error: " + err.Error())
+				logger.Errorf("Error: " + err.Error())
 			} else {
 				ss.handleRequest(rpcReq)
 			}
 		} else if mType == websocket.CloseMessage {
-			logger.Println("Receiving close message")
+			logger.Infoln("Receiving close message")
 			return
 		}
 

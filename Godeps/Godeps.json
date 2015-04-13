@@ -54,10 +54,6 @@
 			"Rev": "843ffa0bb9741fd149acfabb6089244947b40417"
 		},
 		{
-			"ImportPath": "github.com/ebuchman/lexer",
-			"Rev": "fff8d441b5899f5fca93934aaf4941e63248ca93"
-		},
-		{
 			"ImportPath": "github.com/eris-ltd/decerver/interfaces/dapps",
 			"Comment": "v0.8-65-g50baf3a",
 			"Rev": "50baf3ab03a6f615a3c00fd844ef2336e54ee43a"
@@ -196,6 +192,10 @@
 			"Rev": "bbd489b35fd7eac9aaf442e5671ab21cdd972926"
 		},
 		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "ab5b3a61f5b6aa323d66ece457334396c4ccdd03"
+		},
+		{
 			"ImportPath": "github.com/jackpal/go-nat-pmp",
 			"Rev": "a45aa3d54aef73b504e15eb71bea0e5565b5e6e1"
 		},
@@ -247,6 +247,10 @@
 		{
 			"ImportPath": "golang.org/x/crypto/pbkdf2",
 			"Rev": "4ed45ec682102c643324fae5dff8dab085b6c300"
+		},
+		{
+			"ImportPath": "golang.org/x/net/websocket",
+			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
 		},
 		{
 			"ImportPath": "gopkg.in/fatih/set.v0",

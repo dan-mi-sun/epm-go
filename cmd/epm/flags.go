@@ -115,10 +115,12 @@ var (
 		Name:  "checkout, o",
 		Usage: "checkout the chain into head",
 	}
+
 	newConfigFlag = cli.StringFlag{
 		Name:  "config, c",
 		Usage: "specify config file",
 	}
+
 	newGenesisFlag = cli.StringFlag{
 		Name:  "genesis, g",
 		Usage: "specify genesis file",
@@ -162,5 +164,10 @@ var (
 	compilerFlag = cli.StringFlag{
 		Name:  "compiler",
 		Usage: "specify <host>:<port> to use for compile server",
+	}
+
+	forceRmFlag = cli.BoolFlag{
+		Name:   "force",
+		Usage:  "delete directories without confirming (dangerous)",
 	}
 )

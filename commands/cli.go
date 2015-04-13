@@ -527,7 +527,36 @@ func Remove(c *Context) {
 	root, _, _, err := resolveRootArg(c)
 	ifExit(err)
 
-	if confirm("This will permanently delete the directory: " + root) {
+	if !c.IsSet("force") {
+		if confirm("This will permanently delete the directory: " + root) {
+			// remove the directory
+			os.RemoveAll(root)
+			// we only remove refs if its not a multi
+			if !c.IsSet("multi") {
+				// remove from head (if current head)
+				_, h, _ := chains.GetHead()
+				if strings.Contains(root, h) {
+					chains.NullHead()
+				}
+				// remove refs
+				refs, err := chains.GetRefs()
+				ifExit(err)
+				for k, v := range refs {
+					if strings.Contains(root, v) {
+						os.Remove(path.Join(utils.Blockchains, "refs", k))
+					}
+				}
+			}
+			// if there are no chains left, wipe the dir
+			dir := path.Dir(root)
+			fs, _ := ioutil.ReadDir(dir)
+			if len(fs) == 0 {
+				if confirm("Remove the directory " + dir + "?") {
+					os.RemoveAll(dir)
+				}
+			}
+		}
+	} else {
 		// remove the directory
 		os.RemoveAll(root)
 		// we only remove refs if its not a multi
@@ -550,9 +579,7 @@ func Remove(c *Context) {
 		dir := path.Dir(root)
 		fs, _ := ioutil.ReadDir(dir)
 		if len(fs) == 0 {
-			if confirm("Remove the directory " + dir + "?") {
-				os.RemoveAll(dir)
-			}
+			os.RemoveAll(dir)
 		}
 	}
 }
