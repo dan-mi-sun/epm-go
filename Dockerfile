@@ -14,6 +14,7 @@ RUN git clone https://github.com/eris-ltd/eris-std-lib \
 
 COPY . $GOPATH/src/github.com/eris-ltd/epm-go/
 RUN cd $GOPATH/src/github.com/eris-ltd/epm-go/cmd/epm && \
+  go get -d ./... && \
   go install
 
 # Set a user

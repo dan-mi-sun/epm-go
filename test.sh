@@ -11,9 +11,9 @@ cd $GOPATH/src/github.com/eris-ltd/epm-go
 
 # XXX: set develop lllc server
 export DECERVER=/home/eris/.decerver
-echo `jq '.lll.url |= "http://ps.erisindustries.com:8090/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
-echo `jq '.se.url |= "http://ps.erisindustries.com:8090/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
-echo `jq '.sol.url |= "http://ps.erisindustries.com:8090/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
+echo `jq '.lll.url |= "http://compilers:9099/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
+echo `jq '.se.url |= "http://compilers:9099/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
+echo `jq '.sol.url |= "http://compilers:9099/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
 
 # run the go unit tests
 cd epm && go test -v ./... -race
