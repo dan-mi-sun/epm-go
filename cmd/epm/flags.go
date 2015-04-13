@@ -115,10 +115,12 @@ var (
 		Name:  "checkout, o",
 		Usage: "checkout the chain into head",
 	}
+
 	newConfigFlag = cli.StringFlag{
 		Name:  "config, c",
 		Usage: "specify config file",
 	}
+
 	newGenesisFlag = cli.StringFlag{
 		Name:  "genesis, g",
 		Usage: "specify genesis file",
@@ -168,5 +170,9 @@ var (
 		Name:  "type",
 		Value: "secp256k1",
 		Usage: "set the type of the key to generate (secp256k1 by default | ed25519 | ...)",
+
+	forceRmFlag = cli.BoolFlag{
+		Name:   "force",
+		Usage:  "delete directories without confirming (dangerous)",
 	}
 )

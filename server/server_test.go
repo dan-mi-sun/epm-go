@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/eris-ltd/epm-go/server"
-	"golang.org/x/net/websocket"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/golang.org/x/net/websocket"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
@@ -15,11 +14,11 @@ import (
 
 const TEST_NUM = 10
 
-var srvr *server.Server
+var srvr *Server
 
 func init() {
 	rootPath, _ := filepath.Abs("/public")
-	srvr = server.NewServer("localhost", 3000, TEST_NUM, rootPath)
+	srvr = NewServer("localhost", 3000, TEST_NUM, rootPath)
 	go func() {
 		srvr.Start()
 	}()
@@ -60,12 +59,12 @@ func TestWsEcho(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	req := &server.Request{}
+	req := &Request{}
 	req.ID = 1
 	req.JsonRpc = "2.0"
 	req.Method = "echo"
 
-	sVal := &server.StringValue{"testmessage"}
+	sVal := &StringValue{"testmessage"}
 	bts, _ := json.Marshal(sVal)
 	raw := json.RawMessage(bts)
 	req.Params = &raw
@@ -83,7 +82,7 @@ func TestWsEcho(t *testing.T) {
 		panic(err)
 	}
 
-	resp := &server.Response{}
+	resp := &Response{}
 
 	respErr := json.Unmarshal(msg[:n], resp)
 

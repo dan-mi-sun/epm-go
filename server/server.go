@@ -2,12 +2,13 @@ package server
 
 import (
 	"fmt"
-	"github.com/go-martini/martini"
-	"log"
-	"os"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/go-martini/martini"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
+	// "log"
+	// "os"
 )
 
-var logger *log.Logger = log.New(os.Stdout, "[Server] ", log.LstdFlags)
+var logger *monklog.Logger = monklog.NewLogger("EPM-CLI")
 
 // The server object.
 type Server struct {
@@ -33,6 +34,9 @@ func NewServer(host string, port uint16, maxConnections uint32, rootDir string) 
 	cMartini := martini.Classic()
 
 	// TODO remember to change to martini.Prod
+	// better to not set this here and just run from
+	// env vars per
+	// https://github.com/go-martini/martini/blob/master/env.go#L14
 	martini.Env = martini.Dev
 
 	httpService := NewHttpService()
@@ -57,14 +61,36 @@ func (this *Server) Start() error {
 	// Static.
 	cm.Use(martini.Static(this.rootDir))
 
-	// Default 404 message.
-	cm.NotFound(this.httpService.handleNotFound)
-
-	// Handle websocket negotiation requests.
-	cm.Get("/websocket", this.wsService.handleWs)
-
 	// Simple echo for testing http
 	cm.Get("/echo/:message", this.httpService.handleEcho)
+
+	// Informational commands
+	cm.Get("/eris/plop/:chainName/:toPlop", this.httpService.handlePlop)
+	cm.Get("/eris/refs/ls", this.httpService.handleLsRefs)
+	cm.Post("/eris/refs/add/:chainName/:chainType/:chainType", this.httpService.handleAddRefs)
+	cm.Post("/eris/refs/rm/:chainName", this.httpService.handleRmRefs)
+
+	// Chain management commands
+	cm.Post("/eris/checkout/:chainName", this.httpService.handleCheckout)
+	cm.Post("/eris/clean/:chainName", this.httpService.handleClean)
+	cm.Post("/eris/fetch/:chainName/:fetchIP/:fetchPort", this.httpService.handleFetch)
+	cm.Post("/eris/new/:chainName", this.httpService.handleNewChain)
+	cm.Post("/eris/config/:chainName", this.httpService.handleConfig)
+	cm.Post("/eris/rawconfig/:chainName", this.httpService.handleRawConfig)
+
+	// Blockchain client commands
+	cm.Post("/eris/start", this.httpService.handleStartChain)
+	cm.Post("/eris/stop", this.httpService.handleStopChain)
+	cm.Post("/eris/restart", this.httpService.handleRestartChain)
+
+	// Key import
+	cm.Post("/eris/importkey/:keyName", this.httpService.handleKeyImport)
+
+	// Handle websocket negotiation requests.
+	cm.Get("/ws", this.wsService.handleWs)
+
+	// Default 404 message.
+	cm.NotFound(this.httpService.handleNotFound)
 
 	cm.RunOnAddr(this.host + ":" + fmt.Sprintf("%d", this.port))
 

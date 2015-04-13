@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/gorilla/websocket"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/gorilla/websocket"
 	"net/http"
 	"sync"
 )
@@ -61,7 +61,7 @@ func (this *WsService) echo(req *Request, resp *Response) {
 	if err != nil {
 		resp.Error = Error(INVALID_PARAMS, "Echo requires a string parameter.")
 	}
-	logger.Printf("Echo: %s", sVal.Value)
+	logger.Infof("Echo: %s", sVal.Value)
 	resp.Result = sVal
 }
 
@@ -81,15 +81,15 @@ func (this *WsService) MaxConnections() uint32 {
 func (this *WsService) handleWs(w http.ResponseWriter, r *http.Request) {
 
 	// TODO check scheme first.
-	logger.Println("New websocket connection.")
+	logger.Infoln("New websocket connection.")
 
 	if uint32(len(this.sessions)) == this.maxConnections {
-		logger.Println("Connection failed: Already at capacity.")
+		logger.Infoln("Connection failed: Already at capacity.")
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		logger.Printf("Failed to upgrade to websocket (%s)\n", err.Error())
+		logger.Infof("Failed to upgrade to websocket (%s)\n", err.Error())
 		return
 	}
 
@@ -121,14 +121,14 @@ func (this *WsService) newSession(conn *websocket.Conn) *Session {
 //  has been received.
 func (this *WsService) deleteSession(sessionId uint32) {
 	if this.sessions[sessionId] == nil {
-		logger.Printf("Attempted to remove a session that does not exist (id: %d).", sessionId)
+		logger.Infof("Attempted to remove a session that does not exist (id: %d).", sessionId)
 		return
 	}
 	this.sessionLock.Lock()
 	delete(this.sessions, sessionId)
 	this.idPool.ReleaseId(sessionId)
-	logger.Printf("Closing session: %d", sessionId)
-	logger.Printf("Connections remaining: %d", len(this.sessions))
+	logger.Infof("Closing session: %d", sessionId)
+	logger.Infof("Connections remaining: %d", len(this.sessions))
 	this.sessionLock.Unlock()
 }
 
@@ -170,7 +170,7 @@ func (ss *Session) closeSession() {
 	if ss.conn != nil {
 		err := ss.conn.Close()
 		if err != nil {
-			logger.Printf("Failed to close websocket connection, already removed: %d\n", ss.sessionId)
+			logger.Infof("Failed to close websocket connection, already removed: %d\n", ss.sessionId)
 		}
 	}
 }

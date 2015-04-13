@@ -413,6 +413,10 @@
 			"Rev": "4ed45ec682102c643324fae5dff8dab085b6c300"
 		},
 		{
+			"ImportPath": "golang.org/x/net/websocket",
+			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
+		},
+		{
 			"ImportPath": "gopkg.in/fatih/set.v0",
 			"Comment": "v0.1.0-3-g27c4092",
 			"Rev": "27c40922c40b43fe04554d8223a402af3ea333f3"

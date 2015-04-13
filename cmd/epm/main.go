@@ -6,6 +6,7 @@ import (
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
+	"github.com/eris-ltd/epm-go/server"
 	"os"
 	"path"
 	"runtime"
@@ -16,7 +17,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "epm"
 	app.Usage = "The Eris Package Manager Builds, Tests, Operates, and Manages Blockchains and Smart Contract Systems"
-	app.Version = "0.8.3"
+	app.Version = "0.9.0"
 	app.Author = "Ethan Buchman"
 	app.Email = "ethan@erisindustries.com"
 	//	app.EnableBashCompletion = true // this is buggy
@@ -62,6 +63,7 @@ func main() {
 		removeCmd,
 		runCmd,
 		runDappCmd,
+		serveCmd,
 		testCmd,
 	}
 
@@ -111,3 +113,10 @@ func ifExit(err error) {
 		os.Exit(1)
 	}
 }
+
+// this is here to resolve circular dependencies between commands and server packages
+func serve(c *cli.Context) {
+	srvr := server.NewServer("localhost", 4000, 1000, ".")
+	srvr.Start()
+}
+

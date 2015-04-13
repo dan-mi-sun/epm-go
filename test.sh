@@ -19,6 +19,7 @@ echo `jq '.sol.url |= "http://compilers:9099/compile"' $DECERVER/languages/confi
 cd epm && go test -v ./... -race
 cd ../chains && go test -v ./... -race
 cd ../utils && go test -v ./... -race
+# cd ../server && go test -v ./... -race
 cd ../cmd/epm && go test -v ./... -race # these don't exist yet
 
 # run the base pdx deploy test
