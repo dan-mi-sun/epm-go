@@ -24,7 +24,7 @@ var GOPATH = os.Getenv("GOPATH")
 
 var (
 	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
-	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
+	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests")
 
 	EpmDir  = utils.Epm
 	LogFile = path.Join(utils.Logs, "epm", "log")
