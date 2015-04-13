@@ -112,6 +112,8 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 		f = e.EPMx
 	case "include":
 		f = e.Include
+	case "assert":
+		f = e.Assert
 	default:
 		f = func([]string) error { return fmt.Errorf("Unknown command: %s", name) }
 		n = 0
@@ -163,6 +165,17 @@ func (e *EPM) EPMx(args []string) error {
 
 	// return to old jobs
 	e.jobs = oldjobs
+	return nil
+}
+
+// assert a variable equals some value
+func (e *EPM) Assert(args []string) error {
+	got, expected := args[0], args[1]
+	got = strings.ToLower(utils.StripZeros(utils.StripHex(got)))
+	expected = strings.ToLower(utils.StripZeros(utils.StripHex(expected)))
+	if got != expected {
+		return fmt.Errorf("assertion error. Got %s, expected %s", got, expected)
+	}
 	return nil
 }
 

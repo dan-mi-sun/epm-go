@@ -22,6 +22,8 @@ func isSet(cmd string, i, nArgs int) bool {
 		return i == 2
 	case "test":
 		return i == 3
+	case "set":
+		return i == 0
 	default:
 		return false
 	}

@@ -209,3 +209,7 @@ func TestEPMxNamespace(t *testing.T) {
 	}
 	m.Shutdown()
 }
+
+func TestAssert(t *testing.T) {
+	newEpmTest(t, path.Join(epm.TestPath, "test_assert.epm"))
+}
