@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server/abi"
+	//"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server/abi"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
+	"github.com/eris-ltd/epm-go/epm/abi"
 	"github.com/eris-ltd/epm-go/utils"
 	"io/ioutil"
 	"log"
@@ -221,6 +222,20 @@ func (e *EPM) ModifyDeploy(args []string) error {
 	return e.Deploy([]string{newName, key})
 }
 
+func coerceHex(aa string) string {
+	if !utils.IsHex(aa) {
+		//first try and convert to int
+		n, err := strconv.Atoi(aa)
+		if err != nil {
+			// right pad strings
+			aa = "0x" + fmt.Sprintf("%x", aa) + fmt.Sprintf("%0"+strconv.Itoa(64-len(aa)*2)+"s", "")
+		} else {
+			aa = "0x" + fmt.Sprintf("%x", n)
+		}
+	}
+	return aa
+}
+
 func (e *EPM) packArgsABI(to string, data ...string) ([]string, error) {
 	packed := []string{}
 	// check for abi
@@ -232,8 +247,8 @@ func (e *EPM) packArgsABI(to string, data ...string) ([]string, error) {
 		fmt.Println("ABI Spec", abiSpec)
 		a := []interface{}{}
 		for _, aa := range args {
+			aa = coerceHex(aa)
 			bb, _ := hex.DecodeString(utils.StripHex(aa))
-			//bb := utils.StripHex(aa)
 			a = append(a, bb)
 		}
 		packedBytes, err := abiSpec.Pack(funcName, a...)
@@ -244,15 +259,7 @@ func (e *EPM) packArgsABI(to string, data ...string) ([]string, error) {
 
 	} else {
 		for _, aa := range data {
-			if !utils.IsHex(aa) {
-				//first try and convert to int
-				n, err := strconv.Atoi(aa)
-				if err != nil {
-					aa = "0x" + fmt.Sprintf("%x", aa)
-				} else {
-					aa = "0x" + fmt.Sprintf("%x", n)
-				}
-			}
+			aa = coerceHex(aa)
 			packed = append(packed, aa)
 		}
 	}
