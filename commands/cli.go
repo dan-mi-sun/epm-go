@@ -38,7 +38,7 @@ func Clean(c *Context) {
 
 // plop the config or genesis defaults into current dir
 func Plop(c *Context) {
-	root, chainType, chainId, err := resolveRootFlag(c)
+	root, chainType, chainId, err := ResolveRootFlag(c)
 	ifExit(err)
 	var toPlop string
 	if len(c.Args()) > 0 {
@@ -448,7 +448,7 @@ func AddRef(c *Context) {
 
 // run a node on a chain
 func Run(c *Context) {
-	root, chainType, chainId, err := resolveRootFlag(c)
+	root, chainType, chainId, err := ResolveRootFlag(c)
 	ifExit(err)
 
 	pid := os.Getpid()
@@ -457,7 +457,7 @@ func Run(c *Context) {
 	ifExit(err)
 
 	logger.Infof("Running chain %s/%s\n", chainType, chainId)
-	chain := loadChain(c, chainType, root)
+	chain := LoadChain(c, chainType, root)
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
@@ -479,7 +479,7 @@ func RunDapp(c *Context) {
 	chainId, err := chains.ChainIdFromDapp(dapp)
 	ifExit(err)
 	logger.Infoln("Running chain ", chainId)
-	chain := loadChain(c, chainType, chains.ComposeRoot(chainType, chainId))
+	chain := LoadChain(c, chainType, chains.ComposeRoot(chainType, chainId))
 	chain.WaitForShutdown()
 }
 
@@ -491,7 +491,7 @@ func Config(c *Context) {
 		err       error
 	)
 	rpc := c.Bool("rpc")
-	root, chainType, _, err = resolveRootFlag(c)
+	root, chainType, _, err = ResolveRootFlag(c)
 	ifExit(err)
 
 	configPath := path.Join(root, "config.json")
@@ -586,10 +586,10 @@ func Remove(c *Context) {
 
 // run a single epm on-chain command (endow, deploy)
 func Command(c *Context) {
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 
-	chain := loadChain(c, chainType, root)
+	chain := LoadChain(c, chainType, root)
 
 	args := c.Args()
 	if len(args) < 3 {
@@ -637,7 +637,7 @@ func Test(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
@@ -676,7 +676,7 @@ func Test(c *Context) {
 
 		// setup EPM object with ChainInterface
 		var chain epm.Blockchain
-		chain = loadChain(c, chainType, chainRoot)
+		chain = LoadChain(c, chainType, chainRoot)
 		e, err := epm.NewEPM(chain, epm.LogFile)
 		ifExit(err)
 		e.ReadVars(path.Join(chainRoot, EPMVars))
@@ -732,13 +732,13 @@ func Deploy(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
 	// Startup the chain
 	var chain epm.Blockchain
-	chain = loadChain(c, chainType, chainRoot)
+	chain = LoadChain(c, chainType, chainRoot)
 
 	if !c.IsSet("c") {
 		contractPath = DefaultContractPath
@@ -801,13 +801,13 @@ func Console(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
 	// Startup the chain
 	var chain epm.Blockchain
-	chain = loadChain(c, chainType, chainRoot)
+	chain = LoadChain(c, chainType, chainRoot)
 
 	if !c.IsSet("c") {
 		contractPath = DefaultContractPath
@@ -877,7 +877,7 @@ func useKey(keyFile string, c *Context) {
 
 	// set key in chain's config
 	rpc := c.Bool("rpc")
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 
 	configPath := path.Join(root, "config.json")
@@ -940,7 +940,7 @@ func Keygen(c *Context) {
 	if !c.Bool("no-import") {
 		// set key in chain's config
 		rpc := c.Bool("rpc")
-		root, chainType, _, err := resolveRootFlag(c)
+		root, chainType, _, err := ResolveRootFlag(c)
 		ifExit(err)
 
 		configPath := path.Join(root, "config.json")
@@ -1027,7 +1027,7 @@ func Install(c *Context) {
 		chainRoot = chains.ComposeRootMulti("thelonious", chainId, "0")
 	} else {
 		var err error
-		chainRoot, _, chainId, err = resolveRootFlag(c)
+		chainRoot, _, chainId, err = ResolveRootFlag(c)
 		ifExit(err)
 	}
 
@@ -1037,7 +1037,7 @@ func Install(c *Context) {
 	// Startup the chain
 	logger.Warnln("Starting up chain:", chainRoot)
 	var chain epm.Blockchain
-	chain = loadChain(c, "thelonious", chainRoot)
+	chain = LoadChain(c, "thelonious", chainRoot)
 
 	if !c.IsSet("c") {
 		// contractPath = DefaultContractPath
@@ -1149,9 +1149,9 @@ func Accounts(c *Context) {
 		account = c.Args()[0]
 	}
 
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
-	chain := loadChain(c, chainType, root)
+	chain := LoadChain(c, chainType, root)
 
 	if account == "" {
 		// dump list of all accounts

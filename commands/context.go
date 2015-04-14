@@ -29,7 +29,7 @@ type Context struct {
 	Integers  map[string]int
 	Booleans  map[string]bool
 
-	isSet map[string]struct{}
+	HasSet map[string]struct{}
 }
 
 func (c *Context) String(s string) string {
@@ -49,15 +49,15 @@ func (c *Context) Args() []string {
 }
 
 func (c *Context) IsSet(s string) bool {
-	_, ok := c.isSet[s]
+	_, ok := c.HasSet[s]
 	return ok
 }
 
 func (c *Context) Set(s string) {
-	c.isSet[s] = struct{}{}
+	c.HasSet[s] = struct{}{}
 }
 
-func setFields(c *Context, flags []string, generic func(s string) interface{}, isSet func(s string) bool) {
+func setFields(c *Context, flags []string, generic func(s string) interface{}, HasSet func(s string) bool) {
 	for _, f := range flags {
 		t := generic(f)
 		elem := reflect.ValueOf(t).Elem()
@@ -72,7 +72,7 @@ func setFields(c *Context, flags []string, generic func(s string) interface{}, i
 		default:
 			panic(fmt.Sprintf("Unknown type! %v", ty))
 		}
-		if isSet(f) {
+		if HasSet(f) {
 			c.Set(f)
 		}
 	}
@@ -84,7 +84,7 @@ func TransformContext(c *cli.Context) *Context {
 		Strings:   make(map[string]string),
 		Integers:  make(map[string]int),
 		Booleans:  make(map[string]bool),
-		isSet:     make(map[string]struct{}),
+		HasSet:     make(map[string]struct{}),
 	}
 	for _, a := range c.Args() {
 		c2.Arguments = append(c2.Arguments, string(a))

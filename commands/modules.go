@@ -46,7 +46,7 @@ func newChain(chainType string, rpc bool) epm. // modules
 }
 
 // chainroot is a full path to the dir
-func loadChain(c *Context, chainType, chainRoot string) epm.Blockchain {
+func LoadChain(c *Context, chainType, chainRoot string) epm.Blockchain {
 	rpc := c.Bool("rpc")
 	logger.Debugln("Loading chain ", c.String("type"))
 
