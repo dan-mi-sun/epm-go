@@ -84,12 +84,6 @@ format, namely:
 
 Any number of variables can be sent in the same POST call.
 
-	POST http://IP:PORT/eris/rawconfig/:chainName
-
-Will completely replace a blockchain's config.json with the body of the
-POST call. No json validation will be performed prior to saving the sent
-json as the named chain's config.json.
-
 	POST http://IP:PORT/eris/checkout/:chainName
 
 Will checkout the named blockchain. Mirrors epm checkout chainName.
@@ -256,12 +250,11 @@ func (this *Server) Start() error {
 	// Informational handlers
 	cm.Get("/eris/plop/:chainName/:toPlop", this.httpService.handlePlop)
 	cm.Get("/eris/refs/ls", this.httpService.handleLsRefs)
-	cm.Post("/eris/refs/add/:chainName/:chainType/:chainType", this.httpService.handleAddRefs)
+	cm.Post("/eris/refs/add/:chainName/:chainType/:chainId", this.httpService.handleAddRefs)
 	cm.Post("/eris/refs/rm/:chainName", this.httpService.handleRmRefs)
 
 	// Chain management handlers
 	cm.Post("/eris/config/:chainName", this.httpService.handleConfig)
-	cm.Post("/eris/rawconfig/:chainName", this.httpService.handleRawConfig)
 	cm.Post("/eris/checkout/:chainName", this.httpService.handleCheckout)
 	cm.Post("/eris/clean/:chainName", this.httpService.handleClean)
 

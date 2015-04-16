@@ -2,12 +2,14 @@ package server
 
 import (
 	"bytes"
-	"encoding/json"
+	// "encoding/json"
 	"fmt"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/golang.org/x/net/websocket"
+	// "github.com/eris-ltd/epm-go/Godeps/_workspace/src/golang.org/x/net/websocket"
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -15,6 +17,12 @@ import (
 const TEST_NUM = 10
 
 var srvr *Server
+var chainId string
+var chainName string = "testchain1"
+var chainNameOther string = "testchain2"
+var chainNameThird string = "testchain3"
+var fetchIP string = "104.236.146.58"
+var fetchPort string = "15258"
 
 func init() {
 	rootPath, _ := filepath.Abs("/public")
@@ -25,12 +33,10 @@ func init() {
 	time.Sleep(1 * time.Second)
 }
 
-// Test sending a http request to the echo endpoint
-func TestHttpEcho(t *testing.T) {
-	fmt.Println("Start http echo test.")
-
+func doHttpCall(method string, endpoint string, expectedCode int, t *testing.T) string {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", "http://localhost:3000/echo/testmessage", bytes.NewBuffer([]byte{}))
+	compiledEndPoint := "http://localhost:3000/" + endpoint
+	req, err := http.NewRequest(method, compiledEndPoint, bytes.NewBuffer([]byte{}))
 	if err != nil {
 		panic(err)
 	}
@@ -42,65 +48,267 @@ func TestHttpEcho(t *testing.T) {
 	defer resp.Body.Close()
 
 	body, _ := ioutil.ReadAll(resp.Body)
-	retStr := string(body)
-	if retStr != "testmessage" {
-		t.Error("Expected: testmessage, Got: " + retStr)
-	} else {
-		fmt.Println("Http echo test: PASSED")
+
+	if resp.StatusCode != expectedCode {
+		fmt.Println("Output:\n" + string(body))
+		expectString := strconv.Itoa(expectedCode)
+		resultString := strconv.Itoa(resp.StatusCode)
+		t.Error("Expected: " + expectString + ", Got: " + resultString)
+		t.FailNow()
 	}
+	return string(body)
+}
+
+func TestFourOhFour(t *testing.T) {
+	fmt.Println("Start 404 test.")
+
+	_ = doHttpCall("GET", "1234", 404, t)
+
+	fmt.Println("404 test: PASSED")
+}
+
+func TestHttpEcho(t *testing.T) {
+	fmt.Println("Start echo test.")
+
+	ret := doHttpCall("GET", "echo/testmessage", 200, t)
+	if ret != "testmessage" {
+		t.Error("Expected: testmessage, Got: " + ret)
+		t.FailNow()
+	}
+
+	fmt.Println("Echo test: PASSED")
+}
+
+func TestHttpNewChain(t *testing.T) {
+	fmt.Println("Start new chain test.")
+
+	endPoint := "eris/new/" + chainName
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	fmt.Println("New chain test: PASSED")
+}
+
+func TestHttpPlop(t *testing.T) {
+	fmt.Println("Start plop test.")
+
+	endPoint := "eris/plop/" + chainName + "/chainid"
+	ret := doHttpCall("GET", endPoint, 200, t)
+	chainId = strings.TrimSpace(ret)
+
+	endPoint = "eris/plop/" + chainName + "/addr"
+	_ = doHttpCall("GET", endPoint, 200, t)
+
+	endPoint = "eris/plop/" + chainName + "/config"
+	_ = doHttpCall("GET", endPoint, 200, t)
+
+	endPoint = "eris/plop/" + chainName + "/genesis"
+	_ = doHttpCall("GET", endPoint, 200, t)
+
+	// no chain is running, this should 500
+	endPoint = "eris/plop/" + chainName + "/pid"
+	_ = doHttpCall("GET", endPoint, 500, t)
+
+	// no contracts are deployed, this should 500
+	endPoint = "eris/plop/" + chainName + "/vars"
+	_ = doHttpCall("GET", endPoint, 500, t)
+
+	endPoint = "eris/plop/" + chainName + "/key"
+	_ = doHttpCall("GET", endPoint, 401, t)
+
+	fmt.Println("FYI, the ChainID is: " + chainId)
+	fmt.Println("Plop test: PASSED")
+}
+
+func TestRefsLs(t *testing.T) {
+	fmt.Println("Start refs ls test.")
+
+	endPoint := "eris/refs/ls"
+	_ = doHttpCall("GET", endPoint, 200, t)
+
+	fmt.Println("Refs ls test: PASSED")
+}
+
+func TestRefsRm(t *testing.T) {
+	fmt.Println("Start refs rm test.")
+
+	endPoint := "eris/refs/rm/" + chainName
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	fmt.Println("Refs rm test: PASSED")
+}
+
+func TestRefsAdd(t *testing.T) {
+	fmt.Println("Start refs add test.")
+
+	endPoint := "eris/refs/add/" + chainName + "/thelonious/" + chainId
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	fmt.Println("Refs add test: PASSED")
+}
+
+func TestCheckOut(t *testing.T) {
+	fmt.Println("Start checkout test.")
+
+	endPoint := "eris/new/" + chainNameOther
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	endPoint = "eris/checkout/" + chainName
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	fmt.Println("Refs add test: PASSED")
+}
+
+func TestConfig(t *testing.T) {
+	fmt.Println("Start config test.")
+
+	endPoint := "eris/config/" + chainName + "?log_level=5"
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	endPoint = "eris/config/" + chainName + "?log_level=4&local_host=localhost&local_port=15254"
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	fmt.Println("Config test: PASSED")
+}
+
+func TestFetch(t *testing.T) {
+	fmt.Println("Start chain fetch test.")
+
+	endPoint := "eris/fetch/" + chainNameThird + "/" + fetchIP + "/" + fetchPort + "?checkout=false"
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	endPoint = "eris/plop/" + chainName + "/chainid"
+	ret := strings.TrimSpace(doHttpCall("GET", endPoint, 200, t))
+	if ret != chainId {
+		t.Error("Expected: " + chainId + ", Got: " + ret)
+		t.FailNow()
+	}
+
+	fmt.Println("Chain fetch test: PASSED")
+}
+
+func TestChainStart(t *testing.T) {
+	fmt.Println("Start chain start test.")
+
+	_ = doHttpCall("POST", "eris/start", 200, t)
+
+	time.Sleep(5 * time.Second)
+
+	fmt.Println("Chain start test: PASSED")
+}
+
+func TestChainStatus(t *testing.T) {
+	fmt.Println("Start chain status test.")
+
+	ret := doHttpCall("GET", "eris/status", 200, t)
+	if ret != "true" {
+		t.Error("Expected: true, Got: " + ret)
+		t.FailNow()
+	}
+
+	fmt.Println("Chain status test: PASSED")
+}
+
+func TestRestartChain(t *testing.T) {
+	fmt.Println("Start chain restart test.")
+
+	_ = doHttpCall("POST", "eris/restart", 200, t)
+
+	time.Sleep(5 * time.Second)
+
+	fmt.Println("Chain restart test: PASSED")
+}
+
+func TestStopChain(t *testing.T) {
+	fmt.Println("Start chain stop test.")
+
+	_ = doHttpCall("POST", "eris/stop", 200, t)
+
+	fmt.Println("Chain stop test: PASSED")
+}
+
+func TestChainStartWithMining(t *testing.T) {
+	fmt.Println("Start chain start with options test.")
+
+	_ = doHttpCall("POST", "eris/start?commit=true&log=5", 200, t)
+
+	time.Sleep(5 * time.Second)
+
+	_ = doHttpCall("POST", "eris/restart?commit=true&log=5", 200, t)
+
+	time.Sleep(5 * time.Second)
+
+	_ = doHttpCall("POST", "eris/stop", 200, t)
+
+	fmt.Println("Chain start with options test: PASSED")
+}
+
+func TestClean(t *testing.T) {
+	fmt.Println("Start clean test.")
+
+	endPoint := "eris/clean/" + chainName
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	endPoint = "eris/clean/" + chainNameOther
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	endPoint = "eris/clean/" + chainNameThird
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	fmt.Println("Clean test: PASSED")
 }
 
 // Establish websocket connection and rpc to 'echo'
-func TestWsEcho(t *testing.T) {
-	fmt.Println("Start websocket echo test.")
-	origin := "http://localhost/"
-	url := "ws://localhost:3000/websocket"
-	ws, err := websocket.Dial(url, "", origin)
-	if err != nil {
-		panic(err)
-	}
-	req := &Request{}
-	req.ID = 1
-	req.JsonRpc = "2.0"
-	req.Method = "echo"
+// func TestWsEcho(t *testing.T) {
+// 	fmt.Println("Start websocket echo test.")
+// 	origin := "http://localhost/"
+// 	url := "ws://localhost:3000/websocket"
+// 	ws, err := websocket.Dial(url, "", origin)
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// 	req := &Request{}
+// 	req.ID = 1
+// 	req.JsonRpc = "2.0"
+// 	req.Method = "echo"
 
-	sVal := &StringValue{"testmessage"}
-	bts, _ := json.Marshal(sVal)
-	raw := json.RawMessage(bts)
-	req.Params = &raw
+// 	sVal := &StringValue{"testmessage"}
+// 	bts, _ := json.Marshal(sVal)
+// 	raw := json.RawMessage(bts)
+// 	req.Params = &raw
 
-	bts, errJson := json.Marshal(req)
-	if errJson != nil {
-		panic(errJson)
-	}
-	if _, err := ws.Write(bts); err != nil {
-		panic(err)
-	}
-	var msg = make([]byte, 512)
-	var n int
-	if n, err = ws.Read(msg); err != nil {
-		panic(err)
-	}
+// 	bts, errJson := json.Marshal(req)
+// 	if errJson != nil {
+// 		panic(errJson)
+// 	}
+// 	if _, err := ws.Write(bts); err != nil {
+// 		panic(err)
+// 	}
+// 	var msg = make([]byte, 512)
+// 	var n int
+// 	if n, err = ws.Read(msg); err != nil {
+// 		panic(err)
+// 	}
 
-	resp := &Response{}
+// 	resp := &Response{}
 
-	respErr := json.Unmarshal(msg[:n], resp)
+// 	respErr := json.Unmarshal(msg[:n], resp)
 
-	if respErr != nil {
-		panic(respErr)
-	}
+// 	if respErr != nil {
+// 		panic(respErr)
+// 	}
 
-	respR, ok := resp.Result.(map[string]interface{})
-	if !ok {
-		t.Error("Response result cannot be cast to map")
-	}
-	retStr := respR["value"].(string)
-	if retStr != "testmessage" {
-		t.Error("Expected: testmessage, Got: " + retStr)
-	} else {
-		fmt.Println("Websocket echo test: PASSED")
-	}
-	ws.Close()
+// 	respR, ok := resp.Result.(map[string]interface{})
+// 	if !ok {
+// 		t.Error("Response result cannot be cast to map")
+//    t.FailNow()
+// 	}
+// 	retStr := respR["value"].(string)
+// 	if retStr != "testmessage" {
+// 		t.Error("Expected: testmessage, Got: " + retStr)
+// 	} else {
+// 		fmt.Println("Websocket echo test: PASSED")
+// 	}
+// 	ws.Close()
 
-	time.Sleep(1 * time.Second)
-}
+// 	time.Sleep(1 * time.Second)
+// }
