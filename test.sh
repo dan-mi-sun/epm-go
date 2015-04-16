@@ -37,4 +37,3 @@ epm --log 5 deploy test_solidity.pdx
 
 # fig up doesn't return proper error codes, so this is our hack
 touch /opt/success
-
