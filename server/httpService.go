@@ -77,7 +77,7 @@ func (this *HttpService) handleLsRefs(params martini.Params, w http.ResponseWrit
 // This API endpoint is equivalent to `epm refs add` command.
 func (this *HttpService) handleAddRefs(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Add a Reference")
-	toAdd := params["chainType"] + "/" + params["chainType"]
+	toAdd := params["chainType"] + "/" + params["chainId"]
 	cmdRaw := []string{"refs", "add", toAdd, params["chainName"]}
 	this.executeCommand(cmdRaw, w)
 }
@@ -111,27 +111,6 @@ func (this *HttpService) handleConfig(params martini.Params, w http.ResponseWrit
 	}
 
 	this.executeCommand(cmdRaw, w)
-}
-
-// This API endpoint will save the passed string via the POST command
-// as the named blockchain's config.json
-func (this *HttpService) handleRawConfig(params martini.Params, w http.ResponseWriter, r *http.Request) {
-	this.logIncoming("Save Raw Config JSON String")
-
-	// TODO: fix this to read body and and send for config saving.
-	// configs, err := url.ParseQuery(r.URL.RawQuery)
-	// if err != nil {
-	// 	this.logError(w, 400, err)
-	// 	return
-	// }
-
-	// cmdRaw := []string{"config", "--chain", params["chainName"]}
-	// for k, v := range configs {
-	// 	toAdd := k + ":" + v[0]
-	// 	cmdRaw = append(cmdRaw, toAdd)
-	// }
-
-	// this.executeCommand(cmdRaw, w)
 }
 
 // This API endpoint is equivalent to `epm checkout`.
@@ -456,7 +435,6 @@ func (this *HttpService) logError(w http.ResponseWriter, code int, err error) {
 func (this *HttpService) executeCommand(cmdRaw []string, w http.ResponseWriter) {
 	product, err := this.executeCommandRaw(cmdRaw, w)
 	if err != nil {
-		this.logError(w, 500, err)
 		return
 	}
 	this.writeMsg(w, 200, product)
