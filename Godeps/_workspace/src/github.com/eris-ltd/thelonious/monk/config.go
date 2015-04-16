@@ -138,7 +138,7 @@ func InitChain() error {
 
 // Marshal the current configuration to file in pretty json.
 func (mod *MonkModule) WriteConfig(config_file string) error {
-	b, err := json.Marshal(mod.monk.config)
+	b, err := json.Marshal(mod.Config)
 	if err != nil {
 		fmt.Println("error marshalling config:", err)
 		return err
@@ -174,12 +174,12 @@ func (mod *MonkModule) ReadConfig(config_file string) error {
 
 // Set a field in the config struct.
 func (mod *MonkModule) SetProperty(field string, value interface{}) error {
-	cv := reflect.ValueOf(mod.monk.config).Elem()
+	cv := reflect.ValueOf(mod.Config).Elem()
 	return utils.SetProperty(cv, field, value)
 }
 
 func (mod *MonkModule) Property(field string) interface{} {
-	cv := reflect.ValueOf(mod.monk.config).Elem()
+	cv := reflect.ValueOf(mod.Config).Elem()
 	f := cv.FieldByName(field)
 	return f.Interface()
 }
@@ -187,7 +187,7 @@ func (mod *MonkModule) Property(field string) interface{} {
 // Set the config object directly
 func (mod *MonkModule) SetConfigObj(config interface{}) error {
 	if c, ok := config.(*ChainConfig); ok {
-		mod.monk.config = c
+		mod.Config = c
 	} else {
 		return fmt.Errorf("Invalid config object")
 	}

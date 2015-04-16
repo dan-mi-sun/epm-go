@@ -598,7 +598,9 @@ func Command(c *Context) {
 	err = e.ExecuteJobs()
 	ifExit(err)
 	e.WriteVars(path.Join(root, EPMVars))
-	e.Commit()
+	if cmd != "call" {
+		e.Commit()
+	}
 }
 
 func Test(c *Context) {

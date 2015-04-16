@@ -177,36 +177,32 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/lllc-server",
-			"Rev": "805beea3b72a97aa7ad2f59e1aaa4b7300abceaa"
+			"Rev": "3f197125ede22fef1a05b1e3b19620d79c160e97"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/eth",
-			"Rev": "011b270f6f2dbf87d0386bb1107ce4ad40be13c8"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/genblock",
-			"Rev": "011b270f6f2dbf87d0386bb1107ce4ad40be13c8"
-		},
-		{
-			"ImportPath": "github.com/eris-ltd/modules/mint",
-			"Rev": "011b270f6f2dbf87d0386bb1107ce4ad40be13c8"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkrpc",
-			"Rev": "011b270f6f2dbf87d0386bb1107ce4ad40be13c8"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkutils",
-			"Rev": "011b270f6f2dbf87d0386bb1107ce4ad40be13c8"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/types",
-			"Rev": "011b270f6f2dbf87d0386bb1107ce4ad40be13c8"
+			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
-			"Comment": "v0.8-68-gb200c08",
-			"Rev": "b200c08a1f3ddc2811fddf37f9bc3a8469690ccb"
+			"Comment": "v0.8-74-gb700001",
+			"Rev": "b700001be08e7f7e59b20252e9c9e8a7d8f4d153"
 		},
 		{
 			"ImportPath": "github.com/go-martini/martini",

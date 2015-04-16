@@ -10,16 +10,20 @@ import (
 )
 
 // which arg is a "set var"
-func isSet(cmd string, i int) bool {
+func isSet(cmd string, i, nArgs int) bool {
 	switch cmd {
 	case "deploy", "modify-deploy":
 		return i == 1
 	case "include":
 		return i%2 == 1
+	case "call":
+		return i == nArgs-1
 	case "query":
 		return i == 2
 	case "test":
 		return i == 3
+	case "set":
+		return i == 0
 	default:
 		return false
 	}
@@ -55,7 +59,7 @@ func (e *EPM) ResolveArgs(cmd string, args [][]*tree) ([]string, error) {
 
 		} else {
 			for _, aa := range a {
-				if isSet(cmd, i) {
+				if isSet(cmd, i, len(args)) {
 					stringArgs = append(stringArgs, aa.token.val)
 					continue
 				}

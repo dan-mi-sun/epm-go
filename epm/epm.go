@@ -5,7 +5,6 @@ import (
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
 	"github.com/eris-ltd/epm-go/utils"
-	//	"github.com/eris-ltd/lllc-server"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -25,7 +24,7 @@ var GOPATH = os.Getenv("GOPATH")
 
 var (
 	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
-	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "definitions")
+	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests")
 
 	EpmDir  = utils.Epm
 	LogFile = path.Join(utils.Logs, "epm", "log")
@@ -65,6 +64,7 @@ type Blockchain interface {
 	IsScript(target string) bool
 	Tx(addr, amt string) (string, error)
 	Msg(addr string, data []string) (string, error)
+	Call(addr string, data []string) (string, error)
 	Script(code string) (string, error)
 	Subscribe(name, event, target string) chan types.Event
 	UnSubscribe(name string)
@@ -96,8 +96,6 @@ type EPM struct {
 
 // New empty EPM
 func NewEPM(chain Blockchain, log string) (*EPM, error) {
-	//lllcserver.URL = LLLURL
-	//logger.Infoln("url: ", LLLURL)
 	e := &EPM{
 		chain:     chain,
 		jobs:      []Job{},

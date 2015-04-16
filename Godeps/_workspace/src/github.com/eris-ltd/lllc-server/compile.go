@@ -19,7 +19,6 @@ var DefaultUrl = "http://ps.erisindustries.com:8090/compile"
 // command line, with a `_` to denote the place of the filename
 type LangConfig struct {
 	URL             string     `json:"url"`
-	Path            string     `json:"path"`
 	Net             bool       `json:"net"`
 	Extensions      []string   `json:"extensions"`
 	IncludeRegexes  []string   `json:"regexes"`
@@ -64,7 +63,6 @@ func (l LangConfig) Abi(file string) (args []string) {
 var Languages = map[string]LangConfig{
 	"lll": LangConfig{
 		URL:        DefaultUrl,
-		Path:       path.Join(homeDir(), "eric-cpp/build/lllc/lllc"),
 		Net:        true,
 		Extensions: []string{"lll", "def"},
 		IncludeRegexes: []string{
@@ -81,7 +79,6 @@ var Languages = map[string]LangConfig{
 
 	"se": LangConfig{
 		URL:        DefaultUrl,
-		Path:       "/usr/local/bin/serpent",
 		Net:        true,
 		Extensions: []string{"se"},
 		IncludeRegexes: []string{
@@ -107,7 +104,6 @@ var Languages = map[string]LangConfig{
 	},
 	"sol": LangConfig{
 		URL:             DefaultUrl,
-		Path:            path.Join(homeDir(), "cpp-ethereum/build/solc/solc"),
 		Net:             true,
 		Extensions:      []string{"sol"},
 		IncludeRegexes:  []string{},
@@ -163,17 +159,6 @@ func checkConfig(f string) error {
 	}
 
 	Languages = *c
-	return nil
-}
-
-// Set the languages compiler path
-func SetLanguagePath(lang, path string) error {
-	l, ok := Languages[lang]
-	if !ok {
-		return UnknownLang(lang)
-	}
-	l.Path = path
-	Languages[lang] = l
 	return nil
 }
 

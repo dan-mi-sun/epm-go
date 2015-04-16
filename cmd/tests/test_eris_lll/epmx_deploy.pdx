@@ -1,4 +1,4 @@
 epm:
-	definitions/test_deploy.epm => dep
+	test_eris_lll/deploy.pdx => dep
 transact:
 	{{dep.addr}} => 0x3 0x4

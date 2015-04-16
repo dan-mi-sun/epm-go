@@ -94,8 +94,8 @@ func (abi ABI) pack(name string, args ...interface{}) ([]byte, error) {
 	var ret []byte
 	for i, a := range args {
 		input := method.Input[i]
-
 		packed, err := input.Type.pack(a)
+		fmt.Println(i, a, packed)
 		if err != nil {
 			return nil, fmt.Errorf("`%s` %v", name, err)
 		}

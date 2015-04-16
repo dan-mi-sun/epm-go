@@ -95,12 +95,16 @@ func requestResponse(req *Request) (*Response, error) {
 		return nil, err
 	}
 	httpreq, err := http.NewRequest("POST", URL, bytes.NewBuffer(reqJ))
+	if err != nil {
+		logger.Errorln("failed to compose request:", err)
+		return nil, err
+	}
 	httpreq.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(httpreq)
 	if err != nil {
-		logger.Errorln("failed!", err)
+		logger.Errorln("failed to send HTTP request", err)
 		return nil, err
 	}
 	defer resp.Body.Close()

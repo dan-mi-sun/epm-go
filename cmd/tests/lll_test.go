@@ -6,11 +6,12 @@ import (
 	"github.com/eris-ltd/epm-go/epm"
 	"path"
 	"testing"
-	//"github.com/eris-ltd/thelonious/monkutil"
+	//"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkutil"
 	"os"
 )
 
 var GoPath = os.Getenv("GOPATH")
+var LLLDir = "test_eris_lll"
 
 func NewMonkModule() *monk.MonkModule {
 	epm.ErrMode = epm.FailOnErr
@@ -32,10 +33,9 @@ func NewMonkModule() *monk.MonkModule {
    See definitions and contracts for context
 */
 
-func newEpmTest(t *testing.T, pdx string) (*epm.EPM, epm.Blockchain) {
-	defaultContractPath := epm.ContractPath
+func newEpmLLLTest(t *testing.T, pdx string) (*epm.EPM, epm.Blockchain) {
 	m := NewMonkModule()
-	epm.ContractPath = defaultContractPath
+	epm.ContractPath = path.Join(epm.TestPath, LLLDir)
 	e, err := epm.NewEPM(m, ".epm-log-test")
 	if err != nil {
 		t.Error(err)
@@ -52,8 +52,8 @@ func newEpmTest(t *testing.T, pdx string) (*epm.EPM, epm.Blockchain) {
 	return e, m
 }
 
-func TestDeploy(t *testing.T) {
-	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_deploy.epm"))
+func TestLLLDeploy(t *testing.T) {
+	e, m := newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "deploy.pdx"))
 
 	addr := e.Vars()["addr"]
 	//fmt.Println("addr", addr)
@@ -67,8 +67,8 @@ func TestDeploy(t *testing.T) {
 	m.Shutdown()
 }
 
-func TestModifyDeploy(t *testing.T) {
-	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_modify_deploy.epm"))
+func TestLLLModifyDeploy(t *testing.T) {
+	e, m := newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "modify_deploy.pdx"))
 
 	addr := e.Vars()["doug"]
 	addr2 := e.Vars()["doug2"]
@@ -91,7 +91,7 @@ func TestModifyDeploy(t *testing.T) {
 // doesn't work unless we wait a block until actually making the query
 // not going to fly here
 func iTestQuery(t *testing.T) {
-	e, _ := newEpmTest(t, path.Join(epm.TestPath, "test_query.epm"))
+	e, _ := newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "query.pdx"))
 
 	e.Commit()
 	a := e.Vars()["B"]
@@ -100,8 +100,8 @@ func iTestQuery(t *testing.T) {
 	}
 }
 
-func TestStack(t *testing.T) {
-	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_parse.epm"))
+func TestLLLStack(t *testing.T) {
+	e, m := newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "parse.pdx"))
 
 	addr1 := e.Vars()["A"]
 	addr2 := e.Vars()["B"]
@@ -132,8 +132,8 @@ func TestStack(t *testing.T) {
 	m.Shutdown()
 }
 
-func TestKV(t *testing.T) {
-	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_kv.epm"))
+func TestLLLKV(t *testing.T) {
+	e, m := newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "kv.pdx"))
 
 	addr1 := e.Vars()["A"]
 	e.Commit()
@@ -152,7 +152,7 @@ func iTestDiff(t *testing.T) {
 	m := NewMonkModule()
 	e, _ := epm.NewEPM(m, ".epm-log-test")
 
-	if err := e.Parse(path.Join(epm.TestPath, "test_diff.epm")); err != nil {
+	if err := e.Parse(path.Join(epm.TestPath, LLLDir, "diff.pdx")); err != nil {
 		t.Error(err)
 	}
 
@@ -163,18 +163,18 @@ func iTestDiff(t *testing.T) {
 	m.Shutdown()
 }
 
-func TestPdt(t *testing.T) {
-	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_parse.epm"))
+func TestLLLPdt(t *testing.T) {
+	e, m := newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "parse.pdx"))
 	e.Commit()
-	_, err := e.Test(path.Join(epm.TestPath, "test_parse.epm-check"))
+	_, err := e.Test(path.Join(epm.TestPath, LLLDir, "parse.pdt"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	m.Shutdown()
 }
 
-func TestInclude(t *testing.T) {
-	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_path_include.epm"))
+func TestLLLInclude(t *testing.T) {
+	e, m := newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "path_include.pdx"))
 
 	addr := e.Vars()["addr"]
 	addr2 := e.Vars()["addr2"]
@@ -198,8 +198,8 @@ func TestInclude(t *testing.T) {
 	m.Shutdown()
 }
 
-func TestEPMxNamespace(t *testing.T) {
-	e, m := newEpmTest(t, path.Join(epm.TestPath, "test_epmx_deploy.epm"))
+func TestLLLEPMxNamespace(t *testing.T) {
+	e, m := newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "epmx_deploy.pdx"))
 
 	addr := e.Vars()["dep.addr"]
 	e.Commit()
@@ -208,4 +208,8 @@ func TestEPMxNamespace(t *testing.T) {
 		t.Error("got:", got, "expected:", "0x04")
 	}
 	m.Shutdown()
+}
+
+func TestLLLAssert(t *testing.T) {
+	newEpmLLLTest(t, path.Join(epm.TestPath, LLLDir, "assert.pdx"))
 }

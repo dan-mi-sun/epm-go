@@ -90,16 +90,18 @@ const (
 
 // min args per command
 var CommandArgs = map[string]int{
-	"deploy":        2,
-	"modify-deploy": 4,
-	"transact":      2,
-	"query":         3,
-	"log":           2,
-	"set":           2,
-	"endow":         2,
-	"test":          1,
-	"epm":           1,
-	"include":       2,
+	"deploy":        2, // deploy a new contract
+	"modify-deploy": 4, // replace a placeholder (presumably with a deployed address) and deploy
+	"transact":      2, // send a msg to a contract
+	"call":          3, // simulate sending a msg to a contract
+	"query":         3, // get storage out of a contract
+	"log":           2, // log a value
+	"set":           2, // set a value
+	"endow":         2, // send some amount of native currency
+	"test":          1, // run a test suite
+	"epm":           1, // execute a pdx file (recursive)
+	"include":       2, // include contracts in another directory
+	"assert":        2, // assert the value of a variable
 }
 
 // tokens and special chars
@@ -125,5 +127,5 @@ var (
 	tokenNumbers = "0123456789"
 	tokenHex     = "0123456789abcdefABCDEF"
 	tokenOps     = "+-*/%"
-	tokenChars   = "abcdefghijklmnopqrstuvwqyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-/_."
+	tokenChars   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-/_."
 )

@@ -62,7 +62,7 @@ var DefaultConfig = &ChainConfig{
 
 // can these methods be functions in decerver that take the modules as argument?
 func (mod *EthModule) WriteConfig(config_file string) error {
-	b, err := json.Marshal(mod.eth.config)
+	b, err := json.Marshal(mod.Config)
 	if err != nil {
 		fmt.Println("error marshalling config:", err)
 		return err
@@ -97,7 +97,7 @@ func (mod *EthModule) ReadConfig(config_file string) error {
 // this will probably never be used
 func (mod *EthModule) SetConfigObj(config interface{}) error {
 	if c, ok := config.(*ChainConfig); ok {
-		mod.eth.config = c
+		mod.Config = c
 	} else {
 		return fmt.Errorf("Invalid config object")
 	}
@@ -106,8 +106,8 @@ func (mod *EthModule) SetConfigObj(config interface{}) error {
 
 // Set the package global variables, create the root data dir,
 //  copy keys if they are available, and setup logging
-func (eth *Eth) ethConfig() {
-	cfg := eth.config
+func (eth *EthModule) ethConfig() {
+	cfg := eth.Config
 
 	// check on data dir
 	// create keys

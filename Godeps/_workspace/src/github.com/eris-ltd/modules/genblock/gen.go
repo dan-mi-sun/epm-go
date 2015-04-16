@@ -238,6 +238,11 @@ func (mod *GenBlockModule) Msg(addr string, data []string) (string, error) {
 	return addr, nil
 }
 
+// Simulated call is meaningless for genesis block
+func (mod *GenBlockModule) Call(addr string, data []string) (string, error) {
+	return "", nil
+}
+
 // Deploy a new contract. Note the addresses of core contracts must be stored in gendoug if
 // thelonious is expected to find them. Also note the gendoug contract must have `gendoug` in the name!
 func (mod *GenBlockModule) Script(code string) (string, error) {

@@ -5,8 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server/abi"
+	//"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/lllc-server/abi"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
+	"github.com/eris-ltd/epm-go/epm/abi"
 	"github.com/eris-ltd/epm-go/utils"
 	"io/ioutil"
 	"log"
@@ -14,6 +15,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -86,6 +88,8 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 		f = e.ModifyDeploy
 	case "transact":
 		f = e.Transact
+	case "call":
+		f = e.Call
 	case "query":
 		f = e.Query
 	case "log":
@@ -96,7 +100,7 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 		f = e.Endow
 	case "test":
 		f = func(a []string) error {
-			e.chain.Commit()
+			e.Commit()
 			err := e.ExecuteTest(a[0], 0)
 			if err != nil {
 				logger.Errorln(err)
@@ -108,6 +112,8 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 		f = e.EPMx
 	case "include":
 		f = e.Include
+	case "assert":
+		f = e.Assert
 	default:
 		f = func([]string) error { return fmt.Errorf("Unknown command: %s", name) }
 		n = 0
@@ -159,6 +165,18 @@ func (e *EPM) EPMx(args []string) error {
 
 	// return to old jobs
 	e.jobs = oldjobs
+	return nil
+}
+
+// assert a variable equals some value
+func (e *EPM) Assert(args []string) error {
+	got, expected := args[0], args[1]
+	got = strings.ToLower(utils.StripZeros(utils.StripHex(got)))
+	expected = strings.ToLower(utils.StripZeros(utils.StripHex(expected)))
+	if got != expected {
+		return fmt.Errorf("assertion error. Got %s, expected %s", got, expected)
+	}
+	logger.Warnf("correct assertion: %s\n", got)
 	return nil
 }
 
@@ -218,49 +236,93 @@ func (e *EPM) ModifyDeploy(args []string) error {
 	return e.Deploy([]string{newName, key})
 }
 
+func coerceHex(aa string, padright bool) string {
+	if !utils.IsHex(aa) {
+		//first try and convert to int
+		n, err := strconv.Atoi(aa)
+		if err != nil {
+			// right pad strings
+			if padright {
+				aa = "0x" + fmt.Sprintf("%x", aa) + fmt.Sprintf("%0"+strconv.Itoa(64-len(aa)*2)+"s", "")
+			} else {
+				aa = "0x" + fmt.Sprintf("%x", aa)
+			}
+		} else {
+			aa = "0x" + fmt.Sprintf("%x", n)
+		}
+	}
+	return aa
+}
+
+func (e *EPM) packArgsABI(to string, data ...string) ([]string, error) {
+	packed := []string{}
+	// check for abi
+	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
+	if ok {
+		funcName := data[0]
+		args := data[1:]
+
+		fmt.Println("ABI Spec", abiSpec)
+		a := []interface{}{}
+		for _, aa := range args {
+			aa = coerceHex(aa, true)
+			bb, _ := hex.DecodeString(utils.StripHex(aa))
+			a = append(a, bb)
+		}
+		packedBytes, err := abiSpec.Pack(funcName, a...)
+		if err != nil {
+			return nil, err
+		}
+		packed = []string{hex.EncodeToString(packedBytes)}
+
+	} else {
+		for _, aa := range data {
+			aa = coerceHex(aa, false)
+			packed = append(packed, aa)
+		}
+	}
+	return packed, nil
+}
+
 // Send a transaction with data to a contract
 // Data should be list of strings/hex/numeric
 // already resolved
 func (e *EPM) Transact(args []string) (err error) {
 	to := args[0]
 	data := args[1:]
-	//data := strings.Split(dataS, " ")
-	//data = DoMath(data)
 
-	packed := []string{}
-	// check for abi
-	abiSpec, ok := ReadAbi(e.chain.Property("RootDir").(string), to)
-	if ok {
-		//h, _ := hex.DecodeString(utils.StripHex(data[0]))
-		funcName := data[0] //string(h)
-		args = data[1:]
-
-		fmt.Println("ABI Spec", abiSpec)
-		a := []interface{}{}
-		for _, aa := range args {
-			bb, _ := hex.DecodeString(utils.StripHex(aa))
-			//bb := utils.StripHex(aa)
-			a = append(a, bb)
-		}
-		packedBytes, err := abiSpec.Pack(funcName, a...)
-		if err != nil {
-			return err
-		}
-		packed = []string{hex.EncodeToString(packedBytes)}
-
-	} else {
-		for _, aa := range data {
-			if !utils.IsHex(aa) {
-				aa = "0x" + fmt.Sprintf("%x", aa)
-			}
-			packed = append(packed, aa)
-		}
+	packed, err := e.packArgsABI(to, data...)
+	if err != nil {
+		return
 	}
 
 	if _, err = e.chain.Msg(to, packed); err != nil {
 		return
 	}
 	logger.Warnf("Sent %s to %s", data, to)
+	return
+}
+
+// Simulate sending a transaction with data to a contract
+// Data should be list of strings/hex/numeric
+// already resolved
+func (e *EPM) Call(args []string) (err error) {
+	to := args[0]
+	data := args[1 : len(args)-1]
+	varName := args[len(args)-1]
+
+	packed, err := e.packArgsABI(to, data...)
+	if err != nil {
+		return err
+	}
+
+	ret, err := e.chain.Call(to, packed)
+	if err != nil {
+		return
+	}
+	logger.Warnf("Sent %s to %s", data, to)
+	e.StoreVar(varName, ret)
+	logger.Warnf("Result: %s", ret)
 	return
 }
 
@@ -386,8 +448,6 @@ func (e *EPM) Modify(contract string, args []string) (string, error) {
 		lll = strings.Replace(lll, sub, rep, -1)
 		args = args[2:]
 	}
-
-	fmt.Println("NEW LLL:", lll)
 
 	hash := sha256.Sum256([]byte(lll))
 	newPath := path.Join(EpmDir, dir, hex.EncodeToString(hash[:])+".lll")
