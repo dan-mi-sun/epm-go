@@ -176,6 +176,7 @@ func (e *EPM) Assert(args []string) error {
 	if got != expected {
 		return fmt.Errorf("assertion error. Got %s, expected %s", got, expected)
 	}
+	logger.Warnf("correct assertion: %s\n", got)
 	return nil
 }
 
