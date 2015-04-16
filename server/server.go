@@ -1,13 +1,192 @@
+/*
+Package server provides the main API for EPM.
+
+When EPM is started with epm serve this API becomes
+accessible on the the IP:Port combination which is
+passed as flags to the epm serve command or via env
+variables.
+
+The API for EPM is encapsulated under the eris namespace.
+
+There are roughly two major sets of API actions which can
+be asked of the API:
+
+	- eris admin actions; and
+	- running blockchain RPC commands
+
+Eris admin actions which are passed to the API are basic
+epm administrative and informational functions; whereas RPC
+commands are simply passed to whatever blockchain epm has
+been asked to run.
+
+Note. there is, at this time, no authentication which
+is performed before epm serve executes the administrative
+or informational commands. If you are running epm serve on
+a remote location, you should put Nginx, Apache or another
+reverse proxy in front of the application which will perform
+some sort of authentication. At this point authentication is
+on our work plan: https://github.com/eris-ltd/epm-go/issues/145
+but it has not currently been finalized.
+
+API Structure
+
+The Eris API for administrative actions is meant to provide
+a remote-like functionality. Responses are sent as plain-text
+and most responses are simply a method of piping cli information
+from a remote to a local client.
+
+--------------------------------------------------------------
+
+Informational Handlers
+
+--------------------------------------------------------------
+
+	GET http://IP:PORT/eris/plop/:chainName/:toPlop
+
+Will return the variable passed in :toPlop. Namely, one of the
+ploppable information commands: addr, chainid, config,
+genesis, pid, or vars.
+
+Note that the epm cli will be able to plop the private key of the
+blockchain client. This function has purposefully not been implemented
+in the API for fairly obvious reasons. Attempts to plop the private
+key will fail.
+
+	GET http://IP:PORT/eris/refs/ls
+
+Will return the currently known references. Mirrors: epm refs ls.
+Output formated exactly how the cli output is formated (including
+coloring).
+
+	POST http://IP:PORT/eris/refs/add/:chainName/:chainType/:chainType
+
+Will add a reference to the blockchain tree. Mirrors; epm refs add.
+
+	POST http://IP:PORT/eris/refs/rm/:chainName
+
+Will remove a reference from a blockchain tree but will not remove
+the blockchain directories.
+
+--------------------------------------------------------------
+
+Chain management handlers
+
+--------------------------------------------------------------
+
+	POST http://IP:PORT/eris/config/:chainName
+
+Will add a configuration variable to the referenced chain's config.json.
+Configuration variables must be sent in the same format as the
+config.json's variables. Variables are sent as URL parameters in standard
+format, namely:
+
+	- http://IP:PORT/eris/config/:chainName?key=val
+
+Any number of variables can be sent in the same POST call.
+
+	POST http://IP:PORT/eris/rawconfig/:chainName
+
+Will completely replace a blockchain's config.json with the body of the
+POST call. No json validation will be performed prior to saving the sent
+json as the named chain's config.json.
+
+	POST http://IP:PORT/eris/checkout/:chainName
+
+Will checkout the named blockchain. Mirrors epm checkout chainName.
+
+	POST http://IP:PORT/eris/clean/:chainName
+
+Will completely remove the named blockchain folders. Mirrors
+epm clean --force chainName
+
+--------------------------------------------------------------
+
+Blockchain admin handlers
+
+--------------------------------------------------------------
+
+	POST http://IP:PORT/eris/fetch/:chainName/:fetchIP/:fetchPort
+
+Will fetch the genesis block from the named fetchIP:fetchPort
+combination, name the chain according to the :chainName which
+is passed via the URL and will checkout the chain. Mirrors
+epm fetch --name chainName --checkout fetchIP:fetchPort
+
+Optional Parameters:
+
+	- checkout = if checkout=false then the fetched blockchain will not be checked out.
+
+Note, fetch will not begin the operation of the blockchain
+it will simply retrieve the genesis block.
+
+	POST http://IP:PORT/eris/new/:chainName
+
+Will instatiate a blockchain. If the body of the post request
+is blank then epm will instatiate the blockchain using the
+default genesis.json. If the body of the post request is not
+an empty string then the server will use the request body
+string as the genesis.json.
+
+Optional Parameters:
+
+	- checkout = if checkout=false then the fetched blockchain will not be checked out.
+	- type = instatiate a non-thelonious chain which is part of EPM's capabilities.
+
+Note, there is no check that the passed string is valid json
+before the server will seek to instatiate the chain.
+
+	POST http://IP:PORT/eris/start
+
+Will start running the currently checked out blockchain.
+
+Optional Parameters:
+
+	- commit = if commit=true is passed via the URL, then the blockchain will be started with mining/committing turned on;
+	- log = set the log level to a log level
+
+The default log level which is set is 2.
+
+	POST http://IP:PORT/eris/stop
+
+Will stop a running blockchain.
+
+	POST http://IP:PORT/eris/restart
+
+Will restart a running blockchain. The same optional parameters
+as for the start API endpoint may be passed to restart.
+
+	GET http://IP:PORT/eris/status
+
+Will query whether a blockchain is running or not. Returns a plain
+text string of true if a blockchain is running or false if a
+blockchain is not running.
+
+--------------------------------------------------------------
+
+Keys handlers
+
+--------------------------------------------------------------
+
+	POST http://IP:PORT/eris/importkey/:keyName
+
+Will import a key. Keys passed must have been generated
+by epm keys gen NAME. The keyName passed to the URL must
+match the local keyname.
+
+Will save the POSTed key to the keychain and then import the key
+into the config.json for the checked out blockchain.
+
+*/
 package server
 
 import (
 	"fmt"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/go-martini/martini"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
-	"net/http"
-	"time"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/go-martini/martini"
 	"log"
+	"net/http"
 	"os"
+	"time"
 )
 
 var logger *monklog.Logger = monklog.NewLogger("EPM_SERVER")
@@ -30,6 +209,11 @@ type Server struct {
 	wsService *WsService
 }
 
+// To override martini's logger we need to build
+// a custom start function. In other words, we need
+// to make our "own" martini and cannot just
+// use martini classic out of the box as martini
+// classic out of the box uses martini's ugly logger.
 func epmClassic() *martini.ClassicMartini {
 	r := martini.NewRouter()
 	m := martini.New()
@@ -40,7 +224,7 @@ func epmClassic() *martini.ClassicMartini {
 	return &martini.ClassicMartini{m, r}
 }
 
-// Create a new server.
+// Create a new server object.
 func NewServer(host string, port uint16, maxConnections uint32, rootDir string) *Server {
 
 	cMartini := epmClassic()
@@ -99,7 +283,6 @@ func (this *Server) Start() error {
 	cm.NotFound(this.httpService.handleNotFound)
 
 	cm.RunOnAddr(this.host + ":" + fmt.Sprintf("%d", this.port))
-
 	return nil
 }
 
@@ -123,6 +306,10 @@ func (this *Server) WsService() *WsService {
 	return this.wsService
 }
 
+// Custom Logger to harmonize logging events with
+// the rest of EPM logging. While this is non-standard
+// it is necessary because martini's logging is
+// really quite ugly.
 func ServeLogger() martini.Handler {
 	out := log.New(os.Stdout, "", 0)
 	return func(res http.ResponseWriter, req *http.Request, c martini.Context, log *log.Logger) {

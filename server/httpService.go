@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/go-martini/martini"
-	"github.com/eris-ltd/epm-go/commands"
 	"github.com/eris-ltd/epm-go/chains"
+	"github.com/eris-ltd/epm-go/commands"
 	"github.com/eris-ltd/epm-go/epm"
 	"io"
 	"io/ioutil"
@@ -15,22 +15,21 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
-	"strings"
 	"strconv"
+	"strings"
 	"time"
 )
 
+// The default return when a requested URL does not match one of the handlers
 const EPM_HELP = "That API endpoint does not exist. Please see the epm documentation.\n"
 
-
+// The HttpService object.
 type HttpService struct {
-	ChainIsRunning bool
-	chainIsRestarting bool
+	ChainIsRunning       bool
+	chainIsRestarting    bool
 	ChainShutDownChannel chan bool
-	ChainIsShutDown chan bool
-	Chain epm.Blockchain
-	// Maybe keep track of some statistics if this is used to create chains
-	// via some Eris web service later, like it works with the compilers.
+	ChainIsShutDown      chan bool
+	Chain                epm.Blockchain
 }
 
 // Create a new http service
@@ -44,8 +43,8 @@ func NewHttpService() *HttpService {
 	chainShutDownViaOS := make(chan os.Signal, 1)
 	signal.Notify(chainShutDownViaOS, os.Interrupt, os.Kill)
 	go func() {
-	    <-chainShutDownViaOS
-	    h.CleanUpAndExit()
+		<-chainShutDownViaOS
+		h.CleanUpAndExit()
 	}()
 	return h
 }
@@ -54,6 +53,8 @@ func NewHttpService() *HttpService {
 // ------------------- INFORMATIONAL HANDLERS ----------------------
 // -----------------------------------------------------------------
 
+// This API endpoint is equivalent to `epm plop` command. Note that
+// keys are not returnable for obvious reasons.
 func (this *HttpService) handlePlop(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Plopping")
 
@@ -66,12 +67,14 @@ func (this *HttpService) handlePlop(params martini.Params, w http.ResponseWriter
 	this.executeCommand(cmdRaw, w)
 }
 
+// This API endpoint is equivalent to `epm refs ls` command.
 func (this *HttpService) handleLsRefs(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("List References")
 	cmdRaw := []string{"refs", "ls"}
 	this.executeCommand(cmdRaw, w)
 }
 
+// This API endpoint is equivalent to `epm refs add` command.
 func (this *HttpService) handleAddRefs(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Add a Reference")
 	toAdd := params["chainType"] + "/" + params["chainType"]
@@ -79,6 +82,7 @@ func (this *HttpService) handleAddRefs(params martini.Params, w http.ResponseWri
 	this.executeCommand(cmdRaw, w)
 }
 
+// This API endpoint is equivalent to `epm refs rm` command.
 func (this *HttpService) handleRmRefs(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Remove a Reference")
 	cmdRaw := []string{"refs", "rm", params["chainName"]}
@@ -89,6 +93,8 @@ func (this *HttpService) handleRmRefs(params martini.Params, w http.ResponseWrit
 // ------------------- CHAIN MANAGEMENT HANDLERS -------------------
 // -----------------------------------------------------------------
 
+// This API endpoint is equivalent to `epm config` command.
+// It will parse the parameters passed via standard URL syntax.
 func (this *HttpService) handleConfig(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Save Config Values")
 
@@ -107,31 +113,35 @@ func (this *HttpService) handleConfig(params martini.Params, w http.ResponseWrit
 	this.executeCommand(cmdRaw, w)
 }
 
+// This API endpoint will save the passed string via the POST command
+// as the named blockchain's config.json
 func (this *HttpService) handleRawConfig(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Save Raw Config JSON String")
 
 	// TODO: fix this to read body and and send for config saving.
-	configs, err := url.ParseQuery(r.URL.RawQuery)
-	if err != nil {
-		this.logError(w, 400, err)
-		return
-	}
+	// configs, err := url.ParseQuery(r.URL.RawQuery)
+	// if err != nil {
+	// 	this.logError(w, 400, err)
+	// 	return
+	// }
 
-	cmdRaw := []string{"config", "--chain", params["chainName"]}
-	for k, v := range configs {
-		toAdd := k + ":" + v[0]
-		cmdRaw = append(cmdRaw, toAdd)
-	}
+	// cmdRaw := []string{"config", "--chain", params["chainName"]}
+	// for k, v := range configs {
+	// 	toAdd := k + ":" + v[0]
+	// 	cmdRaw = append(cmdRaw, toAdd)
+	// }
 
-	this.executeCommand(cmdRaw, w)
+	// this.executeCommand(cmdRaw, w)
 }
 
+// This API endpoint is equivalent to `epm checkout`.
 func (this *HttpService) handleCheckout(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Checkout a Chain")
 	cmdRaw := []string{"checkout", params["chainName"]}
 	this.executeCommand(cmdRaw, w)
 }
 
+// This API endpoint is equivalent to `epm clean --force`.
 func (this *HttpService) handleClean(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Removing a Chain from the Tree")
 	cmdRaw := []string{"rm", "--force", params["chainName"]}
@@ -142,6 +152,7 @@ func (this *HttpService) handleClean(params martini.Params, w http.ResponseWrite
 // ------------------- BLOCKCHAIN ADMIN HANDLERS -------------------
 // -----------------------------------------------------------------
 
+// This API endpoint is equivalent to `epm fetch`.
 func (this *HttpService) handleFetchChain(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Fetchin a Blockchain")
 
@@ -160,6 +171,7 @@ func (this *HttpService) handleFetchChain(params martini.Params, w http.Response
 	this.executeCommand(cmdRaw, w)
 }
 
+// This API endpoint is equivalent to `epm new`.
 func (this *HttpService) handleNewChain(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Making a new Blockchain")
 
@@ -215,6 +227,7 @@ func (this *HttpService) handleNewChain(params martini.Params, w http.ResponseWr
 	this.executeCommand(cmdRaw, w)
 }
 
+// This API endpoint is equivalent to `epm run`.
 func (this *HttpService) handleStartChain(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Starting Chain Runner")
 
@@ -271,21 +284,9 @@ func (this *HttpService) handleStartChain(params martini.Params, w http.Response
 	}
 }
 
+// This API endpoint is equivalent to `kill -SIGTERM $(epm plop chainid)`.
 func (this *HttpService) handleStopChain(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Stopping Chain Runner")
-
-	cmdRaw := []string{"plop", "chainid"}
-	toTrim, err := this.executeCommandRaw(cmdRaw, w)
-	if err != nil {
-		this.logError(w, 400, err)
-		return
-	}
-	chainId := strings.TrimSpace(toTrim)
-
-	chainType := r.URL.Query().Get("type")
-	if chainType == "" {
-		chainType = "thelonious"
-	}
 
 	// First check if there is a running chain via in process check.
 	if this.ChainIsRunning {
@@ -301,7 +302,23 @@ func (this *HttpService) handleStopChain(params martini.Params, w http.ResponseW
 		return
 	}
 
-	// If there is no chain running then check if there is a PID.
+	// If `epm serve` did not start a blockchain, check if there
+	// is a pid file in the checked out blockchain's folder
+	// which would mean that there is a running blockchain which
+	// was started by the cli.
+	cmdRaw := []string{"plop", "chainid"}
+	toTrim, err := this.executeCommandRaw(cmdRaw, w)
+	if err != nil {
+		this.logError(w, 400, err)
+		return
+	}
+	chainId := strings.TrimSpace(toTrim)
+
+	chainType := r.URL.Query().Get("type")
+	if chainType == "" {
+		chainType = "thelonious"
+	}
+
 	chainDir := chains.ComposeRoot(chainType, chainId)
 	pidFile := path.Join(chainDir, "pid")
 	if _, err := os.Stat(pidFile); err != nil {
@@ -309,18 +326,22 @@ func (this *HttpService) handleStopChain(params martini.Params, w http.ResponseW
 		this.logError(w, 500, err)
 		return
 	}
+
 	var pidInt int
 	var chainProcess *os.Process
+
 	pid, err := ioutil.ReadFile(pidFile)
 	if err != nil {
 		this.logError(w, 500, err)
 		return
 	}
+
 	pidInt, err = strconv.Atoi(string(pid))
 	if err != nil {
 		this.logError(w, 500, err)
 		return
 	}
+
 	chainProcess, err = os.FindProcess(pidInt)
 	if err != nil {
 		this.logError(w, 500, err)
@@ -333,6 +354,7 @@ func (this *HttpService) handleStopChain(params martini.Params, w http.ResponseW
 	}
 }
 
+// This API endpoint is equivalent to `kill -SIGTERM $(epm plop chainid) && sleep 5 && epm run`
 func (this *HttpService) handleRestartChain(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Restarting Chain Runner")
 
@@ -355,6 +377,7 @@ func (this *HttpService) handleRestartChain(params martini.Params, w http.Respon
 	this.writeMsg(w, 200, "Blockchain restarted.")
 }
 
+// This API endpoint has no equivalent in the cli.
 func (this *HttpService) handleChainStatus(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Chain Running Status")
 
@@ -370,6 +393,8 @@ func (this *HttpService) handleChainStatus(params martini.Params, w http.Respons
 // ------------------- KEYS HANDLERS -------------------------------
 // -----------------------------------------------------------------
 
+// This API endpoint will save the POSTed key and import it to the
+// checked out blockchain.
 func (this *HttpService) handleKeyImport(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Keys Import")
 
@@ -399,7 +424,7 @@ func (this *HttpService) handleKeyImport(params martini.Params, w http.ResponseW
 // -----------------------------------------------------------------
 
 // Helper function to ensure if a chain is running that it has the time to shut
-//   down before the parent process exits.
+// down before the parent process exits.
 func (this *HttpService) CleanUpAndExit() {
 	logger.Errorln("Shutdown Signal Received")
 	if this.ChainIsRunning {
@@ -426,6 +451,8 @@ func (this *HttpService) logError(w http.ResponseWriter, code int, err error) {
 	this.writeMsg(w, code, errString)
 }
 
+// Helper function to execute the cli commands and send back
+// the result of the command to the caller.
 func (this *HttpService) executeCommand(cmdRaw []string, w http.ResponseWriter) {
 	product, err := this.executeCommandRaw(cmdRaw, w)
 	if err != nil {
@@ -435,6 +462,7 @@ func (this *HttpService) executeCommand(cmdRaw []string, w http.ResponseWriter) 
 	this.writeMsg(w, 200, product)
 }
 
+// Assembles the command.
 func (this *HttpService) executeCommandRaw(cmdRaw []string, w http.ResponseWriter) (string, error) {
 	var cmd *exec.Cmd
 	cmd = exec.Command("epm")
@@ -457,7 +485,7 @@ func (this *HttpService) handleNotFound(w http.ResponseWriter, r *http.Request) 
 	this.writeMsg(w, 404, EPM_HELP)
 }
 
-// Handler for echo.
+// Handler for echo. Useful for testing.
 func (this *HttpService) handleEcho(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Echo")
 	this.writeMsg(w, 200, params["message"])
