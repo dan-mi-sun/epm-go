@@ -40,8 +40,17 @@ func (e *EPM) ExecuteJobs() error {
 		e.checkTakeStateDiff(0)
 	}
 
+	uncommited := false
 	for i, j := range e.jobs {
 		err := e.ExecuteJob(j)
+
+		if j.cmd == "transact" || j.cmd == "deploy" || j.cmd == "modify-deploy" {
+			uncommited = true
+		}
+		if j.cmd == "commit" {
+			uncommited = false
+		}
+
 		if e.Diff {
 			e.checkTakeStateDiff(i + 1)
 		}
@@ -60,6 +69,9 @@ func (e *EPM) ExecuteJobs() error {
 	}
 	if e.Diff {
 		e.checkTakeStateDiff(len(e.jobs))
+	}
+	if uncommited {
+		e.chain.Commit()
 	}
 	return nil
 }
@@ -267,7 +279,7 @@ func (e *EPM) packArgsABI(to string, data ...string) ([]string, error) {
 		funcName := data[0]
 		args := data[1:]
 
-		fmt.Println("ABI Spec", abiSpec)
+		//fmt.Println("ABI Spec", abiSpec)
 		a := []interface{}{}
 		for _, aa := range args {
 			aa = coerceHex(aa, true)
