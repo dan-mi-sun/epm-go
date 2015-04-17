@@ -752,7 +752,7 @@ func Deploy(c *Context) {
 	// write epm variables to file
 	e.WriteVars(path.Join(chainRoot, EPMVars))
 	// wait for a block
-	e.Commit()
+	//e.Commit()
 	// run tests
 	if test_ {
 		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
