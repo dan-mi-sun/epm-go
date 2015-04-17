@@ -114,6 +114,11 @@ func (e *EPM) resolveFunc(name string) (func([]string) error, int) {
 		f = e.Include
 	case "assert":
 		f = e.Assert
+	case "commit":
+		f = func([]string) error {
+			e.Commit()
+			return nil
+		}
 	default:
 		f = func([]string) error { return fmt.Errorf("Unknown command: %s", name) }
 		n = 0
@@ -202,7 +207,7 @@ func (e *EPM) Deploy(args []string) error {
 	// send transaction
 	addr, err := e.chain.Script(hex.EncodeToString(bytecode))
 	if err != nil {
-		err = fmt.Errorf("Error compiling %s: %s", p, err.Error())
+		err = fmt.Errorf("Error deploying contract %s: %s", p, err.Error())
 		logger.Infoln(err.Error())
 		return err
 	}

@@ -102,6 +102,7 @@ var CommandArgs = map[string]int{
 	"epm":           1, // execute a pdx file (recursive)
 	"include":       2, // include contracts in another directory
 	"assert":        2, // assert the value of a variable
+	"commit":        0, // commit a block
 }
 
 // tokens and special chars
