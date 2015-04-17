@@ -595,9 +595,6 @@ func Command(c *Context) {
 	e.AddJob(job)
 	e.ExecuteJobs()
 	e.WriteVars(path.Join(root, EPMVars))
-//	if cmd != "call" && cmd != "assert" {
-//		e.Commit()
-//	}
 }
 
 func Test(c *Context) {
@@ -666,8 +663,7 @@ func Test(c *Context) {
 		e.ExecuteJobs()
 		// write epm variables to file
 		e.WriteVars(path.Join(chainRoot, EPMVars))
-		// wait for a block
-		e.Commit()
+
 		// run tests
 		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
 		if err != nil {
@@ -751,9 +747,7 @@ func Deploy(c *Context) {
 	e.ExecuteJobs()
 	// write epm variables to file
 	e.WriteVars(path.Join(chainRoot, EPMVars))
-	// wait for a block
-	//e.Commit()
-	// run tests
+
 	if test_ {
 		results, err := e.Test(path.Join(dir, pkg+"."+TestExt))
 		if err != nil {
