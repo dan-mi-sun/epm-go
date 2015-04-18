@@ -249,14 +249,14 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 	return nil
 }
 
-func resolveRootFlag(c *Context) (string, string, string, error) {
+func ResolveRootFlag(c *Context) (string, string, string, error) {
 	ref := c.String("chain")
 	rpc := c.Bool("rpc")
 	multi := c.String("multi")
 	return resolveRoot(ref, rpc, multi)
 }
 
-func resolveRootArg(c *Context) (string, string, string, error) {
+func ResolveRootArg(c *Context) (string, string, string, error) {
 	args := c.Args()
 	ref := ""
 	if len(args) > 0 {

@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"github.com/eris-ltd/epm-go/epm"
 	"log"
 
@@ -20,6 +21,12 @@ func NewChain(chainType string, rpc bool) epm.Blockchain {
 
 }
 
+// This will be called and should do nothing.
 func ChainSpecificDeploy(chain epm.Blockchain, deployGen, root string, novi bool) error {
 	return nil
+}
+
+// This is invalid
+func Fetch(chainType, peerserver string) ([]byte, error) {
+	return nil, fmt.Errorf("Fetch not defined for eth")
 }

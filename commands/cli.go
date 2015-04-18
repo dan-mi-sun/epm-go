@@ -37,7 +37,7 @@ func Clean(c *Context) {
 
 // plop the config or genesis defaults into current dir
 func Plop(c *Context) {
-	root, chainType, chainId, err := resolveRootFlag(c)
+	root, chainType, chainId, err := ResolveRootFlag(c)
 	ifExit(err)
 	var toPlop string
 	if len(c.Args()) > 0 {
@@ -403,7 +403,7 @@ func AddRef(c *Context) {
 
 // run a node on a chain
 func Run(c *Context) {
-	root, chainType, chainId, err := resolveRootFlag(c)
+	root, chainType, chainId, err := ResolveRootFlag(c)
 	ifExit(err)
 
 	pid := os.Getpid()
@@ -446,7 +446,7 @@ func Config(c *Context) {
 		err       error
 	)
 	rpc := c.Bool("rpc")
-	root, chainType, _, err = resolveRootFlag(c)
+	root, chainType, _, err = ResolveRootFlag(c)
 	ifExit(err)
 
 	configPath := path.Join(root, "config.json")
@@ -479,7 +479,7 @@ func Remove(c *Context) {
 	if len(c.Args()) < 1 {
 		exit(fmt.Errorf("Error: specify the chain ref as an argument"))
 	}
-	root, _, _, err := resolveRootArg(c)
+	root, _, _, err := ResolveRootArg(c)
 	ifExit(err)
 
 	if confirm("This will permanently delete the directory: " + root) {
@@ -514,7 +514,7 @@ func Remove(c *Context) {
 
 // run a single epm on-chain command (endow, deploy)
 func Command(c *Context) {
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 
 	chain := LoadChain(c, chainType, root)
@@ -565,7 +565,7 @@ func Test(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
@@ -660,7 +660,7 @@ func Deploy(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
@@ -729,7 +729,7 @@ func Console(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
@@ -805,7 +805,7 @@ func useKey(keyFile string, c *Context) {
 
 	// set key in chain's config
 	rpc := c.Bool("rpc")
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 
 	configPath := path.Join(root, "config.json")
@@ -879,7 +879,7 @@ func Keygen(c *Context) {
 	if !c.Bool("no-import") {
 		// set key in chain's config
 		rpc := c.Bool("rpc")
-		root, chainType, _, err := resolveRootFlag(c)
+		root, chainType, _, err := ResolveRootFlag(c)
 		ifExit(err)
 
 		configPath := path.Join(root, "config.json")
@@ -966,7 +966,7 @@ func Install(c *Context) {
 		chainRoot = chains.ComposeRootMulti("thelonious", chainId, "0")
 	} else {
 		var err error
-		chainRoot, _, chainId, err = resolveRootFlag(c)
+		chainRoot, _, chainId, err = ResolveRootFlag(c)
 		ifExit(err)
 	}
 
@@ -1088,7 +1088,7 @@ func Accounts(c *Context) {
 		account = c.Args()[0]
 	}
 
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	chain := LoadChain(c, chainType, root)
 

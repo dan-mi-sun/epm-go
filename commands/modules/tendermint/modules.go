@@ -23,3 +23,7 @@ func NewChain(chainType string, rpc bool) epm.Blockchain {
 func ChainSpecificDeploy(chain epm.Blockchain, deployGen, root string, novi bool) error {
 	return nil
 }
+
+func Fetch(chainType, peerserver string) ([]byte, error) {
+	return nil, fmt.Errorf("Fetch not supported for mint")
+}
