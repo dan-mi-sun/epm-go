@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -23,9 +24,6 @@ import (
 
 	//epm-binary-generator:IMPORT
 	mod "github.com/eris-ltd/epm-go/commands/modules/thelonious"
-
-	// TODO remove this!
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkcrypto"
 )
 
 func Clean(c *Context) {
@@ -851,22 +849,32 @@ func Keygen(c *Context) {
 	}
 	name := c.Args()[0]
 
-	// create a new ecdsa key
-	key := monkcrypto.GenerateNewKeyPair()
-	prv := key.PrivateKey
-	addr := key.Address()
-	a := hex.EncodeToString(addr)
-	if name != "" {
-		name += "-"
+	// check for keygen binary
+	bin := path.Join(GoPath, "bin", "epm-keygen")
+	src := path.Join(utils.ErisLtd, "epm-go", "cmd", "epm-keygen")
+	cur, _ := os.Getwd()
+	ifExit(os.Chdir(src))
+	if _, err := os.Stat(bin); err != nil {
+		cmd := exec.Command("go", "install")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		err := cmd.Run()
+		ifExit(os.Chdir(cur))
+		if err != nil {
+			exit(err)
+		}
 	}
-	name += a
-	prvHex := hex.EncodeToString(prv)
 
-	// write key to file
-	keyFile := path.Join(utils.Keys, name)
-	err := ioutil.WriteFile(keyFile, []byte(prvHex), 0600)
-	ifExit(err)
-	fmt.Println(name)
+	buf := new(bytes.Buffer)
+	// run keygen
+	// the only output is the name of the keyfile (for now)
+	cmd := exec.Command(bin, name)
+	cmd.Stdout = buf
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	ifExit(cmd.Run())
+	keyFile := string(buf.Bytes())
 
 	if !c.Bool("no-import") {
 		// set key in chain's config
