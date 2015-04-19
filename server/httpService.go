@@ -2,8 +2,10 @@ package server
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/go-martini/martini"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monk"
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/commands"
 	"github.com/eris-ltd/epm-go/epm"
@@ -21,31 +23,45 @@ import (
 )
 
 // The default return when a requested URL does not match one of the handlers
-const EPM_HELP = "That API endpoint does not exist. Please see the epm documentation.\n"
+const EPM_HELP = "That API endpoint does not exist. Please see the epm documentation."
 
 // The HttpService object.
 type HttpService struct {
+	Router               *martini.Router
 	ChainIsRunning       bool
 	chainIsRestarting    bool
+	ChainRunningName     string
+	ChainRunningRPC    	 ChainConfig
 	ChainShutDownChannel chan bool
 	ChainIsShutDown      chan bool
 	Chain                epm.Blockchain
 }
 
+type ChainConfig struct {
+	ServeRPC bool   `json:"serve_rpc"`
+	RPCIp    string `json:"rpc_host"`
+	RPCPort  int    `json:"rpc_port"`
+}
+
 // Create a new http service
-func NewHttpService() *HttpService {
+func NewHttpService(cm martini.Router) *HttpService {
 	h := &HttpService{}
+
+	h.Router = &cm
 	h.ChainIsRunning = false
 	h.chainIsRestarting = false
+
 	h.ChainShutDownChannel = make(chan bool, 1)
 	h.ChainIsShutDown = make(chan bool, 1)
 
 	chainShutDownViaOS := make(chan os.Signal, 1)
+
 	signal.Notify(chainShutDownViaOS, os.Interrupt, os.Kill)
 	go func() {
 		<-chainShutDownViaOS
 		h.CleanUpAndExit()
 	}()
+
 	return h
 }
 
@@ -226,6 +242,10 @@ func (this *HttpService) handleStartChain(params martini.Params, w http.Response
 			return
 		}
 
+		if !this.chainIsRestarting {
+			this.setupRPC(root, w, r)
+		}
+
 		logLevel := r.URL.Query().Get("log")
 		if logLevel == "" {
 			logLevel = "2"
@@ -239,6 +259,7 @@ func (this *HttpService) handleStartChain(params martini.Params, w http.Response
 				c.Booleans["mine"] = true
 				c.Set("mine")
 			}
+			this.ChainRunningName = params["chainName"]
 
 			this.logInfo("Starting Blockchain with log level: " + logLevel)
 			this.Chain = commands.LoadChain(c, chainType, root)
@@ -251,12 +272,14 @@ func (this *HttpService) handleStartChain(params martini.Params, w http.Response
 			this.ChainIsShutDown <- true
 		}()
 
+		this.ChainIsRunning = true
+
 	} else {
+
 		this.writeMsg(w, 500, "A blockchain is already running.")
 		return
-	}
 
-	this.ChainIsRunning = true
+	}
 
 	if !this.chainIsRestarting {
 		this.writeMsg(w, 200, "Blockchain started.")
@@ -268,17 +291,24 @@ func (this *HttpService) handleStopChain(params martini.Params, w http.ResponseW
 	this.logIncoming("Stopping Chain Runner")
 
 	// First check if there is a running chain via in process check.
-	if this.ChainIsRunning {
+	if (this.ChainIsRunning && this.ChainRunningName == params["chainName"]) {
 
 		this.ChainShutDownChannel <- true
 		<-this.ChainIsShutDown
 		this.ChainIsRunning = false
+		this.Chain = monk.NewMonk(nil)
 
 		if !this.chainIsRestarting {
 			this.writeMsg(w, 200, "Blockchain stopped.")
 		}
 
 		return
+
+	} else if this.ChainIsRunning {
+
+		this.writeMsg(w, 400, "Improper chain name")
+		return
+
 	}
 
 	// If `epm serve` did not start a blockchain, check if there
@@ -361,11 +391,13 @@ func (this *HttpService) handleChainStatus(params martini.Params, w http.Respons
 	this.logIncoming("Chain Running Status")
 
 	if this.ChainIsRunning {
-		this.writeMsg(w, 200, "true")
-	} else {
-		this.writeMsg(w, 200, "false")
+		if this.ChainRunningName == params["chainName"] {
+			this.writeMsg(w, 200, "true")
+			return
+		}
 	}
 
+	this.writeMsg(w, 200, "false")
 }
 
 // -----------------------------------------------------------------
@@ -457,6 +489,83 @@ func (this *HttpService) executeCommandRaw(cmdRaw []string, w http.ResponseWrite
 	return out.String(), nil
 }
 
+// Setup the rpc
+func (this *HttpService) setupRPC(root string, w http.ResponseWriter, r *http.Request) {
+	// rpc override?
+	if r.URL.Query().Get("no-rpc") == "true" {
+		var configParsed ChainConfig
+		configParsed.ServeRPC = false
+		this.ChainRunningRPC = configParsed
+		return
+	}
+
+	// else turn it on
+	configRaw, err := ioutil.ReadFile(path.Join(root, "config.json"))
+	if err != nil {
+		this.logError(w, 500, err)
+		return
+	}
+	var configParsed ChainConfig
+	err = json.Unmarshal(configRaw, &configParsed)
+	if err != nil {
+		this.logError(w, 500, err)
+		return
+	}
+
+	// make sure the RPC server is turned on
+	if !configParsed.ServeRPC {
+		this.logInfo("Turning on RPC Server.")
+		_, err = this.executeCommandRaw([]string{"config", "serve_rpc:true"}, w)
+		if err != nil {
+			this.logError(w, 500, err)
+			return
+		}
+	}
+
+	// set the RPC host
+	if r.URL.Query().Get("rpc-host") != "" {
+		this.logInfo("Making sure RPC Host is set.")
+		rpcHost := "rpc_host:" + r.URL.Query().Get("rpc-host")
+		_, err = this.executeCommandRaw([]string{"config", rpcHost}, w)
+		if err != nil {
+			this.logError(w, 500, err)
+			return
+		}
+	} else if configParsed.RPCIp == "" {
+		this.logInfo("Making sure RPC Host is set to localhost.")
+		_, err = this.executeCommandRaw([]string{"config", "rpc_host:localhost"}, w)
+		if err != nil {
+			this.logError(w, 500, err)
+			return
+		}
+	}
+
+	// set the RPC port
+	if r.URL.Query().Get("rpc-port") != "" {
+		this.logInfo("Making sure RPC Port is set.")
+		rpcPort := "rpc_port:" + r.URL.Query().Get("rpc-port")
+		_, err = this.executeCommandRaw([]string{"config", rpcPort}, w)
+		if err != nil {
+			this.logError(w, 500, err)
+			return
+		}
+	}
+
+	// Now set the vars in the object
+	configRaw, err = ioutil.ReadFile(root + "/config.json")
+	if err != nil {
+		this.logError(w, 500, err)
+		return
+	}
+	err = json.Unmarshal(configRaw, &configParsed)
+	if err != nil {
+		this.logError(w, 500, err)
+		return
+	}
+
+	this.ChainRunningRPC = configParsed
+}
+
 // Handler for not found.
 func (this *HttpService) handleNotFound(w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("404! No handler found for that endpoint.")
@@ -466,6 +575,15 @@ func (this *HttpService) handleNotFound(w http.ResponseWriter, r *http.Request) 
 // Handler for echo. Useful for testing.
 func (this *HttpService) handleEcho(params martini.Params, w http.ResponseWriter, r *http.Request) {
 	this.logIncoming("Echo")
+
+	// todo: remove this
+	// var a string
+	// ro := *this.Router
+	// for _, r := range ro.All() {
+	// 	a = a + "/n" + r.Pattern()
+	// }
+	// this.writeMsg(w, 200, a)
+
 	this.writeMsg(w, 200, params["message"])
 }
 

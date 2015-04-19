@@ -129,22 +129,25 @@ Optional Parameters:
 Note, there is no check that the passed string is valid json
 before the server will seek to instatiate the chain.
 
-	POST http://IP:PORT/eris/start
+	POST http://IP:PORT/eris/start/:chainName
 
 Will start running the currently checked out blockchain.
 
 Optional Parameters:
 
 	- commit = if commit=true is passed via the URL, then the blockchain will be started with mining/committing turned on;
-	- log = set the log level to a log level
+	- log = set the log level to a log level;
+	- no-rpc = by default the server will turn on the RPC server and reverse proxy to it unless the no-rpc=true is set;
+	- rpc-host = will set the rpc host to something other than localhost;
+	- rpc-port = manually set an rpc port;
 
 The default log level which is set is 2.
 
-	POST http://IP:PORT/eris/stop
+	POST http://IP:PORT/eris/stop/:chainName
 
 Will stop a running blockchain.
 
-	POST http://IP:PORT/eris/restart
+	POST http://IP:PORT/eris/restart/:chainName
 
 Will restart a running blockchain. The same optional parameters
 as for the start API endpoint may be passed to restart.
@@ -209,10 +212,10 @@ type Server struct {
 // use martini classic out of the box as martini
 // classic out of the box uses martini's ugly logger.
 func epmClassic() *martini.ClassicMartini {
-	r := martini.NewRouter()
 	m := martini.New()
 	m.Use(ServeLogger())
 	m.Use(martini.Recovery())
+	r := martini.NewRouter()
 	m.MapTo(r, (*martini.Routes)(nil))
 	m.Action(r.Handle)
 	return &martini.ClassicMartini{m, r}
@@ -222,7 +225,7 @@ func epmClassic() *martini.ClassicMartini {
 func NewServer(host string, port uint16, maxConnections uint32, rootDir string) *Server {
 
 	cMartini := epmClassic()
-	httpService := NewHttpService()
+	httpService := NewHttpService(cMartini.Router)
 	wsService := NewWsService(maxConnections)
 
 	return &Server{
@@ -261,10 +264,10 @@ func (this *Server) Start() error {
 	// Blockchain admin handlers
 	cm.Post("/eris/fetch/:chainName/:fetchIP/:fetchPort", this.httpService.handleFetchChain)
 	cm.Post("/eris/new/:chainName", this.httpService.handleNewChain)
-	cm.Post("/eris/start", this.httpService.handleStartChain)
-	cm.Post("/eris/stop", this.httpService.handleStopChain)
-	cm.Post("/eris/restart", this.httpService.handleRestartChain)
-	cm.Get("/eris/status", this.httpService.handleChainStatus)
+	cm.Post("/eris/start/:chainName", this.httpService.handleStartChain)
+	cm.Post("/eris/stop/:chainName", this.httpService.handleStopChain)
+	cm.Post("/eris/restart/:chainName", this.httpService.handleRestartChain)
+	cm.Get("/eris/status/:chainName", this.httpService.handleChainStatus)
 
 	// Keys handlers
 	cm.Post("/eris/importkey/:keyName", this.httpService.handleKeyImport)
@@ -276,6 +279,7 @@ func (this *Server) Start() error {
 	cm.NotFound(this.httpService.handleNotFound)
 
 	cm.RunOnAddr(this.host + ":" + fmt.Sprintf("%d", this.port))
+
 	return nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/braintree/manners"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkchain"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkstate"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monktrie"
@@ -29,10 +30,11 @@ func (s *Thelonious) ServeGenesis(fetchPort int) {
 	mux.HandleFunc("/block", s.serveGenesisBlock)  // serve genesis block
 	mux.HandleFunc("/state/", s.serveGenesisState) // serve serialized trie given root hash
 	mux.HandleFunc("/hash/", s.serveHash)          // serve value given key hash
-	err := http.ListenAndServe(":"+fetchPortString, mux)
-	if err != nil {
-		monklogger.Errorln(err)
-	}
+	server := manners.NewServer()
+	go server.ListenAndServe(":"+fetchPortString, mux)
+	<-s.quit
+	server.Shutdown <- true
+	return
 }
 
 // serve the peers p2p listening port

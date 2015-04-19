@@ -197,8 +197,13 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
+<<<<<<< HEAD
 			"Comment": "v0.8-84-gc4f152e",
 			"Rev": "c4f152e6ac2617d9f8be12e3637a03fa830cd323"
+=======
+			"Comment": "v.0.8.1-64-gd127730",
+			"Rev": "d12773069a481ce721021c1dc2dc665643951073"
+>>>>>>> enable turning on an off of rpc functionality
 		},
 		{
 			"ImportPath": "github.com/ethereum/go-ethereum/crypto/randentropy",
