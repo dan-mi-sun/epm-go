@@ -37,10 +37,25 @@ func cliCall(f func(*commands.Context)) func(*cli.Context) {
 			if err != nil {
 				exit(err)
 			}
-			fmt.Println("Chain type:", typ)
 			if commands.CHAIN == "" {
 				// run the proper binary
+				// if it does not exist, install it
 				bin := path.Join(utils.GoPath, "bin", "epm-"+typ)
+				if _, err := os.Stat(bin); err != nil {
+					cur, _ := os.Getwd()
+					ifExit(os.Chdir(path.Join(utils.ErisLtd, "epm-go")))
+					cmd := exec.Command("go", "install", "./cmd/epm-binary-generator")
+					cmd.Stdin = os.Stdin
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					ifExit(cmd.Run())
+					cmd = exec.Command(path.Join(utils.GoPath, "bin", "epm-binary-generator"), "./cmd/epm", "commands", typ)
+					cmd.Stdin = os.Stdin
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					ifExit(cmd.Run())
+					ifExit(os.Chdir(cur))
+				}
 				cmd := exec.Command(bin, os.Args[1:]...)
 				cmd.Stdin = os.Stdin
 				cmd.Stdout = os.Stdout

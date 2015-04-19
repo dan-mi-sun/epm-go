@@ -43,9 +43,6 @@ func main() {
 		fmt.Println("Error parsing package", commandsPkg, err)
 		os.Exit(1)
 	}
-	for _, i := range imports {
-		fmt.Println(i.importSpec.Name)
-	}
 
 	// we need to back up the files we'll be overwriting
 	// imports and files are bijective
@@ -152,9 +149,7 @@ func parseImports(commandsPkg string) (*ast.BasicLit, []*Import, error) {
 		// find the CHAIN variable declaration
 		for _, decl := range astFile.Decls {
 			if gendecl, ok := decl.(*ast.GenDecl); ok {
-				fmt.Println("gendecl", gendecl.Tok)
 				if gendecl.Tok == token.CONST {
-					fmt.Println("Const")
 					if valspec, ok := gendecl.Specs[0].(*ast.ValueSpec); ok {
 						names := valspec.Names
 						if len(names) == 1 && names[0].Name == "CHAIN" {
