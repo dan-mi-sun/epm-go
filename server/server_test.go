@@ -60,7 +60,7 @@ func doHttpCall(method string, endpoint string, expectedCode int, t *testing.T) 
 }
 
 func TestFourOhFour(t *testing.T) {
-	fmt.Println("Start 404 test.")
+	fmt.Println("Begin 404 test.")
 
 	_ = doHttpCall("GET", "1234", 404, t)
 
@@ -68,7 +68,7 @@ func TestFourOhFour(t *testing.T) {
 }
 
 func TestHttpEcho(t *testing.T) {
-	fmt.Println("Start echo test.")
+	fmt.Println("Begin echo test.")
 
 	ret := doHttpCall("GET", "echo/testmessage", 200, t)
 	if ret != "testmessage" {
@@ -80,7 +80,7 @@ func TestHttpEcho(t *testing.T) {
 }
 
 func TestHttpNewChain(t *testing.T) {
-	fmt.Println("Start new chain test.")
+	fmt.Println("Begin new chain test.")
 
 	endPoint := "eris/new/" + chainName
 	_ = doHttpCall("POST", endPoint, 200, t)
@@ -89,7 +89,7 @@ func TestHttpNewChain(t *testing.T) {
 }
 
 func TestHttpPlop(t *testing.T) {
-	fmt.Println("Start plop test.")
+	fmt.Println("Begin plop test.")
 
 	endPoint := "eris/plop/" + chainName + "/chainid"
 	ret := doHttpCall("GET", endPoint, 200, t)
@@ -120,7 +120,7 @@ func TestHttpPlop(t *testing.T) {
 }
 
 func TestRefsLs(t *testing.T) {
-	fmt.Println("Start refs ls test.")
+	fmt.Println("Begin refs ls test.")
 
 	endPoint := "eris/refs/ls"
 	_ = doHttpCall("GET", endPoint, 200, t)
@@ -129,7 +129,7 @@ func TestRefsLs(t *testing.T) {
 }
 
 func TestRefsRm(t *testing.T) {
-	fmt.Println("Start refs rm test.")
+	fmt.Println("Begin refs rm test.")
 
 	endPoint := "eris/refs/rm/" + chainName
 	_ = doHttpCall("POST", endPoint, 200, t)
@@ -138,7 +138,7 @@ func TestRefsRm(t *testing.T) {
 }
 
 func TestRefsAdd(t *testing.T) {
-	fmt.Println("Start refs add test.")
+	fmt.Println("Begin refs add test.")
 
 	endPoint := "eris/refs/add/" + chainName + "/thelonious/" + chainId
 	_ = doHttpCall("POST", endPoint, 200, t)
@@ -147,7 +147,7 @@ func TestRefsAdd(t *testing.T) {
 }
 
 func TestCheckOut(t *testing.T) {
-	fmt.Println("Start checkout test.")
+	fmt.Println("Begin checkout test.")
 
 	endPoint := "eris/new/" + chainNameOther
 	_ = doHttpCall("POST", endPoint, 200, t)
@@ -159,7 +159,7 @@ func TestCheckOut(t *testing.T) {
 }
 
 func TestConfig(t *testing.T) {
-	fmt.Println("Start config test.")
+	fmt.Println("Begin config test.")
 
 	endPoint := "eris/config/" + chainName + "?log_level=5"
 	_ = doHttpCall("POST", endPoint, 200, t)
@@ -171,7 +171,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestFetch(t *testing.T) {
-	fmt.Println("Start chain fetch test.")
+	fmt.Println("Begin chain fetch test.")
 
 	endPoint := "eris/fetch/" + chainNameThird + "/" + fetchIP + "/" + fetchPort + "?checkout=false"
 	_ = doHttpCall("POST", endPoint, 200, t)
@@ -187,9 +187,10 @@ func TestFetch(t *testing.T) {
 }
 
 func TestChainStart(t *testing.T) {
-	fmt.Println("Start chain start test.")
+	fmt.Println("Begin chain start test.")
 
-	_ = doHttpCall("POST", "eris/start", 200, t)
+	endPoint := "eris/start/" + chainName + "?log=5"
+	_ = doHttpCall("POST", endPoint, 200, t)
 
 	time.Sleep(5 * time.Second)
 
@@ -197,9 +198,10 @@ func TestChainStart(t *testing.T) {
 }
 
 func TestChainStatus(t *testing.T) {
-	fmt.Println("Start chain status test.")
+	fmt.Println("Begin chain status test.")
 
-	ret := doHttpCall("GET", "eris/status", 200, t)
+	endPoint := "eris/status/" + chainName
+	ret := doHttpCall("GET", endPoint, 200, t)
 	if ret != "true" {
 		t.Error("Expected: true, Got: " + ret)
 		t.FailNow()
@@ -208,42 +210,47 @@ func TestChainStatus(t *testing.T) {
 	fmt.Println("Chain status test: PASSED")
 }
 
-func TestRestartChain(t *testing.T) {
-	fmt.Println("Start chain restart test.")
+// func TestRestartChain(t *testing.T) {
+// 	fmt.Println("Begin chain restart test.")
 
-	_ = doHttpCall("POST", "eris/restart", 200, t)
+// 	endPoint := "eris/restart/" + chainName
+// 	_ = doHttpCall("POST", endPoint, 200, t)
 
-	time.Sleep(5 * time.Second)
+// 	time.Sleep(5 * time.Second)
 
-	fmt.Println("Chain restart test: PASSED")
-}
+// 	fmt.Println("Chain restart test: PASSED")
+// }
 
 func TestStopChain(t *testing.T) {
-	fmt.Println("Start chain stop test.")
+	fmt.Println("Begin chain stop test.")
 
-	_ = doHttpCall("POST", "eris/stop", 200, t)
+	endPoint := "eris/stop/" + chainName
+	_ = doHttpCall("POST", endPoint, 200, t)
 
 	fmt.Println("Chain stop test: PASSED")
 }
 
 func TestChainStartWithMining(t *testing.T) {
-	fmt.Println("Start chain start with options test.")
+	fmt.Println("Begin chain start with options test.")
 
-	_ = doHttpCall("POST", "eris/start?commit=true&log=5", 200, t)
-
-	time.Sleep(5 * time.Second)
-
-	_ = doHttpCall("POST", "eris/restart?commit=true&log=5", 200, t)
+	endPoint := "eris/start/" + chainName + "?commit=true&log=5"
+	_ = doHttpCall("POST", endPoint, 200, t)
 
 	time.Sleep(5 * time.Second)
 
-	_ = doHttpCall("POST", "eris/stop", 200, t)
+	endPoint = "eris/restart/" + chainName + "?commit=true&log=5"
+	_ = doHttpCall("POST", endPoint, 200, t)
+
+	time.Sleep(5 * time.Second)
+
+	endPoint = "eris/stop/" + chainName
+	_ = doHttpCall("POST", endPoint, 200, t)
 
 	fmt.Println("Chain start with options test: PASSED")
 }
 
 func TestClean(t *testing.T) {
-	fmt.Println("Start clean test.")
+	fmt.Println("Begin clean test.")
 
 	endPoint := "eris/clean/" + chainName
 	_ = doHttpCall("POST", endPoint, 200, t)
@@ -259,7 +266,7 @@ func TestClean(t *testing.T) {
 
 // Establish websocket connection and rpc to 'echo'
 // func TestWsEcho(t *testing.T) {
-// 	fmt.Println("Start websocket echo test.")
+// 	fmt.Println("Begin websocket echo test.")
 // 	origin := "http://localhost/"
 // 	url := "ws://localhost:3000/websocket"
 // 	ws, err := websocket.Dial(url, "", origin)
