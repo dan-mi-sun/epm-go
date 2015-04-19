@@ -15,19 +15,19 @@ echo `jq '.lll.url |= "http://compilers:9099/compile"' $DECERVER/languages/confi
 echo `jq '.se.url |= "http://compilers:9099/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
 echo `jq '.sol.url |= "http://compilers:9099/compile"' $DECERVER/languages/config.json` > $DECERVER/languages/config.json
 
-# run the go unit tests
-cd epm && go test -v ./... -race
-cd ../chains && go test -v ./... -race
-cd ../utils && go test -v ./... -race
-cd ../server && go test -v ./... -race
-cd ../cmd/epm && go test -v ./... -race # these don't exist yet
-
 # run the base pdx deploy test
 cd ../tests && go test -v ./... -race
 
 # test suite of eris-std-lib deploys
 cd $GOPATH/src/github.com/eris-ltd/eris-std-lib/DTT/tests
 ./test.sh
+
+# run the go unit tests
+cd epm && go test -v ./... -race
+cd ../chains && go test -v ./... -race
+cd ../utils && go test -v ./... -race
+cd ../server && go test -v ./... -race
+cd ../cmd/epm && go test -v ./... -race # these don't exist yet
 
 # grab a new eth chain and test serpent and solidity
 epm --log 5 new -type eth -checkout
