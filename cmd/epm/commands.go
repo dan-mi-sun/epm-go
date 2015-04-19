@@ -1,15 +1,82 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"os/exec"
+	"path"
+
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/commands"
+	"github.com/eris-ltd/epm-go/utils"
 )
+
+var standAlones = map[string]struct{}{
+	"checkout": struct{}{},
+	"clean":    struct{}{},
+	"config":   struct{}{},
+	"head":     struct{}{},
+	"init":     struct{}{},
+	"keys":     struct{}{},
+	"plop":     struct{}{},
+	"refs":     struct{}{},
+	"rm":       struct{}{},
+}
 
 // wraps a epm-go/commands function in a closure that accepts cli.Context
 func cliCall(f func(*commands.Context)) func(*cli.Context) {
 	return func(c *cli.Context) {
 		c2 := commands.TransformContext(c)
-		f(c2)
+
+		if _, ok := standAlones[c.Command.Name]; ok {
+			f(c2)
+		} else {
+			var err error
+			var typ string
+			if c.Command.Name == "new" {
+				typ, err = chains.ResolveChainType(c2.String("type"))
+				ifExit(err)
+			} else {
+
+				// ensure we are using the correct binary
+				_, typ, _, err = commands.ResolveRootFlag(c2)
+				if err != nil {
+					exit(err)
+				}
+			}
+			fmt.Println("Chain type:", typ)
+			if commands.CHAIN == "" {
+				// run the proper binary
+				// if it does not exist, install it
+				bin := path.Join(utils.GoPath, "bin", "epm-"+typ)
+				if _, err := os.Stat(bin); err != nil {
+					cur, _ := os.Getwd()
+					ifExit(os.Chdir(path.Join(utils.ErisLtd, "epm-go")))
+					cmd := exec.Command("go", "install", "./cmd/epm-binary-generator")
+					cmd.Stdin = os.Stdin
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					ifExit(cmd.Run())
+					cmd = exec.Command(path.Join(utils.GoPath, "bin", "epm-binary-generator"), "./cmd/epm", "commands", typ)
+					cmd.Stdin = os.Stdin
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					ifExit(cmd.Run())
+					ifExit(os.Chdir(cur))
+				}
+				cmd := exec.Command(bin, os.Args[1:]...)
+				cmd.Stdin = os.Stdin
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				cmd.Run()
+			} else if typ != commands.CHAIN {
+				exit(fmt.Errorf("Wrong binary (%s) for chain type (%s)", commands.CHAIN, typ))
+			} else {
+				// go for it
+				f(c2)
+			}
+		}
 	}
 }
 

@@ -13,6 +13,9 @@ import (
 	"os/exec"
 	"path"
 	"strings"
+
+	//epm-binary-generator:IMPORT
+	mod "github.com/eris-ltd/epm-go/commands/modules/thelonious"
 )
 
 // TODO: needs work..
@@ -158,36 +161,6 @@ func checkInit() error {
 	return nil
 }
 
-func editor(file string) error {
-	editr := os.Getenv("EDITOR")
-	if strings.Contains(editr, "/") {
-		editr = path.Base(editr)
-	}
-	switch editr {
-	case "", "vim", "vi":
-		return vi(file)
-	case "emacs":
-		return emacs(file)
-	}
-	return fmt.Errorf("Unknown editor %s", editr)
-}
-
-func emacs(file string) error {
-	cmd := exec.Command("emacs", file)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-func vi(file string) error {
-	cmd := exec.Command("vim", file)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
 func exit(err error) {
 	if err != nil {
 		logger.Errorln(err)
@@ -228,29 +201,9 @@ func DeployChain(chain epm.Blockchain, root, config, deployGen string, novi bool
 
 	// TODO: nice way to handle multiple gen blocks on other chains
 	// set genesis config file
-	if th, ok := isThelonious(chain); ok {
-		tempGen := copyEditGenesisConfig(deployGen, root, "thelonious", novi)
-		setGenesisConfigThel(th, tempGen)
-	} else if tmint, ok := isTendermint(chain); ok {
-		tempGen := path.Join(root, "genesis.json")
-		utils.InitDataDir(root)
-
-		if deployGen == "" {
-			deployGen = path.Join(utils.Blockchains, "tendermint", "genesis.json")
-		}
-		if _, err := os.Stat(deployGen); err != nil {
-			err := ioutil.WriteFile(deployGen, []byte(mintconfig.DefaultGenesis), 0600)
-			ifExit(err)
-		}
-		ifExit(utils.Copy(deployGen, tempGen))
-		if !novi {
-			ifExit(editor(tempGen))
-		}
-
-		setGenesisConfigMint(tmint, tempGen)
-
-	} else if deployGen != "" {
-		logger.Warnln("Genesis configuration only possible with thelonious (for now - https://github.com/eris-ltd/epm-go/issues/53)")
+	err := mod.ChainSpecificDeploy(chain, deployGen, root, novi)
+	if err != nil {
+		return "", err
 	}
 
 	if err := chain.Init(); err != nil {
@@ -297,14 +250,14 @@ func InstallChain(chain epm.Blockchain, root, chainType, tempConf, chainId strin
 	return nil
 }
 
-func resolveRootFlag(c *Context) (string, string, string, error) {
+func ResolveRootFlag(c *Context) (string, string, string, error) {
 	ref := c.String("chain")
 	rpc := c.Bool("rpc")
 	multi := c.String("multi")
 	return resolveRoot(ref, rpc, multi)
 }
 
-func resolveRootArg(c *Context) (string, string, string, error) {
+func ResolveRootArg(c *Context) (string, string, string, error) {
 	args := c.Args()
 	ref := ""
 	if len(args) > 0 {

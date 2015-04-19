@@ -4,57 +4,25 @@ import (
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/eth"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/genblock"
-	//	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/mint"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkrpc"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monk"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkdoug" //"github.com/eris-ltd/modules/mint"
-	"github.com/eris-ltd/modules/mint"
+	//epm-binary-generator:IMPORT
+	mod "github.com/eris-ltd/epm-go/commands/modules/thelonious"
 )
 
-func newChain(chainType string, rpc bool) epm. // modules
-						Blockchain {
-	switch chainType {
-	case "thel", "thelonious", "monk":
-		if rpc {
-			return monkrpc.NewMonkRpcModule()
-		} else {
-			return monk.NewMonk(nil)
-		}
-	case "btc", "bitcoin":
-		if rpc {
-			log.Fatal("Bitcoin rpc not implemented yet")
-		} else {
-			log.Fatal("Bitcoin not implemented yet")
-		}
-	case "eth", "ethereum":
-		if rpc {
-			log.Fatal("Eth rpc not implemented yet")
-		} else {
-			return eth.NewEth(nil)
-		}
-	case "gen", "genesis":
-		return genblock.NewGenBlockModule(nil)
-	case "tendermint", "mint":
-		return mint.NewMint()
-	}
-	return nil
-
-}
+// this needs to match the type of the chain we're trying to run
+// it should be blank for the base epm (even though it includes thel ...)
+//epm-binary-generator:CHAIN
+const CHAIN = ""
 
 // chainroot is a full path to the dir
-func loadChain(c *Context, chainType, chainRoot string) epm.Blockchain {
+func LoadChain(c *Context, chainType, chainRoot string) epm.Blockchain {
 	rpc := c.Bool("rpc")
 	logger.Debugln("Loading chain ", c.String("type"))
 
-	chain := newChain(chainType, rpc)
+	chain := mod.NewChain(chainType, rpc)
 	setupModule(c, chain, chainRoot)
 	return chain
 }
@@ -123,7 +91,7 @@ func setupModule(c *Context, m epm.Blockchain, chainRoot string) {
 		// write the config to a temp file, open in editor, reload
 		tempConfig := path.Join(utils.Epm, "tempconfig.json")
 		ifExit(m.WriteConfig(tempConfig))
-		ifExit(editor(tempConfig))
+		ifExit(utils.Editor(tempConfig))
 		ifExit(m.ReadConfig(tempConfig))
 	}
 
@@ -132,50 +100,4 @@ func setupModule(c *Context, m epm.Blockchain, chainRoot string) {
 	// initialize and start
 	m.Init()
 	m.Start()
-}
-
-func isThelonious(chain epm.Blockchain) (*monk.MonkModule, bool) {
-	th, ok := chain.(*monk.MonkModule)
-	return th, ok
-}
-
-func isTendermint(chain epm.Blockchain) (*mint.MintModule, bool) {
-	th, ok := chain.(*mint.MintModule)
-	return th, ok
-}
-
-func setGenesisConfigThel(m *monk.MonkModule, genesis string) {
-	if strings.HasSuffix(genesis, ".pdx") || strings.HasSuffix(genesis, ".gdx") {
-		m.GenesisConfig = &monkdoug.GenesisConfig{Address: "0000000000THISISDOUG", NoGenDoug: false, Pdx: genesis}
-		m.GenesisConfig.Init()
-	} else {
-		m.Config.GenesisConfig = genesis
-	}
-}
-
-func setGenesisConfigMint(m *mint.MintModule, genesis string) {
-	if strings.HasSuffix(genesis, ".pdx") || strings.HasSuffix(genesis, ".gdx") {
-		//m.GenesisConfig = &monkdoug.GenesisConfig{Address: "0000000000THISISDOUG", NoGenDoug: false, Pdx: genesis}
-		//m.GenesisConfig.Init()
-	} else {
-		m.Config.GenesisConfig = genesis
-	}
-}
-
-func copyEditGenesisConfig(deployGen, tmpRoot, chainType string, novi bool) string {
-	tempGen := path.Join(tmpRoot, "genesis.json")
-	utils.InitDataDir(tmpRoot)
-
-	if deployGen == "" {
-		deployGen = path.Join(utils.Blockchains, chainType, "genesis.json")
-	}
-	if _, err := os.Stat(deployGen); err != nil {
-		err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)
-		ifExit(err)
-	}
-	ifExit(utils.Copy(deployGen, tempGen))
-	if !novi {
-		ifExit(editor(tempGen))
-	}
-	return tempGen
 }

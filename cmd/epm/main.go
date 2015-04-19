@@ -103,3 +103,11 @@ func exit(err error) {
 	}
 	os.Exit(0)
 }
+
+func ifExit(err error) {
+	if err != nil {
+		monklog.Flush()
+		fmt.Println(err)
+		os.Exit(1)
+	}
+}

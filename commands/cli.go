@@ -1,23 +1,19 @@
 package commands
 
 import (
+	"bytes"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	color "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/daviddengcn/go-colortext"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/decerver/interfaces/dapps"
-	mutils "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkutils"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkcrypto"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkutil"
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm" // ed25519 key generation
 	"github.com/eris-ltd/epm-go/utils"
 	"github.com/tendermint/tendermint/account"
 	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -26,6 +22,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	//epm-binary-generator:IMPORT
+	mod "github.com/eris-ltd/epm-go/commands/modules/thelonious"
 )
 
 func Clean(c *Context) {
@@ -39,7 +38,7 @@ func Clean(c *Context) {
 
 // plop the config or genesis defaults into current dir
 func Plop(c *Context) {
-	root, chainType, chainId, err := resolveRootFlag(c)
+	root, chainType, chainId, err := ResolveRootFlag(c)
 	ifExit(err)
 	var toPlop string
 	if len(c.Args()) > 0 {
@@ -80,7 +79,7 @@ func Plop(c *Context) {
 	case "key", "addr":
 		rpc := c.Bool("rpc")
 		configPath := path.Join(root, "config.json")
-		m := newChain(chainType, rpc)
+		m := mod.NewChain(chainType, rpc)
 		err := m.ReadConfig(configPath)
 		ifExit(err)
 		keyname := m.Property("KeySession").(string)
@@ -111,7 +110,7 @@ func Refs(c *Context) {
 		chainDir, er := chains.ResolveChainDir(chainType, rk, chainId)
 		ifExit(er)
 		rpc := c.Bool("rpc")
-		m := newChain(chainType, rpc)
+		m := mod.NewChain(chainType, rpc)
 		configPath := path.Join(chainDir, "config.json")
 		err := m.ReadConfig(configPath)
 		ifExit(err)
@@ -208,7 +207,7 @@ func Cp(c *Context) {
 		err = utils.Copy(root, newRoot)
 		ifExit(err)
 	}
-	chain := newChain(typ, false)
+	chain := mod.NewChain(typ, false)
 	configureRootDir(c, chain, newRoot)
 	chain.WriteConfig(path.Join(newRoot, "config.json"))
 }
@@ -226,52 +225,8 @@ func Fetch(c *Context) {
 
 	chainType := "thelonious"
 	peerserver := c.Args()[0]
-	peerip, _, err := net.SplitHostPort(peerserver)
+	chainId, err := mod.Fetch(chainType, peerserver)
 	ifExit(err)
-	peerserver = "http://" + peerserver
-
-	chainId, err := thelonious.GetChainId(peerserver)
-	ifExit(err)
-
-	rootDir := chains.ComposeRoot(chainType, monkutil.Bytes2Hex(chainId))
-	monkutil.Config = &monkutil.ConfigManager{ExecPath: rootDir, Debug: true, Paranoia: true}
-	utils.InitLogging(rootDir, "", 5, "")
-	db := mutils.NewDatabase("database", false)
-	monkutil.Config.Db = db
-
-	genesisBlock, err := thelonious.GetGenesisBlock(peerserver)
-	ifExit(err)
-
-	db.Put([]byte("GenesisBlock"), genesisBlock.RlpEncode())
-	db.Put([]byte("ChainID"), chainId)
-
-	hash := genesisBlock.GetRoot()
-	hashB, ok := hash.([]byte)
-	if !ok {
-		ifExit(fmt.Errorf("State root is not []byte:", hash))
-	}
-	logger.Warnf("Fetching state %x\n", hashB)
-	err = thelonious.GetGenesisState(peerserver, monkutil.Bytes2Hex(hashB), db)
-	ifExit(err)
-	db.Close()
-
-	// get genesis.json
-	g, err := thelonious.GetGenesisJson(peerserver)
-	ifExit(err)
-	err = ioutil.WriteFile(path.Join(rootDir, "genesis.json"), g, 0600)
-	ifExit(err)
-
-	peerport, err := thelonious.GetFetchPeerPort(peerserver)
-	ifExit(err)
-
-	// drop config
-	chain := newChain(chainType, false)
-	chain.SetProperty("RootDir", rootDir)
-	chain.SetProperty("RemoteHost", peerip)
-	chain.SetProperty("RemotePort", peerport)
-	chain.SetProperty("UseSeed", true)
-	ifExit(chain.WriteConfig(path.Join(rootDir, "config.json")))
-
 	logger.Warnf("Fetched genesis block for chain %x", chainId)
 
 	chainID := hex.EncodeToString(chainId)
@@ -354,7 +309,7 @@ func deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType stri
 		}
 	}
 
-	chain := newChain(chainType, rpc)
+	chain := mod.NewChain(chainType, rpc)
 
 	// if config doesnt exist, lay it
 	if _, err := os.Stat(deployConf); err != nil {
@@ -367,7 +322,7 @@ func deployInstallChain(tmpRoot, deployConf, deployGen, tempConf, chainType stri
 	// copy and edit temp
 	ifExit(utils.Copy(deployConf, tempConf))
 	if editCfg {
-		ifExit(editor(tempConf))
+		ifExit(utils.Editor(tempConf))
 	}
 
 	// deploy and install chain
@@ -449,7 +404,7 @@ func AddRef(c *Context) {
 
 // run a node on a chain
 func Run(c *Context) {
-	root, chainType, chainId, err := resolveRootFlag(c)
+	root, chainType, chainId, err := ResolveRootFlag(c)
 	ifExit(err)
 
 	pid := os.Getpid()
@@ -458,7 +413,7 @@ func Run(c *Context) {
 	ifExit(err)
 
 	logger.Infof("Running chain %s/%s\n", chainType, chainId)
-	chain := loadChain(c, chainType, root)
+	chain := LoadChain(c, chainType, root)
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt)
@@ -480,7 +435,7 @@ func RunDapp(c *Context) {
 	chainId, err := chains.ChainIdFromDapp(dapp)
 	ifExit(err)
 	logger.Infoln("Running chain ", chainId)
-	chain := loadChain(c, chainType, chains.ComposeRoot(chainType, chainId))
+	chain := LoadChain(c, chainType, chains.ComposeRoot(chainType, chainId))
 	chain.WaitForShutdown()
 }
 
@@ -492,14 +447,14 @@ func Config(c *Context) {
 		err       error
 	)
 	rpc := c.Bool("rpc")
-	root, chainType, _, err = resolveRootFlag(c)
+	root, chainType, _, err = ResolveRootFlag(c)
 	ifExit(err)
 
 	configPath := path.Join(root, "config.json")
 	if c.Bool("vi") {
-		ifExit(editor(configPath))
+		ifExit(utils.Editor(configPath))
 	} else {
-		m := newChain(chainType, rpc)
+		m := mod.NewChain(chainType, rpc)
 		err = m.ReadConfig(configPath)
 		ifExit(err)
 
@@ -525,7 +480,7 @@ func Remove(c *Context) {
 	if len(c.Args()) < 1 {
 		exit(fmt.Errorf("Error: specify the chain ref as an argument"))
 	}
-	root, _, _, err := resolveRootArg(c)
+	root, _, _, err := ResolveRootArg(c)
 	ifExit(err)
 
 	if confirm("This will permanently delete the directory: " + root) {
@@ -560,10 +515,10 @@ func Remove(c *Context) {
 
 // run a single epm on-chain command (endow, deploy)
 func Command(c *Context) {
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 
-	chain := loadChain(c, chainType, root)
+	chain := LoadChain(c, chainType, root)
 
 	args := c.Args()
 	if len(args) < 3 {
@@ -613,7 +568,7 @@ func Test(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
@@ -652,7 +607,7 @@ func Test(c *Context) {
 
 		// setup EPM object with ChainInterface
 		var chain epm.Blockchain
-		chain = loadChain(c, chainType, chainRoot)
+		chain = LoadChain(c, chainType, chainRoot)
 		e, err := epm.NewEPM(chain, epm.LogFile)
 		ifExit(err)
 		e.ReadVars(path.Join(chainRoot, EPMVars))
@@ -708,13 +663,13 @@ func Deploy(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
 	// Startup the chain
 	var chain epm.Blockchain
-	chain = loadChain(c, chainType, chainRoot)
+	chain = LoadChain(c, chainType, chainRoot)
 
 	if !c.IsSet("c") {
 		contractPath = DefaultContractPath
@@ -777,13 +732,13 @@ func Console(c *Context) {
 	dontClear := c.Bool("dont-clear")
 	diffStorage := c.Bool("diff")
 
-	chainRoot, chainType, _, err := resolveRootFlag(c)
+	chainRoot, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 	// hierarchy : name > chainId > db > config > HEAD > default
 
 	// Startup the chain
 	var chain epm.Blockchain
-	chain = loadChain(c, chainType, chainRoot)
+	chain = LoadChain(c, chainType, chainRoot)
 
 	if !c.IsSet("c") {
 		contractPath = DefaultContractPath
@@ -853,11 +808,11 @@ func useKey(keyFile string, c *Context) {
 
 	// set key in chain's config
 	rpc := c.Bool("rpc")
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 
 	configPath := path.Join(root, "config.json")
-	m := newChain(chainType, rpc)
+	m := mod.NewChain(chainType, rpc)
 	err = m.ReadConfig(configPath)
 	ifExit(err)
 
@@ -914,55 +869,48 @@ func KeyPublic(c *Context) {
 
 }
 
+// TODO: move to its own binary
 func Keygen(c *Context) {
 	if len(c.Args()) == 0 {
 		exit(fmt.Errorf("Please enter a name for your key"))
 	}
 	name := c.Args()[0]
 
-	// default to secp256k1
-	keyType := c.String("type")
-
-	var (
-		prv  []byte
-		addr []byte
-	)
-
-	switch keyType {
-	case "secp256k1", "bitcoin", "ethereum", "thelonious":
-		// create a new ecdsa key
-		key := monkcrypto.GenerateNewKeyPair()
-		prv = key.PrivateKey
-		addr = key.Address()
-	case "ed25519", "tendermint":
-		privAccount := account.GenPrivAccount()
-		prv = []byte(privAccount.PrivKey.(account.PrivKeyEd25519))
-		addr = privAccount.Address
-	default:
-		exit(fmt.Errorf("Unknown key type: %s", keyType))
+	// check for keygen binary
+	bin := path.Join(GoPath, "bin", "epm-keygen")
+	src := path.Join(utils.ErisLtd, "epm-go", "cmd", "epm-keygen")
+	cur, _ := os.Getwd()
+	ifExit(os.Chdir(src))
+	if _, err := os.Stat(bin); err != nil {
+		cmd := exec.Command("go", "install")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
+		err := cmd.Run()
+		ifExit(os.Chdir(cur))
+		if err != nil {
+			exit(err)
+		}
 	}
 
-	a := hex.EncodeToString(addr)
-	if name != "" {
-		name += "-"
-	}
-	name += a
-	prvHex := hex.EncodeToString(prv)
-
-	// write key to file
-	keyFile := path.Join(utils.Keys, name)
-	err := ioutil.WriteFile(keyFile, []byte(prvHex), 0600)
-	ifExit(err)
-	fmt.Println(name)
+	buf := new(bytes.Buffer)
+	// run keygen
+	// the only output is the name of the keyfile (for now)
+	cmd := exec.Command(bin, name)
+	cmd.Stdout = buf
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	ifExit(cmd.Run())
+	keyFile := string(buf.Bytes())
 
 	if !c.Bool("no-import") {
 		// set key in chain's config
 		rpc := c.Bool("rpc")
-		root, chainType, _, err := resolveRootFlag(c)
+		root, chainType, _, err := ResolveRootFlag(c)
 		ifExit(err)
 
 		configPath := path.Join(root, "config.json")
-		m := newChain(chainType, rpc)
+		m := mod.NewChain(chainType, rpc)
 		err = m.ReadConfig(configPath)
 		ifExit(err)
 
@@ -1045,7 +993,7 @@ func Install(c *Context) {
 		chainRoot = chains.ComposeRootMulti("thelonious", chainId, "0")
 	} else {
 		var err error
-		chainRoot, _, chainId, err = resolveRootFlag(c)
+		chainRoot, _, chainId, err = ResolveRootFlag(c)
 		ifExit(err)
 	}
 
@@ -1055,7 +1003,7 @@ func Install(c *Context) {
 	// Startup the chain
 	logger.Warnln("Starting up chain:", chainRoot)
 	var chain epm.Blockchain
-	chain = loadChain(c, "thelonious", chainRoot)
+	chain = LoadChain(c, "thelonious", chainRoot)
 
 	if !c.IsSet("c") {
 		// contractPath = DefaultContractPath
@@ -1167,9 +1115,9 @@ func Accounts(c *Context) {
 		account = c.Args()[0]
 	}
 
-	root, chainType, _, err := resolveRootFlag(c)
+	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
-	chain := loadChain(c, chainType, root)
+	chain := LoadChain(c, chainType, root)
 
 	if account == "" {
 		// dump list of all accounts
