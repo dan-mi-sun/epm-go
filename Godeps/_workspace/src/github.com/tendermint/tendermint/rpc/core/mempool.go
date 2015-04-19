@@ -3,38 +3,32 @@ package core
 import (
 	"fmt"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
+	ctypes "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 //-----------------------------------------------------------------------------
 
-type Receipt struct {
-	TxHash          []byte
-	CreatesContract bool
-	ContractAddr    []byte
-}
-
 // pass pointer?
 // Note: tx must be signed
-func BroadcastTx(tx types.Tx) (*Receipt, error) {
+func BroadcastTx(tx types.Tx) (*ctypes.ResponseBroadcastTx, error) {
 	err := mempoolReactor.BroadcastTx(tx)
 	if err != nil {
 		return nil, fmt.Errorf("Error broadcasting transaction: %v", err)
 	}
 
-	txHash := merkle.HashFromBinary(tx)
-	var createsContract bool
+	txHash := types.TxId(tx)
+	var createsContract uint8
 	var contractAddr []byte
 	// check if creates new contract
 	if callTx, ok := tx.(*types.CallTx); ok {
-		if callTx.Address == nil {
-			createsContract = true
+		if len(callTx.Address) == 0 {
+			createsContract = 1
 			contractAddr = state.NewContractAddress(callTx.Input.Address, uint64(callTx.Input.Sequence))
 		}
 	}
-	return &Receipt{txHash, createsContract, contractAddr}, nil
+	return &ctypes.ResponseBroadcastTx{ctypes.Receipt{txHash, createsContract, contractAddr}}, nil
 }
 
 /*

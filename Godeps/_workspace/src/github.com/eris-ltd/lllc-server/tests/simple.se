@@ -1,0 +1,1 @@
+self.storage[msg.sender] = 1000000

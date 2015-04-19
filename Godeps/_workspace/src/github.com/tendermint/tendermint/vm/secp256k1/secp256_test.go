@@ -6,7 +6,7 @@ import (
 	"log"
 	"testing"
 
-	"github.com/ethereum/go-ethereum/crypto/randentropy"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/ethereum/go-ethereum/crypto/randentropy"
 )
 
 const TESTS = 10000 // how many tests

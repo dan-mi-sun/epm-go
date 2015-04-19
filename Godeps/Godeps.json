@@ -68,10 +68,6 @@
 			"Rev": "843ffa0bb9741fd149acfabb6089244947b40417"
 		},
 		{
-			"ImportPath": "github.com/ebuchman/lexer",
-			"Rev": "fff8d441b5899f5fca93934aaf4941e63248ca93"
-		},
-		{
 			"ImportPath": "github.com/eris-ltd/decerver/interfaces/dapps",
 			"Comment": "v0.8-65-g50baf3a",
 			"Rev": "50baf3ab03a6f615a3c00fd844ef2336e54ee43a"
@@ -181,23 +177,23 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/eth",
-			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
+			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
 		},
 		{
-			"ImportPath": "github.com/eris-ltd/modules/genblock",
-			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
+			"ImportPath": "github.com/eris-ltd/modules/mint",
+			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkrpc",
-			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
+			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkutils",
-			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
+			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/types",
-			"Rev": "eec40f80b046105449e6d205f049eb18629ea4e2"
+			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
@@ -205,9 +201,23 @@
 			"Rev": "b700001be08e7f7e59b20252e9c9e8a7d8f4d153"
 		},
 		{
+			"ImportPath": "github.com/ethereum/go-ethereum/crypto/randentropy",
+			"Comment": "v0.8.5-1573-g61db7a7",
+			"Rev": "61db7a71dd809a003b5c899398b02945c04890c9"
+		},
+		{
+			"ImportPath": "github.com/ethereum/go-ethereum/crypto/sha3",
+			"Comment": "v0.8.5-1573-g61db7a7",
+			"Rev": "61db7a71dd809a003b5c899398b02945c04890c9"
+		},
+		{
 			"ImportPath": "github.com/go-martini/martini",
 			"Comment": "v1.0-85-gbbd489b",
 			"Rev": "bbd489b35fd7eac9aaf442e5671ab21cdd972926"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "1f87405cd9755fc388e111c4003caca4a2f52fa6"
 		},
 		{
 			"ImportPath": "github.com/inconshreveable/log15/stack",
@@ -264,10 +274,6 @@
 			"Rev": "d899334bba7bf4a157cab19d8ad836dcb1de0c34"
 		},
 		{
-			"ImportPath": "github.com/obscuren/secp256k1-go",
-			"Rev": "88d689c5032b23994016f6206d7ac1340ec6974e"
-		},
-		{
 			"ImportPath": "github.com/obscuren/sha3",
 			"Rev": "4ae244389bb9c339b4df6c3930a15396a1e801d7"
 		},
@@ -319,67 +325,75 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/account",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/alert",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/binary",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+		},
+		{
+			"ImportPath": "github.com/tendermint/tendermint/blockchain",
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/common",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/config",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/consensus",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
-		},
-		{
-			"ImportPath": "github.com/tendermint/tendermint/daemon",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/db",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+		},
+		{
+			"ImportPath": "github.com/tendermint/tendermint/events",
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/logger",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/mempool",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/merkle",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+		},
+		{
+			"ImportPath": "github.com/tendermint/tendermint/node",
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/p2p",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/rpc",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/state",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/types",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/vm",
-			"Rev": "5f6293b03e04c726d17c04ee5a7281376c153741"
+			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
 		},
 		{
 			"ImportPath": "github.com/yvasiyarov/go-metrics",

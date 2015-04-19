@@ -1,19 +1,21 @@
-package main
+package vm
 
 import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/vm"
 	"strings"
 	"testing"
 	"time"
+
+	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/vm"
 )
 
 func newAppState() *FakeAppState {
 	return &FakeAppState{
 		accounts: make(map[string]*Account),
-		storage:  make(map[string]Word),
+		storage:  make(map[string]Word256),
 		logs:     nil,
 	}
 }
@@ -21,7 +23,7 @@ func newAppState() *FakeAppState {
 func newParams() Params {
 	return Params{
 		BlockHeight: 0,
-		BlockHash:   Zero,
+		BlockHash:   Zero256,
 		BlockTime:   0,
 		GasLimit:    0,
 	}
@@ -34,14 +36,14 @@ func makeBytes(n int) []byte {
 }
 
 func TestVM(t *testing.T) {
-	ourVm := NewVM(newAppState(), newParams(), Zero)
+	ourVm := NewVM(newAppState(), newParams(), Zero256, nil)
 
 	// Create accounts
 	account1 := &Account{
-		Address: Uint64ToWord(100),
+		Address: Uint64ToWord256(100),
 	}
 	account2 := &Account{
-		Address: Uint64ToWord(101),
+		Address: Uint64ToWord256(101),
 	}
 
 	var gas uint64 = 1000
@@ -62,15 +64,15 @@ func TestSubcurrency(t *testing.T) {
 	st := newAppState()
 	// Create accounts
 	account1 := &Account{
-		Address: BytesToWord(makeBytes(20)),
+		Address: LeftPadWord256(makeBytes(20)),
 	}
 	account2 := &Account{
-		Address: BytesToWord(makeBytes(20)),
+		Address: LeftPadWord256(makeBytes(20)),
 	}
 	st.accounts[account1.Address.String()] = account1
 	st.accounts[account2.Address.String()] = account2
 
-	ourVm := NewVM(st, newParams(), Zero)
+	ourVm := NewVM(st, newParams(), Zero256, nil)
 
 	var gas uint64 = 1000
 	code_parts := []string{"620f42403355",

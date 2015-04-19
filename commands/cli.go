@@ -11,7 +11,6 @@ import (
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm" // ed25519 key generation
 	"github.com/eris-ltd/epm-go/utils"
-	"github.com/tendermint/tendermint/account"
 	"io/ioutil"
 	"log"
 	"os"

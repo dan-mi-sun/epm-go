@@ -3,12 +3,13 @@ package core
 import (
 	"fmt"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	ctypes "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 //-----------------------------------------------------------------------------
 
-func BlockchainInfo(minHeight, maxHeight uint) (uint, []*types.BlockMeta) {
+func BlockchainInfo(minHeight, maxHeight uint) (*ctypes.ResponseBlockchainInfo, error) {
 	if maxHeight == 0 {
 		maxHeight = blockStore.Height()
 	} else {
@@ -25,20 +26,20 @@ func BlockchainInfo(minHeight, maxHeight uint) (uint, []*types.BlockMeta) {
 		blockMetas = append(blockMetas, blockMeta)
 	}
 
-	return blockStore.Height(), blockMetas
+	return &ctypes.ResponseBlockchainInfo{blockStore.Height(), blockMetas}, nil
 }
 
 //-----------------------------------------------------------------------------
 
-func GetBlock(height uint) (*types.BlockMeta, *types.Block, error) {
+func GetBlock(height uint) (*ctypes.ResponseGetBlock, error) {
 	if height == 0 {
-		return nil, nil, fmt.Errorf("height must be greater than 1")
+		return nil, fmt.Errorf("height must be greater than 0")
 	}
 	if height > blockStore.Height() {
-		return nil, nil, fmt.Errorf("height must be less than the current blockchain height")
+		return nil, fmt.Errorf("height must be less than the current blockchain height")
 	}
 
 	blockMeta := blockStore.LoadBlockMeta(height)
 	block := blockStore.LoadBlock(height)
-	return blockMeta, block, nil
+	return &ctypes.ResponseGetBlock{blockMeta, block}, nil
 }

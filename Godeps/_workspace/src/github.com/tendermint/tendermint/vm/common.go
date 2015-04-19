@@ -1,35 +1,26 @@
 package vm
 
 import (
-	"encoding/binary"
+	"math/big"
 )
 
-func Uint64ToWord(i uint64) Word {
-	word := Word{}
-	PutUint64(word[:], i)
-	return word
+// To256
+//
+// "cast" the big int to a 256 big int (i.e., limit to)
+var tt256 = new(big.Int).Lsh(big.NewInt(1), 256)
+var tt256m1 = new(big.Int).Sub(new(big.Int).Lsh(big.NewInt(1), 256), big.NewInt(1))
+var tt255 = new(big.Int).Lsh(big.NewInt(1), 255)
+
+func U256(x *big.Int) *big.Int {
+	x.And(x, tt256m1)
+	return x
 }
 
-func BytesToWord(bz []byte) Word {
-	word := Word{}
-	copy(word[:], bz)
-	return word
-}
-
-func LeftPadWord(bz []byte) (word Word) {
-	copy(word[32-len(bz):], bz)
-	return
-}
-
-func RightPadWord(bz []byte) (word Word) {
-	copy(word[:], bz)
-	return
-}
-
-func GetUint64(word Word) uint64 {
-	return binary.LittleEndian.Uint64(word[:])
-}
-
-func PutUint64(dest []byte, i uint64) {
-	binary.LittleEndian.PutUint64(dest, i)
+func S256(x *big.Int) *big.Int {
+	if x.Cmp(tt255) < 0 {
+		return x
+	} else {
+		// We don't want to modify x, ever
+		return new(big.Int).Sub(x, tt256)
+	}
 }

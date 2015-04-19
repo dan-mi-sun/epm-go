@@ -2,7 +2,6 @@ package merkle
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"io"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
@@ -210,35 +209,35 @@ func (node *IAVLNode) set(t *IAVLTree, key interface{}, value interface{}) (newS
 // newKey: new leftmost leaf key for tree after successfully removing 'key' if changed.
 // value: removed value.
 func (node *IAVLNode) remove(t *IAVLTree, key interface{}) (
-	newHash []byte, newNode *IAVLNode, newKey interface{}, value interface{}, removed error) {
+	newHash []byte, newNode *IAVLNode, newKey interface{}, value interface{}, removed bool) {
 	if node.height == 0 {
 		if t.keyCodec.Compare(key, node.key) == 0 {
-			return nil, nil, nil, node.value, nil
+			return nil, nil, nil, node.value, true
 		} else {
-			return nil, node, nil, nil, fmt.Errorf("Key comparison failed: %v, %v", key, node.key)
+			return nil, node, nil, nil, false
 		}
 	} else {
 		if t.keyCodec.Compare(key, node.key) < 0 {
 			var newLeftHash []byte
 			var newLeftNode *IAVLNode
 			newLeftHash, newLeftNode, newKey, value, removed = node.getLeftNode(t).remove(t, key)
-			if removed != nil {
-				return nil, node, nil, value, removed
+			if !removed {
+				return nil, node, nil, value, false
 			} else if newLeftHash == nil && newLeftNode == nil { // left node held value, was removed
-				return node.rightHash, node.rightNode, node.key, value, nil
+				return node.rightHash, node.rightNode, node.key, value, true
 			}
 			node = node._copy()
 			node.leftHash, node.leftNode = newLeftHash, newLeftNode
 			node.calcHeightAndSize(t)
-			return nil, node.balance(t), newKey, value, nil
+			return nil, node.balance(t), newKey, value, true
 		} else {
 			var newRightHash []byte
 			var newRightNode *IAVLNode
 			newRightHash, newRightNode, newKey, value, removed = node.getRightNode(t).remove(t, key)
-			if removed != nil {
-				return nil, node, nil, value, removed
+			if !removed {
+				return nil, node, nil, value, false
 			} else if newRightHash == nil && newRightNode == nil { // right node held value, was removed
-				return node.leftHash, node.leftNode, nil, value, nil
+				return node.leftHash, node.leftNode, nil, value, true
 			}
 			node = node._copy()
 			node.rightHash, node.rightNode = newRightHash, newRightNode
@@ -247,7 +246,7 @@ func (node *IAVLNode) remove(t *IAVLTree, key interface{}) (
 				newKey = nil
 			}
 			node.calcHeightAndSize(t)
-			return nil, node.balance(t), newKey, value, nil
+			return nil, node.balance(t), newKey, value, true
 		}
 	}
 }

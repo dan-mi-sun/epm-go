@@ -2,7 +2,6 @@ package account
 
 import (
 	"errors"
-
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/ed25519"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
@@ -10,7 +9,6 @@ import (
 
 type // PubKey is part of Account and Validator.
 PubKey interface {
-	TypeByte() byte
 	IsNil() bool
 	Address() []byte
 	VerifyBytes(msg []byte, sig Signature) bool
@@ -18,51 +16,19 @@ PubKey interface {
 
 // Types of PubKey implementations
 const (
-	PubKeyTypeNil     = byte(0x00)
 	PubKeyTypeEd25519 = byte(0x01)
 )
 
 // for binary.readReflect
 var _ = binary.RegisterInterface(
 	struct{ PubKey }{},
-	binary.ConcreteType{PubKeyNil{}},
-	binary.ConcreteType{PubKeyEd25519{}},
+	binary.ConcreteType{PubKeyEd25519{}, PubKeyTypeEd25519},
 )
 
 //-------------------------------------
 
 // Implements PubKey
-type PubKeyNil struct{}
-
-func (key PubKeyNil) TypeByte() byte { return PubKeyTypeNil }
-
-func (key PubKeyNil) IsNil() bool { return true }
-
-func (key PubKeyNil) Address() []byte {
-	panic("PubKeyNil has no address")
-}
-
-func (key PubKeyNil) VerifyBytes(msg []byte, sig_ Signature) bool {
-	panic("PubKeyNil cannot verify messages")
-}
-
-func (key PubKeyEd25519) ValidateBasic() error {
-	if len(key) != ed25519.PublicKeySize {
-		return errors.New("Invalid PubKeyEd25519 key size")
-	}
-	return nil
-}
-
-func (key PubKeyNil) String() string {
-	return "PubKeyNil{}"
-}
-
-//-------------------------------------
-
-// Implements PubKey
 type PubKeyEd25519 []byte
-
-func (pubKey PubKeyEd25519) TypeByte() byte { return PubKeyTypeEd25519 }
 
 func (pubKey PubKeyEd25519) IsNil() bool { return false }
 
@@ -79,6 +45,13 @@ func (pubKey PubKeyEd25519) VerifyBytes(msg []byte, sig_ Signature) bool {
 	sigBytes := new([64]byte)
 	copy(sigBytes[:], sig)
 	return ed25519.Verify(pubKeyBytes, msg, sigBytes)
+}
+
+func (pubKey PubKeyEd25519) ValidateBasic() error {
+	if len(pubKey) != ed25519.PublicKeySize {
+		return errors.New("Invalid PubKeyEd25519 key size")
+	}
+	return nil
 }
 
 func (pubKey PubKeyEd25519) String() string {

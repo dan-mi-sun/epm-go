@@ -61,7 +61,7 @@ func MakeGenesisState(db dbm.DB, genDoc *GenesisDoc) *State {
 	for _, genAcc := range genDoc.Accounts {
 		acc := &account.Account{
 			Address:  genAcc.Address,
-			PubKey:   account.PubKeyNil{},
+			PubKey:   nil,
 			Sequence: 0,
 			Balance:  genAcc.Amount,
 		}
@@ -103,7 +103,7 @@ func MakeGenesisState(db dbm.DB, genDoc *GenesisDoc) *State {
 	accounts.Save()
 	validatorInfos.Save()
 
-	s := &State{
+	return &State{
 		DB:                   db,
 		LastBlockHeight:      0,
 		LastBlockHash:        nil,
@@ -115,6 +115,4 @@ func MakeGenesisState(db dbm.DB, genDoc *GenesisDoc) *State {
 		accounts:             accounts,
 		validatorInfos:       validatorInfos,
 	}
-	s.blockState = NewTransState(&TransStateWrapper{s})
-	return s
 }

@@ -1,12 +1,13 @@
 package core
 
 import (
+	ctypes "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 	sm "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 )
 
 //-----------------------------------------------------------------------------
 
-func ListValidators() (uint, []*sm.Validator, []*sm.Validator) {
+func ListValidators() (*ctypes.ResponseListValidators, error) {
 	var blockHeight uint
 	var bondedValidators []*sm.Validator
 	var unbondingValidators []*sm.Validator
@@ -22,5 +23,5 @@ func ListValidators() (uint, []*sm.Validator, []*sm.Validator) {
 		return false
 	})
 
-	return blockHeight, bondedValidators, unbondingValidators
+	return &ctypes.ResponseListValidators{blockHeight, bondedValidators, unbondingValidators}, nil
 }

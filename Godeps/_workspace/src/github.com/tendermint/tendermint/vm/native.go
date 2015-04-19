@@ -3,19 +3,18 @@ package vm
 import (
 	"crypto/sha256"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/code.google.com/p/go.crypto/ripemd160"
-	//"github.com/tendermint/tendermint/vm/secp256k1"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto/secp256k1"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/vm/secp256k1"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/vm/sha3"
 )
 
-var nativeContracts = make(map[Word]NativeContract)
+var nativeContracts = make(map[Word256]NativeContract)
 
 func init() {
-	nativeContracts[Uint64ToWord(1)] = ecrecoverFunc
-	nativeContracts[Uint64ToWord(2)] = sha256Func
-	nativeContracts[Uint64ToWord(3)] = ripemd160Func
-	nativeContracts[Uint64ToWord(4)] = identityFunc
+	nativeContracts[Uint64ToWord256(1)] = ecrecoverFunc
+	nativeContracts[Uint64ToWord256(2)] = sha256Func
+	nativeContracts[Uint64ToWord256(3)] = ripemd160Func
+	nativeContracts[Uint64ToWord256(4)] = identityFunc
 }
 
 //-----------------------------------------------------------------------------
@@ -40,7 +39,7 @@ func ecrecoverFunc(input []byte, gas *uint64) (output []byte, err error) {
 		return nil, err
 	}
 	hashed := sha3.Sha3(recovered[1:])
-	return RightPadBytes(hashed, 32), nil
+	return LeftPadBytes(hashed, 32), nil
 }
 
 func sha256Func(input []byte, gas *uint64) (output []byte, err error) {
@@ -74,7 +73,7 @@ func ripemd160Func(input []byte, gas *uint64) (output []byte, err error) {
 	if err != nil {
 		panic(err)
 	}
-	return RightPadBytes(hasher.Sum(nil), 32), nil
+	return LeftPadBytes(hasher.Sum(nil), 32), nil
 }
 
 func identityFunc(input []byte, gas *uint64) (output []byte, err error) {

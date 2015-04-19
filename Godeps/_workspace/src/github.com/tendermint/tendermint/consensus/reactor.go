@@ -4,22 +4,25 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	bc "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/blockchain"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/consensus/types"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/events"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/p2p"
 	sm "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 const (
-	StateCh = byte(0x20)
-	DataCh  = byte(0x21)
-	VoteCh  = byte(0x22)
+	StateChannel = byte(0x20)
+	DataChannel  = byte(0x21)
+	VoteChannel  = byte(0x22)
 
 	peerStateKey = "ConsensusReactor.peerState"
 
@@ -28,17 +31,20 @@ const (
 
 //-----------------------------------------------------------------------------
 
+// The reactor's underlying ConsensusState may change state at any time.
+// We atomically copy the RoundState struct before using it.
 type ConsensusReactor struct {
 	sw      *p2p.Switch
-	started uint32
-	stopped uint32
+	running uint32
 	quit    chan struct{}
 
-	blockStore *types.BlockStore
+	blockStore *bc.BlockStore
 	conS       *ConsensusState
+
+	evsw events.Fireable
 }
 
-func NewConsensusReactor(consensusState *ConsensusState, blockStore *types.BlockStore) *ConsensusReactor {
+func NewConsensusReactor(consensusState *ConsensusState, blockStore *bc.BlockStore) *ConsensusReactor {
 	conR := &ConsensusReactor{
 		blockStore: blockStore,
 		quit:       make(chan struct{}),
@@ -49,7 +55,7 @@ func NewConsensusReactor(consensusState *ConsensusState, blockStore *types.Block
 
 // Implements Reactor
 func (conR *ConsensusReactor) Start(sw *p2p.Switch) {
-	if atomic.CompareAndSwapUint32(&conR.started, 0, 1) {
+	if atomic.CompareAndSwapUint32(&conR.running, 0, 1) {
 		log.Info("Starting ConsensusReactor")
 		conR.sw = sw
 		conR.conS.Start()
@@ -59,15 +65,15 @@ func (conR *ConsensusReactor) Start(sw *p2p.Switch) {
 
 // Implements Reactor
 func (conR *ConsensusReactor) Stop() {
-	if atomic.CompareAndSwapUint32(&conR.stopped, 0, 1) {
+	if atomic.CompareAndSwapUint32(&conR.running, 1, 0) {
 		log.Info("Stopping ConsensusReactor")
 		conR.conS.Stop()
 		close(conR.quit)
 	}
 }
 
-func (conR *ConsensusReactor) IsStopped() bool {
-	return atomic.LoadUint32(&conR.stopped) == 1
+func (conR *ConsensusReactor) IsRunning() bool {
+	return atomic.LoadUint32(&conR.running) == 1
 }
 
 // Implements Reactor
@@ -75,15 +81,15 @@ func (conR *ConsensusReactor) GetChannels() []*p2p.ChannelDescriptor {
 	// TODO optimize
 	return []*p2p.ChannelDescriptor{
 		&p2p.ChannelDescriptor{
-			Id:       StateCh,
+			Id:       StateChannel,
 			Priority: 5,
 		},
 		&p2p.ChannelDescriptor{
-			Id:       DataCh,
+			Id:       DataChannel,
 			Priority: 5,
 		},
 		&p2p.ChannelDescriptor{
-			Id:       VoteCh,
+			Id:       VoteChannel,
 			Priority: 5,
 		},
 	}
@@ -91,6 +97,10 @@ func (conR *ConsensusReactor) GetChannels() []*p2p.ChannelDescriptor {
 
 // Implements Reactor
 func (conR *ConsensusReactor) AddPeer(peer *p2p.Peer) {
+	if !conR.IsRunning() {
+		return
+	}
+
 	// Create peerState for peer
 	peerState := NewPeerState(peer)
 	peer.Data.Set(peerStateKey, peerState)
@@ -105,11 +115,18 @@ func (conR *ConsensusReactor) AddPeer(peer *p2p.Peer) {
 
 // Implements Reactor
 func (conR *ConsensusReactor) RemovePeer(peer *p2p.Peer, reason interface{}) {
+	if !conR.IsRunning() {
+		return
+	}
+
 	//peer.Data.Get(peerStateKey).(*PeerState).Disconnect()
 }
 
 // Implements Reactor
 func (conR *ConsensusReactor) Receive(chId byte, peer *p2p.Peer, msgBytes []byte) {
+	if !conR.IsRunning() {
+		return
+	}
 
 	// Get round state
 	rs := conR.conS.GetRoundState()
@@ -122,7 +139,7 @@ func (conR *ConsensusReactor) Receive(chId byte, peer *p2p.Peer, msgBytes []byte
 	log.Debug("Receive", "channel", chId, "peer", peer, "msg", msg_, "bytes", msgBytes)
 
 	switch chId {
-	case StateCh:
+	case StateChannel:
 		switch msg := msg_.(type) {
 		case *NewRoundStepMessage:
 			ps.ApplyNewRoundStepMessage(msg, rs)
@@ -131,14 +148,14 @@ func (conR *ConsensusReactor) Receive(chId byte, peer *p2p.Peer, msgBytes []byte
 		case *HasVoteMessage:
 			ps.ApplyHasVoteMessage(msg)
 		default:
-			// Ignore unknown message
+			log.Warn(Fmt("Unknown message type %v", reflect.TypeOf(msg)))
 		}
 
-	case DataCh:
+	case DataChannel:
 		switch msg := msg_.(type) {
-		case *Proposal:
-			ps.SetHasProposal(msg)
-			err = conR.conS.SetProposal(msg)
+		case *ProposalMessage:
+			ps.SetHasProposal(msg.Proposal)
+			err = conR.conS.SetProposal(msg.Proposal)
 
 		case *PartMessage:
 			if msg.Type == partTypeProposalBlock {
@@ -148,14 +165,14 @@ func (conR *ConsensusReactor) Receive(chId byte, peer *p2p.Peer, msgBytes []byte
 				ps.SetHasProposalPOLPart(msg.Height, msg.Round, msg.Part.Index)
 				_, err = conR.conS.AddProposalPOLPart(msg.Height, msg.Round, msg.Part)
 			} else {
-				// Ignore unknown part type
+				log.Warn(Fmt("Unknown part type %v", msg.Type))
 			}
 
 		default:
-			// Ignore unknown message
+			log.Warn(Fmt("Unknown message type %v", reflect.TypeOf(msg)))
 		}
 
-	case VoteCh:
+	case VoteChannel:
 		switch msg := msg_.(type) {
 		case *VoteMessage:
 			vote := msg.Vote
@@ -192,14 +209,14 @@ func (conR *ConsensusReactor) Receive(chId byte, peer *p2p.Peer, msgBytes []byte
 					Type:   vote.Type,
 					Index:  index,
 				}
-				conR.sw.Broadcast(StateCh, msg)
+				conR.sw.Broadcast(StateChannel, msg)
 			}
 
 		default:
-			// Ignore unknown message
+			log.Warn(Fmt("Unknown message type %v", reflect.TypeOf(msg)))
 		}
 	default:
-		// Ignore unknown channel
+		log.Warn(Fmt("Unknown channel %X", chId))
 	}
 
 	if err != nil {
@@ -210,6 +227,17 @@ func (conR *ConsensusReactor) Receive(chId byte, peer *p2p.Peer, msgBytes []byte
 // Sets our private validator account for signing votes.
 func (conR *ConsensusReactor) SetPrivValidator(priv *sm.PrivValidator) {
 	conR.conS.SetPrivValidator(priv)
+}
+
+// Reset to some state.
+func (conR *ConsensusReactor) ResetToState(state *sm.State) {
+	conR.conS.updateToState(state, false)
+}
+
+// implements events.Eventable
+func (conR *ConsensusReactor) SetFireable(evsw events.Fireable) {
+	conR.evsw = evsw
+	conR.conS.SetFireable(evsw)
 }
 
 //--------------------------------------
@@ -252,10 +280,10 @@ func (conR *ConsensusReactor) broadcastNewRoundStepRoutine() {
 
 		nrsMsg, csMsg := makeRoundStepMessages(rs)
 		if nrsMsg != nil {
-			conR.sw.Broadcast(StateCh, nrsMsg)
+			conR.sw.Broadcast(StateChannel, nrsMsg)
 		}
 		if csMsg != nil {
-			conR.sw.Broadcast(StateCh, csMsg)
+			conR.sw.Broadcast(StateChannel, csMsg)
 		}
 	}
 }
@@ -264,10 +292,10 @@ func (conR *ConsensusReactor) sendNewRoundStepRoutine(peer *p2p.Peer) {
 	rs := conR.conS.GetRoundState()
 	nrsMsg, csMsg := makeRoundStepMessages(rs)
 	if nrsMsg != nil {
-		peer.Send(StateCh, nrsMsg)
+		peer.Send(StateChannel, nrsMsg)
 	}
 	if csMsg != nil {
-		peer.Send(StateCh, nrsMsg)
+		peer.Send(StateChannel, nrsMsg)
 	}
 }
 
@@ -276,7 +304,7 @@ func (conR *ConsensusReactor) gossipDataRoutine(peer *p2p.Peer, ps *PeerState) {
 OUTER_LOOP:
 	for {
 		// Manage disconnects from self or peer.
-		if peer.IsStopped() || conR.IsStopped() {
+		if !peer.IsRunning() || !conR.IsRunning() {
 			log.Info(Fmt("Stopping gossipDataRoutine for %v.", peer))
 			return
 		}
@@ -296,7 +324,7 @@ OUTER_LOOP:
 					Type:   partTypeProposalBlock,
 					Part:   part,
 				}
-				peer.Send(DataCh, msg)
+				peer.Send(DataChannel, msg)
 				ps.SetHasProposalBlockPart(rs.Height, rs.Round, index)
 				continue OUTER_LOOP
 			}
@@ -306,7 +334,7 @@ OUTER_LOOP:
 		if 0 < prs.Height && prs.Height < rs.Height {
 			//log.Debug("Data catchup", "height", rs.Height, "peerHeight", prs.Height, "peerProposalBlockBitArray", prs.ProposalBlockBitArray)
 			if index, ok := prs.ProposalBlockBitArray.Not().PickRandom(); ok {
-				// Ensure that the peer's PartSetHeaeder is correct
+				// Ensure that the peer's PartSetHeader is correct
 				blockMeta := conR.blockStore.LoadBlockMeta(prs.Height)
 				if !blockMeta.Parts.Equals(prs.ProposalBlockParts) {
 					log.Debug("Peer ProposalBlockParts mismatch, sleeping",
@@ -329,7 +357,7 @@ OUTER_LOOP:
 					Type:   partTypeProposalBlock,
 					Part:   part,
 				}
-				peer.Send(DataCh, msg)
+				peer.Send(DataChannel, msg)
 				ps.SetHasProposalBlockPart(prs.Height, prs.Round, index)
 				continue OUTER_LOOP
 			} else {
@@ -348,8 +376,8 @@ OUTER_LOOP:
 
 		// Send proposal?
 		if rs.Proposal != nil && !prs.Proposal {
-			msg := p2p.TypedMessage{msgTypeProposal, rs.Proposal}
-			peer.Send(DataCh, msg)
+			msg := &ProposalMessage{Proposal: rs.Proposal}
+			peer.Send(DataChannel, msg)
 			ps.SetHasProposal(rs.Proposal)
 			continue OUTER_LOOP
 		}
@@ -363,7 +391,7 @@ OUTER_LOOP:
 					Type:   partTypeProposalPOL,
 					Part:   rs.ProposalPOLParts.GetPart(index),
 				}
-				peer.Send(DataCh, msg)
+				peer.Send(DataChannel, msg)
 				ps.SetHasProposalPOLPart(rs.Height, rs.Round, index)
 				continue OUTER_LOOP
 			}
@@ -379,7 +407,7 @@ func (conR *ConsensusReactor) gossipVotesRoutine(peer *p2p.Peer, ps *PeerState) 
 OUTER_LOOP:
 	for {
 		// Manage disconnects from self or peer.
-		if peer.IsStopped() || conR.IsStopped() {
+		if !peer.IsRunning() || !conR.IsRunning() {
 			log.Info(Fmt("Stopping gossipVotesRoutine for %v.", peer))
 			return
 		}
@@ -397,7 +425,7 @@ OUTER_LOOP:
 				vote := voteSet.GetByIndex(index)
 				// NOTE: vote may be a commit.
 				msg := &VoteMessage{index, vote}
-				peer.Send(VoteCh, msg)
+				peer.Send(VoteChannel, msg)
 				ps.SetHasVote(vote, index)
 				return true
 			}
@@ -421,7 +449,7 @@ OUTER_LOOP:
 					Signature:  commit.Signature,
 				}
 				msg := &VoteMessage{index, vote}
-				peer.Send(VoteCh, msg)
+				peer.Send(VoteChannel, msg)
 				ps.SetHasVote(vote, index)
 				return true
 			}
@@ -728,7 +756,6 @@ func (ps *PeerState) ApplyHasVoteMessage(msg *HasVoteMessage) {
 // Messages
 
 const (
-	msgTypeUnknown      = byte(0x00)
 	msgTypeNewRoundStep = byte(0x01)
 	msgTypeCommitStep   = byte(0x02)
 	msgTypeProposal     = byte(0x11)
@@ -737,31 +764,24 @@ const (
 	msgTypeHasVote      = byte(0x14)
 )
 
+type ConsensusMessage interface{}
+
+var _ = binary.RegisterInterface(
+	struct{ ConsensusMessage }{},
+	binary.ConcreteType{&NewRoundStepMessage{}, msgTypeNewRoundStep},
+	binary.ConcreteType{&CommitStepMessage{}, msgTypeCommitStep},
+	binary.ConcreteType{&ProposalMessage{}, msgTypeProposal},
+	binary.ConcreteType{&PartMessage{}, msgTypePart},
+	binary.ConcreteType{&VoteMessage{}, msgTypeVote},
+	binary.ConcreteType{&HasVoteMessage{}, msgTypeHasVote},
+)
+
 // TODO: check for unnecessary extra bytes at the end.
-func DecodeMessage(bz []byte) (msgType byte, msg interface{}, err error) {
-	n := new(int64)
-	// log.Debug(Fmt("decoding msg bytes: %X", bz))
+func DecodeMessage(bz []byte) (msgType byte, msg ConsensusMessage, err error) {
 	msgType = bz[0]
+	n := new(int64)
 	r := bytes.NewReader(bz)
-	switch msgType {
-	// Messages for communicating state changes
-	case msgTypeNewRoundStep:
-		msg = binary.ReadBinary(&NewRoundStepMessage{}, r, n, &err)
-	case msgTypeCommitStep:
-		msg = binary.ReadBinary(&CommitStepMessage{}, r, n, &err)
-	// Messages of data
-	case msgTypeProposal:
-		r.ReadByte() // Consume the byte
-		msg = binary.ReadBinary(&Proposal{}, r, n, &err)
-	case msgTypePart:
-		msg = binary.ReadBinary(&PartMessage{}, r, n, &err)
-	case msgTypeVote:
-		msg = binary.ReadBinary(&VoteMessage{}, r, n, &err)
-	case msgTypeHasVote:
-		msg = binary.ReadBinary(&HasVoteMessage{}, r, n, &err)
-	default:
-		msg = nil
-	}
+	msg = binary.ReadBinary(struct{ ConsensusMessage }{}, r, n, &err).(struct{ ConsensusMessage }).ConsensusMessage
 	return
 }
 
@@ -773,8 +793,6 @@ type NewRoundStepMessage struct {
 	Step                  RoundStep
 	SecondsSinceStartTime uint
 }
-
-func (m *NewRoundStepMessage) TypeByte() byte { return msgTypeNewRoundStep }
 
 func (m *NewRoundStepMessage) String() string {
 	return fmt.Sprintf("[NewRoundStep H:%v R:%v S:%v]", m.Height, m.Round, m.Step)
@@ -788,10 +806,18 @@ type CommitStepMessage struct {
 	BlockBitArray BitArray
 }
 
-func (m *CommitStepMessage) TypeByte() byte { return msgTypeCommitStep }
-
 func (m *CommitStepMessage) String() string {
 	return fmt.Sprintf("[CommitStep H:%v BP:%v BA:%v]", m.Height, m.BlockParts, m.BlockBitArray)
+}
+
+//-------------------------------------
+
+type ProposalMessage struct {
+	Proposal *Proposal
+}
+
+func (m *ProposalMessage) String() string {
+	return fmt.Sprintf("[Proposal %v]", m.Proposal)
 }
 
 //-------------------------------------
@@ -808,8 +834,6 @@ type PartMessage struct {
 	Part   *types.Part
 }
 
-func (m *PartMessage) TypeByte() byte { return msgTypePart }
-
 func (m *PartMessage) String() string {
 	return fmt.Sprintf("[Part H:%v R:%v T:%X P:%v]", m.Height, m.Round, m.Type, m.Part)
 }
@@ -820,8 +844,6 @@ type VoteMessage struct {
 	ValidatorIndex uint
 	Vote           *types.Vote
 }
-
-func (m *VoteMessage) TypeByte() byte { return msgTypeVote }
 
 func (m *VoteMessage) String() string {
 	return fmt.Sprintf("[Vote VI:%v V:%v]", m.ValidatorIndex, m.Vote)
@@ -835,8 +857,6 @@ type HasVoteMessage struct {
 	Type   byte
 	Index  uint
 }
-
-func (m *HasVoteMessage) TypeByte() byte { return msgTypeHasVote }
 
 func (m *HasVoteMessage) String() string {
 	return fmt.Sprintf("[HasVote %v/%v T:%X]", m.Height, m.Round, m.Type)

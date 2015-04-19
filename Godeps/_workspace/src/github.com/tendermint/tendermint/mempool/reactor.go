@@ -3,15 +3,18 @@ package mempool
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"sync/atomic"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/events"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/p2p"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 )
 
 var (
-	MempoolCh = byte(0x30)
+	MempoolChannel = byte(0x30)
 )
 
 // MempoolReactor handles mempool tx broadcasting amongst peers.
@@ -22,6 +25,8 @@ type MempoolReactor struct {
 	stopped uint32
 
 	Mempool *Mempool
+
+	evsw events.Fireable
 }
 
 func NewMempoolReactor(mempool *Mempool) *MempoolReactor {
@@ -52,7 +57,7 @@ func (memR *MempoolReactor) Stop() {
 func (memR *MempoolReactor) GetChannels() []*p2p.ChannelDescriptor {
 	return []*p2p.ChannelDescriptor{
 		&p2p.ChannelDescriptor{
-			Id:       MempoolCh,
+			Id:       MempoolChannel,
 			Priority: 5,
 		},
 	}
@@ -92,11 +97,11 @@ func (memR *MempoolReactor) Receive(chId byte, src *p2p.Peer, msgBytes []byte) {
 			if peer.Key == src.Key {
 				continue
 			}
-			peer.TrySend(MempoolCh, msg)
+			peer.TrySend(MempoolChannel, msg)
 		}
 
 	default:
-		// Ignore unknown message
+		log.Warn(Fmt("Unknown message type %v", reflect.TypeOf(msg)))
 	}
 }
 
@@ -106,29 +111,34 @@ func (memR *MempoolReactor) BroadcastTx(tx types.Tx) error {
 		return err
 	}
 	msg := &TxMessage{Tx: tx}
-	memR.sw.Broadcast(MempoolCh, msg)
+	memR.sw.Broadcast(MempoolChannel, msg)
 	return nil
+}
+
+// implements events.Eventable
+func (memR *MempoolReactor) SetFireable(evsw events.Fireable) {
+	memR.evsw = evsw
 }
 
 //-----------------------------------------------------------------------------
 // Messages
 
 const (
-	msgTypeUnknown = byte(0x00)
-	msgTypeTx      = byte(0x10)
+	msgTypeTx = byte(0x01)
 )
 
-// TODO: check for unnecessary extra bytes at the end.
-func DecodeMessage(bz []byte) (msgType byte, msg interface{}, err error) {
-	n := new(int64)
+type MempoolMessage interface{}
+
+var _ = binary.RegisterInterface(
+	struct{ MempoolMessage }{},
+	binary.ConcreteType{&TxMessage{}, msgTypeTx},
+)
+
+func DecodeMessage(bz []byte) (msgType byte, msg MempoolMessage, err error) {
 	msgType = bz[0]
+	n := new(int64)
 	r := bytes.NewReader(bz)
-	switch msgType {
-	case msgTypeTx:
-		msg = binary.ReadBinary(&TxMessage{}, r, n, &err)
-	default:
-		msg = nil
-	}
+	msg = binary.ReadBinary(struct{ MempoolMessage }{}, r, n, &err).(struct{ MempoolMessage }).MempoolMessage
 	return
 }
 
@@ -137,8 +147,6 @@ func DecodeMessage(bz []byte) (msgType byte, msg interface{}, err error) {
 type TxMessage struct {
 	Tx types.Tx
 }
-
-func (m *TxMessage) TypeByte() byte { return msgTypeTx }
 
 func (m *TxMessage) String() string {
 	return fmt.Sprintf("[TxMessage %v]", m.Tx)

@@ -3,7 +3,6 @@ package merkle
 import (
 	"bytes"
 	"container/list"
-	"fmt"
 	"sync"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
@@ -145,20 +144,20 @@ func (t *IAVLTree) GetByIndex(index uint64) (key interface{}, value interface{})
 	return t.root.getByIndex(t, index)
 }
 
-func (t *IAVLTree) Remove(key interface{}) (value interface{}, removed error) {
+func (t *IAVLTree) Remove(key interface{}) (value interface{}, removed bool) {
 	if t.root == nil {
-		return nil, fmt.Errorf("Root is nil")
+		return nil, false
 	}
 	newRootHash, newRoot, _, value, removed := t.root.remove(t, key)
-	if removed != nil {
-		return nil, removed
+	if !removed {
+		return nil, false
 	}
 	if newRoot == nil && newRootHash != nil {
 		t.root = t.ndb.GetNode(t, newRootHash)
 	} else {
 		t.root = newRoot
 	}
-	return value, nil
+	return value, true
 }
 
 func (t *IAVLTree) Iterate(fn func(key interface{}, value interface{}) bool) (stopped bool) {
@@ -236,9 +235,9 @@ func (ndb *nodeDB) SaveNode(t *IAVLTree, node *IAVLNode) {
 	if node.persisted {
 		panic("Shouldn't be calling save on an already persisted node.")
 	}
-	if _, ok := ndb.cache[string(node.hash)]; ok {
+	/*if _, ok := ndb.cache[string(node.hash)]; ok {
 		panic("Shouldn't be calling save on an already cached node.")
-	}
+	}*/
 	// Save node bytes to db
 	buf := bytes.NewBuffer(nil)
 	_, _, err := node.writeToCountHashes(t, buf)

@@ -4,17 +4,19 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync/atomic"
 	"time"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/events"
 )
 
 var pexErrInvalidMessage = errors.New("Invalid PEX message")
 
 const (
-	PexCh                    = byte(0x00)
+	PexChannel               = byte(0x00)
 	ensurePeersPeriodSeconds = 30
 	minNumOutboundPeers      = 10
 	maxNumPeers              = 50
@@ -31,6 +33,8 @@ type PEXReactor struct {
 	stopped uint32
 
 	book *AddrBook
+
+	evsw events.Fireable
 }
 
 func NewPEXReactor(book *AddrBook) *PEXReactor {
@@ -62,8 +66,9 @@ func (pexR *PEXReactor) Stop() {
 func (pexR *PEXReactor) GetChannels() []*ChannelDescriptor {
 	return []*ChannelDescriptor{
 		&ChannelDescriptor{
-			Id:       PexCh,
-			Priority: 1,
+			Id:                PexChannel,
+			Priority:          1,
+			SendQueueCapacity: 10,
 		},
 	}
 }
@@ -88,7 +93,7 @@ func (pexR *PEXReactor) RemovePeer(peer *Peer, reason interface{}) {
 func (pexR *PEXReactor) Receive(chId byte, src *Peer, msgBytes []byte) {
 
 	// decode message
-	msg, err := DecodeMessage(msgBytes)
+	_, msg, err := DecodeMessage(msgBytes)
 	if err != nil {
 		log.Warn("Error decoding message", "error", err)
 		return
@@ -97,9 +102,9 @@ func (pexR *PEXReactor) Receive(chId byte, src *Peer, msgBytes []byte) {
 
 	switch msg.(type) {
 	case *pexHandshakeMessage:
-		chainId := msg.(*pexHandshakeMessage).ChainId
-		if chainId != pexR.sw.chainId {
-			err := fmt.Sprintf("Peer is on a different chain/network. Got %s, expected %s", chainId, pexR.sw.chainId)
+		network := msg.(*pexHandshakeMessage).Network
+		if network != pexR.sw.network {
+			err := fmt.Sprintf("Peer is on a different chain/network. Got %s, expected %s", network, pexR.sw.network)
 			pexR.sw.StopPeerForError(src, err)
 		}
 	case *pexRequestMessage:
@@ -115,18 +120,18 @@ func (pexR *PEXReactor) Receive(chId byte, src *Peer, msgBytes []byte) {
 			pexR.book.AddAddress(addr, srcAddr)
 		}
 	default:
-		// Ignore unknown message.
+		log.Warn(Fmt("Unknown message type %v", reflect.TypeOf(msg)))
 	}
 
 }
 
 // Asks peer for more addresses.
 func (pexR *PEXReactor) RequestPEX(peer *Peer) {
-	peer.Send(PexCh, &pexRequestMessage{})
+	peer.Send(PexChannel, &pexRequestMessage{})
 }
 
 func (pexR *PEXReactor) SendAddrs(peer *Peer, addrs []*NetAddress) {
-	peer.Send(PexCh, &pexAddrsMessage{Addrs: addrs})
+	peer.Send(PexChannel, &pexAddrsMessage{Addrs: addrs})
 }
 
 // Ensures that sufficient peers are connected. (continuous)
@@ -175,10 +180,12 @@ func (pexR *PEXReactor) ensurePeers() {
 			alreadyDialing := pexR.sw.IsDialing(try)
 			alreadyConnected := pexR.sw.Peers().Has(try.String())
 			if alreadySelected || alreadyDialing || alreadyConnected {
-				log.Debug("Cannot dial address", "addr", try,
-					"alreadySelected", alreadySelected,
-					"alreadyDialing", alreadyDialing,
-					"alreadyConnected", alreadyConnected)
+				/*
+					log.Debug("Cannot dial address", "addr", try,
+						"alreadySelected", alreadySelected,
+						"alreadyDialing", alreadyDialing,
+						"alreadyConnected", alreadyConnected)
+				*/
 				continue
 			} else {
 				log.Debug("Will dial address", "addr", try)
@@ -194,53 +201,52 @@ func (pexR *PEXReactor) ensurePeers() {
 
 	// Dial picked addresses
 	for _, item := range toDial.Values() {
-		picked := item.(*NetAddress)
-		go func() {
+		go func(picked *NetAddress) {
 			_, err := pexR.sw.DialPeerWithAddress(picked)
 			if err != nil {
 				pexR.book.MarkAttempt(picked)
 			}
-		}()
+		}(item.(*NetAddress))
 	}
+}
+
+// implements events.Eventable
+func (pexR *PEXReactor) SetFireable(evsw events.Fireable) {
+	pexR.evsw = evsw
 }
 
 //-----------------------------------------------------------------------------
 // Messages
 
 const (
-	msgTypeUnknown   = byte(0x00)
 	msgTypeRequest   = byte(0x01)
 	msgTypeAddrs     = byte(0x02)
 	msgTypeHandshake = byte(0x03)
 )
 
-// TODO: check for unnecessary extra bytes at the end.
-func DecodeMessage(bz []byte) (msg interface{}, err error) {
+type PexMessage interface{}
+
+var _ = binary.RegisterInterface(
+	struct{ PexMessage }{},
+	binary.ConcreteType{&pexHandshakeMessage{}, msgTypeHandshake},
+	binary.ConcreteType{&pexRequestMessage{}, msgTypeRequest},
+	binary.ConcreteType{&pexAddrsMessage{}, msgTypeAddrs},
+)
+
+func DecodeMessage(bz []byte) (msgType byte, msg PexMessage, err error) {
+	msgType = bz[0]
 	n := new(int64)
-	msgType := bz[0]
 	r := bytes.NewReader(bz)
-	// log.Debug(Fmt("decoding msg bytes: %X", bz))
-	switch msgType {
-	case msgTypeHandshake:
-		msg = binary.ReadBinary(&pexHandshakeMessage{}, r, n, &err)
-	case msgTypeRequest:
-		msg = &pexRequestMessage{}
-	case msgTypeAddrs:
-		msg = binary.ReadBinary(&pexAddrsMessage{}, r, n, &err)
-	default:
-		msg = nil
-	}
+	msg = binary.ReadBinary(struct{ PexMessage }{}, r, n, &err).(struct{ PexMessage }).PexMessage
 	return
 }
 
 /*
-A pexHandshakeMessage contains the peer's chainId
+A pexHandshakeMessage contains the network identifier.
 */
 type pexHandshakeMessage struct {
-	ChainId string
+	Network string
 }
-
-func (m *pexHandshakeMessage) TypeByte() byte { return msgTypeHandshake }
 
 func (m *pexHandshakeMessage) String() string {
 	return "[pexHandshake]"
@@ -252,8 +258,6 @@ A pexRequestMessage requests additional peer addresses.
 type pexRequestMessage struct {
 }
 
-func (m *pexRequestMessage) TypeByte() byte { return msgTypeRequest }
-
 func (m *pexRequestMessage) String() string {
 	return "[pexRequest]"
 }
@@ -264,8 +268,6 @@ A message with announced peer addresses.
 type pexAddrsMessage struct {
 	Addrs []*NetAddress
 }
-
-func (m *pexAddrsMessage) TypeByte() byte { return msgTypeAddrs }
 
 func (m *pexAddrsMessage) String() string {
 	return fmt.Sprintf("[pexAddrs %v]", m.Addrs)

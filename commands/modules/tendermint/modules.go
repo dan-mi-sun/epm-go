@@ -1,10 +1,11 @@
 package commands
 
 import (
-	"github.com/eris-ltd/epm-go/epm"
+	"fmt"
 	"log"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/mint"
+	"github.com/eris-ltd/epm-go/epm"
 )
 
 func NewChain(chainType string, rpc bool) epm.Blockchain {
@@ -13,7 +14,7 @@ func NewChain(chainType string, rpc bool) epm.Blockchain {
 		if rpc {
 			log.Fatal("Tendermint rpc not implemented yet")
 		} else {
-			return mint.NewMintModule(nil)
+			return mint.NewMint()
 		}
 	}
 	return nil

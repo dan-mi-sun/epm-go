@@ -9,29 +9,31 @@ import (
 	"os/user"
 	"path"
 	"strconv"
-	"time"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/logger"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/types"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/confer"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/ed25519"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/account" //"github.com/eris-ltd/modules/types"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary" //"github.com/eris-ltd/modules/types"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/consensus"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/daemon"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/events"
 	tmlog "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/logger"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/mempool"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/merkle"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/node"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/p2p"
+	rpccore "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	blk "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
 	"github.com/eris-ltd/epm-go/utils"
 )
 
 var (
-	GASLIMIT = uint64(10000)
-	FEE      = uint64(500)
+	GASLIMIT = uint64(1000000)
+	FEE      = uint64(5000)
 )
 
 //Logging
@@ -45,12 +47,12 @@ type MintModule struct {
 	ConsensusState *consensus.ConsensusState
 	MempoolReactor *mempool.MempoolReactor
 	//	State      *state.State
-	App        *confer.Config
-	tendermint *daemon.Node
-	started    bool
+	App     *confer.Config
+	started bool
 
-	node     *daemon.Node
+	node     *node.Node
 	listener p2p.Listener
+	evsw     *events.EventSwitch
 
 	priv *account.PrivAccount
 }
@@ -73,7 +75,7 @@ func (mod *MintModule) Init() error {
 	// transform epm json based config to tendermint config
 	mod.Config2Config()
 
-	tmlog.InitLog()
+	tmlog.Reset()
 
 	prv, err := mod.loadOrCreateKey()
 	if err != nil {
@@ -85,7 +87,7 @@ func (mod *MintModule) Init() error {
 	}
 
 	// Create & start node
-	n := daemon.NewNode()
+	n := node.NewNode()
 	l := p2p.NewDefaultListener("tcp", config.App().GetString("ListenAddr"), false)
 	n.AddListener(l)
 
@@ -94,6 +96,7 @@ func (mod *MintModule) Init() error {
 	mod.App = config.App()
 	mod.ConsensusState = n.ConsensusState()
 	mod.MempoolReactor = n.MempoolReactor()
+	mod.evsw = n.EventSwitch()
 
 	return nil
 }
@@ -109,7 +112,7 @@ func (mod *MintModule) Start() error {
 
 	// Run the RPC server.
 	if config.App().GetString("RPC.HTTP.ListenAddr") != "" {
-		mod.node.StartRpc()
+		mod.node.StartRPC()
 	}
 
 	mod.started = true
@@ -195,6 +198,7 @@ func (mint *MintModule) Account(target string) *types.Account {
 	if err != nil {
 		return nil
 	}
+	fmt.Println("TARGET:", target, targetBytes)
 	acc := mint.ConsensusState.GetState().GetAccount(targetBytes)
 	return &types.Account{
 		Address: target,
@@ -219,9 +223,15 @@ func (mint *MintModule) StorageAt(contract_addr string, storage_addr string) str
 	if err != nil {
 		return ""
 	}
-	b := mint.MempoolReactor.Mempool.GetState().GetStorage(caddr, saddr)
-	fmt.Printf("CADDR, SADDR, b: %x, %x, %x", caddr, saddr, b)
-	return hex.EncodeToString(b)
+	cache := mint.MempoolReactor.Mempool.GetCache()
+	// block cache will not have account available to return
+	// something meaningful from GetStorage unless we
+	// call GetAccount first
+	acc := cache.GetAccount(caddr)
+	fmt.Println("ACC:", acc)
+	b := cache.GetStorage(common.LeftPadWord256(caddr), common.RightPadWord256(flip(saddr)))
+	fmt.Printf("CADDR, SADDR, b: %x, %x, %x", caddr, common.RightPadWord256(flip(saddr)), b)
+	return hex.EncodeToString(flip(b.Bytes()))
 }
 
 func (mint *MintModule) BlockCount() int {
@@ -249,7 +259,7 @@ func (mint *MintModule) Tx(addr, amt string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	acc := mint.MempoolReactor.Mempool.GetState().GetAccount(mint.priv.Address)
+	acc := mint.MempoolReactor.Mempool.GetCache().GetAccount(mint.priv.Address)
 	nonce := 0
 	if acc != nil {
 		nonce = int(acc.Sequence) + 1
@@ -294,7 +304,7 @@ func (mint *MintModule) Msg(addr string, data []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	acc := mint.MempoolReactor.Mempool.GetState().GetAccount(mint.priv.Address)
+	acc := mint.MempoolReactor.Mempool.GetCache().GetAccount(mint.priv.Address)
 	nonce := 0
 	if acc != nil {
 		nonce = int(acc.Sequence) + 1
@@ -318,13 +328,32 @@ func (mint *MintModule) Msg(addr string, data []string) (string, error) {
 	return hex.EncodeToString(merkle.HashFromBinary(tx)), err
 }
 
+// send a simulated message to a contract
+// data is prepacked by epm
+func (mint *MintModule) Call(addr string, data []string) (string, error) {
+	packed := data[0]
+	packedBytes, _ := hex.DecodeString(packed)
+	addr = utils.StripHex(addr)
+	addrB, err := hex.DecodeString(addr)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := rpccore.Call(addrB, packedBytes)
+	if err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(resp.Return), err
+}
+
 func (mint *MintModule) Script(script string) (string, error) {
 	script = utils.StripHex(script)
 	code, err := hex.DecodeString(script)
 	if err != nil {
 		return "", err
 	}
-	acc := mint.MempoolReactor.Mempool.GetState().GetAccount(mint.priv.Address)
+	acc := mint.MempoolReactor.Mempool.GetCache().GetAccount(mint.priv.Address)
 	nonce := 0
 	if acc != nil {
 		nonce = int(acc.Sequence) + 1
@@ -358,7 +387,14 @@ func (mint *MintModule) UnSubscribe(name string) {
 
 // Mine a block
 func (m *MintModule) Commit() {
-	time.Sleep(time.Second * 20)
+	ch := make(chan struct{})
+	m.evsw.AddListenerForEvent("mint-module", "NewBlock", func(msg interface{}) {
+		ch <- struct{}{}
+	})
+	<-ch
+	<-ch
+	m.evsw.RemoveListener("mint-module")
+
 }
 
 // start and stop continuous mining

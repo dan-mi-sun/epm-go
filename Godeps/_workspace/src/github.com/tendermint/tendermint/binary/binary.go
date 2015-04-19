@@ -21,23 +21,30 @@ func ReadBinary(o interface{}, r io.Reader, n *int64, err *error) interface{} {
 func WriteBinary(o interface{}, w io.Writer, n *int64, err *error) {
 	rv := reflect.ValueOf(o)
 	rt := reflect.TypeOf(o)
+	if rv.Kind() == reflect.Ptr {
+		rv, rt = rv.Elem(), rt.Elem()
+	}
 	writeReflect(rv, rt, w, n, err)
 }
 
 func ReadJSON(o interface{}, bytes []byte, err *error) interface{} {
-	var parsed interface{}
-	*err = json.Unmarshal(bytes, &parsed)
+	var object interface{}
+	*err = json.Unmarshal(bytes, &object)
 	if *err != nil {
 		return o
 	}
 
+	return ReadJSONObject(o, object, err)
+}
+
+func ReadJSONObject(o interface{}, object interface{}, err *error) interface{} {
 	rv, rt := reflect.ValueOf(o), reflect.TypeOf(o)
 	if rv.Kind() == reflect.Ptr {
-		readReflectJSON(rv.Elem(), rt.Elem(), parsed, err)
+		readReflectJSON(rv.Elem(), rt.Elem(), object, err)
 		return o
 	} else {
 		ptrRv := reflect.New(rt)
-		readReflectJSON(ptrRv.Elem(), rt, parsed, err)
+		readReflectJSON(ptrRv.Elem(), rt, object, err)
 		return ptrRv.Elem().Interface()
 	}
 }
@@ -45,6 +52,9 @@ func ReadJSON(o interface{}, bytes []byte, err *error) interface{} {
 func WriteJSON(o interface{}, w io.Writer, n *int64, err *error) {
 	rv := reflect.ValueOf(o)
 	rt := reflect.TypeOf(o)
+	if rv.Kind() == reflect.Ptr {
+		rv, rt = rv.Elem(), rt.Elem()
+	}
 	writeReflectJSON(rv, rt, w, n, err)
 }
 

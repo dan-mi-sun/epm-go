@@ -140,3 +140,16 @@ func trapSignal(cb func()) {
 	}()
 	select {}
 }
+
+func flip(b []byte) []byte {
+	flipped := make([]byte, len(b))
+	l2 := len(b) / 2
+	if len(b) > 0 {
+		flipped[l2] = b[l2]
+	}
+	for i := 0; i < l2; i++ {
+		flipped[i] = b[len(b)-1-i]
+		flipped[len(b)-1-i] = b[i]
+	}
+	return flipped
+}

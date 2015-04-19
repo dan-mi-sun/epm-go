@@ -2,6 +2,7 @@ package binary
 
 import (
 	"bytes"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -29,34 +30,55 @@ type Cat struct {
 	SimpleStruct
 }
 
-func (cat Cat) TypeByte() byte { return AnimalTypeCat }
-
 // Implements Animal
 type Dog struct {
 	SimpleStruct
 }
 
-func (dog Dog) TypeByte() byte { return AnimalTypeDog }
-
 // Implements Animal
 type Snake []byte
-
-func (snake Snake) TypeByte() byte { return AnimalTypeSnake }
 
 // Implements Animal
 type Viper struct {
 	Bytes []byte
 }
 
-func (viper *Viper) TypeByte() byte { return AnimalTypeViper }
-
 var _ = RegisterInterface(
 	struct{ Animal }{},
-	ConcreteType{Cat{}},
-	ConcreteType{Dog{}},
-	ConcreteType{Snake{}},
-	ConcreteType{&Viper{}},
+	ConcreteType{Cat{}, AnimalTypeCat},
+	ConcreteType{Dog{}, AnimalTypeDog},
+	ConcreteType{Snake{}, AnimalTypeSnake},
+	ConcreteType{&Viper{}, AnimalTypeViper},
 )
+
+func TestAnimalInterface(t *testing.T) {
+	var foo Animal
+
+	// Type of pointer to Animal
+	rt := reflect.TypeOf(&foo)
+	fmt.Printf("rt: %v\n", rt)
+
+	// Type of Animal itself.
+	// NOTE: normally this is acquired through other means
+	// like introspecting on method signatures, or struct fields.
+	rte := rt.Elem()
+	fmt.Printf("rte: %v\n", rte)
+
+	// Get a new pointer to the interface
+	// NOTE: calling .Interface() is to get the actual value,
+	// instead of reflection values.
+	ptr := reflect.New(rte).Interface()
+	fmt.Printf("ptr: %v", ptr)
+
+	// Make a binary byteslice that represents a snake.
+	snakeBytes := BinaryBytes(Snake([]byte("snake")))
+	snakeReader := bytes.NewReader(snakeBytes)
+
+	// Now you can read it.
+	n, err := new(int64), new(error)
+	it := *ReadBinary(ptr, snakeReader, n, err).(*Animal)
+	fmt.Println(it, reflect.TypeOf(it))
+}
 
 //-------------------------------------
 
@@ -90,13 +112,42 @@ func instantiateBasic() (interface{}, interface{}) {
 func validateBasic(o interface{}, t *testing.T) {
 	cat := o.(Cat)
 	if cat.String != "String" {
-		t.Errorf("Expected cat2.String == 'String', got %v", cat.String)
+		t.Errorf("Expected cat.String == 'String', got %v", cat.String)
 	}
 	if string(cat.Bytes) != "Bytes" {
-		t.Errorf("Expected cat2.Bytes == 'Bytes', got %X", cat.Bytes)
+		t.Errorf("Expected cat.Bytes == 'Bytes', got %X", cat.Bytes)
 	}
 	if cat.Time.Unix() != 123 {
-		t.Errorf("Expected cat2.Time == 'Unix(123)', got %v", cat.Time)
+		t.Errorf("Expected cat.Time == 'Unix(123)', got %v", cat.Time)
+	}
+}
+
+//-------------------------------------
+
+type NilTestStruct struct {
+	IntPtr *int
+	CatPtr *Cat
+	Animal Animal
+}
+
+func constructNilTestStruct() interface{} {
+	return NilTestStruct{}
+}
+
+func instantiateNilTestStruct() (interface{}, interface{}) {
+	return NilTestStruct{}, &NilTestStruct{}
+}
+
+func validateNilTestStruct(o interface{}, t *testing.T) {
+	nts := o.(NilTestStruct)
+	if nts.IntPtr != nil {
+		t.Errorf("Expected nts.IntPtr to be nil, got %v", nts.IntPtr)
+	}
+	if nts.CatPtr != nil {
+		t.Errorf("Expected nts.CatPtr to be nil, got %v", nts.CatPtr)
+	}
+	if nts.Animal != nil {
+		t.Errorf("Expected nts.Animal to be nil, got %v", nts.Animal)
 	}
 }
 
@@ -222,7 +273,7 @@ func constructComplexArray() interface{} {
 					Bytes:  []byte("Bytes"),
 				},
 			},
-			&Dog{ // Even though it's a *Dog, we'll get a Dog{} back.
+			Dog{
 				SimpleStruct{
 					String: "Woof",
 					Bytes:  []byte("Bark"),
@@ -287,15 +338,18 @@ func validateComplexArray(o interface{}, t *testing.T) {
 var testCases = []TestCase{}
 
 func init() {
-	//testCases = append(testCases, TestCase{constructBasic, instantiateBasic, validateBasic})
-	//testCases = append(testCases, TestCase{constructComplex, instantiateComplex, validateComplex})
-	//testCases = append(testCases, TestCase{constructComplex2, instantiateComplex2, validateComplex2})
+	testCases = append(testCases, TestCase{constructBasic, instantiateBasic, validateBasic})
+	testCases = append(testCases, TestCase{constructComplex, instantiateComplex, validateComplex})
+	testCases = append(testCases, TestCase{constructComplex2, instantiateComplex2, validateComplex2})
 	testCases = append(testCases, TestCase{constructComplexArray, instantiateComplexArray, validateComplexArray})
+	testCases = append(testCases, TestCase{constructNilTestStruct, instantiateNilTestStruct, validateNilTestStruct})
 }
 
 func TestBinary(t *testing.T) {
 
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
+
+		log.Info(fmt.Sprintf("Running test case %v", i))
 
 		// Construct an object
 		o := testCase.Constructor()
@@ -310,7 +364,7 @@ func TestBinary(t *testing.T) {
 		n, err := new(int64), new(error)
 		res := ReadBinary(instance, bytes.NewReader(data), n, err)
 		if *err != nil {
-			t.Fatalf("Failed to read cat: %v", *err)
+			t.Fatalf("Failed to read into instance: %v", *err)
 		}
 
 		// Validate object
@@ -320,7 +374,7 @@ func TestBinary(t *testing.T) {
 		n, err = new(int64), new(error)
 		res = ReadBinary(instancePtr, bytes.NewReader(data), n, err)
 		if *err != nil {
-			t.Fatalf("Failed to read cat: %v", *err)
+			t.Fatalf("Failed to read into instance: %v", *err)
 		}
 
 		if res != instancePtr {
@@ -335,7 +389,9 @@ func TestBinary(t *testing.T) {
 
 func TestJSON(t *testing.T) {
 
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
+
+		log.Info(fmt.Sprintf("Running test case %v", i))
 
 		// Construct an object
 		o := testCase.Constructor()
@@ -370,4 +426,24 @@ func TestJSON(t *testing.T) {
 		testCase.Validator(reflect.ValueOf(res).Elem().Interface(), t)
 	}
 
+}
+
+//------------------------------------------------------------------------------
+
+type Foo struct {
+	FieldA string `json:"fieldA"` // json field name is "fieldA"
+	FieldB string // json field name is "FieldB"
+	fieldC string // not exported, not serialized.
+}
+
+func TestJSONFieldNames(t *testing.T) {
+	for i := 0; i < 20; i++ { // Try to ensure deterministic success.
+		foo := Foo{"a", "b", "c"}
+		stringified := string(JSONBytes(foo))
+		expected := `{"fieldA":"a","FieldB":"b"}`
+		if stringified != expected {
+			t.Fatalf("JSONFieldNames error: expected %v, got %v",
+				expected, stringified)
+		}
+	}
 }

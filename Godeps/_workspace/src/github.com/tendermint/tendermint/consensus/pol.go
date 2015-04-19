@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/binary"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	sm "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/state"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/types"
@@ -32,7 +33,7 @@ type POL struct {
 func (pol *POL) Verify(valSet *sm.ValidatorSet) error {
 
 	if uint(len(pol.Votes)) != valSet.Size() {
-		return Errorf("Invalid POL votes count: Expected %v, got %v",
+		return fmt.Errorf("Invalid POL votes count: Expected %v, got %v",
 			valSet.Size(), len(pol.Votes))
 	}
 
@@ -60,16 +61,16 @@ func (pol *POL) Verify(valSet *sm.ValidatorSet) error {
 				BlockParts: pol.BlockParts,
 			})
 		} else if vote.Round > pol.Round {
-			return Errorf("Invalid commit round %v for POL %v", vote.Round, pol)
+			return fmt.Errorf("Invalid commit round %v for POL %v", vote.Round, pol)
 		}
 
 		// Validate
 		if _, seen := seenValidators[string(val.Address)]; seen {
-			return Errorf("Duplicate validator for vote %v for POL %v", vote, pol)
+			return fmt.Errorf("Duplicate validator for vote %v for POL %v", vote, pol)
 		}
 
 		if !val.PubKey.VerifyBytes(voteDoc, vote.Signature) {
-			return Errorf("Invalid signature for vote %v for POL %v", vote, pol)
+			return fmt.Errorf("Invalid signature for vote %v for POL %v", vote, pol)
 		}
 
 		// Tally
@@ -80,7 +81,7 @@ func (pol *POL) Verify(valSet *sm.ValidatorSet) error {
 	if talliedVotingPower > valSet.TotalVotingPower()*2/3 {
 		return nil
 	} else {
-		return Errorf("Invalid POL, insufficient voting power %v, needed %v",
+		return fmt.Errorf("Invalid POL, insufficient voting power %v, needed %v",
 			talliedVotingPower, (valSet.TotalVotingPower()*2/3 + 1))
 	}
 
@@ -93,4 +94,8 @@ func (pol *POL) StringShort() string {
 		return fmt.Sprintf("POL{H:%v R:%v BH:%X}", pol.Height, pol.Round,
 			Fingerprint(pol.BlockHash), pol.BlockParts)
 	}
+}
+
+func (pol *POL) MakePartSet() *types.PartSet {
+	return types.NewPartSetFromData(binary.BinaryBytes(pol))
 }

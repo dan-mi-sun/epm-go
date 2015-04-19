@@ -1,32 +1,73 @@
 package core
 
 import (
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	"fmt"
+	acm "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
+	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
+	ctypes "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/rpc/core/types"
 )
 
-//-----------------------------------------------------------------------------
-
-func GenPrivAccount() *account.PrivAccount {
-	return account.GenPrivAccount()
+func GenPrivAccount() (*ctypes.ResponseGenPrivAccount, error) {
+	return &ctypes.ResponseGenPrivAccount{acm.GenPrivAccount()}, nil
 }
 
-//-----------------------------------------------------------------------------
+func GetAccount(address []byte) (*ctypes.ResponseGetAccount, error) {
+	cache := mempoolReactor.Mempool.GetCache()
+	account := cache.GetAccount(address)
+	if account == nil {
+		account = &acm.Account{
+			Address:     address,
+			PubKey:      nil,
+			Sequence:    0,
+			Balance:     0,
+			Code:        nil,
+			StorageRoot: nil,
+		}
+	}
+	return &ctypes.ResponseGetAccount{account}, nil
+}
 
-func GetAccount(address []byte) *account.Account {
+func GetStorage(address, key []byte) (*ctypes.ResponseGetStorage, error) {
 	state := consensusState.GetState()
-	return state.GetAccount(address)
+	account := state.GetAccount(address)
+	if account == nil {
+		return nil, fmt.Errorf("Unknown address: %X", address)
+	}
+	storageRoot := account.StorageRoot
+	storageTree := state.LoadStorage(storageRoot)
+
+	_, value := storageTree.Get(LeftPadWord256(key).Bytes())
+	if value == nil {
+		return &ctypes.ResponseGetStorage{key, nil}, nil
+	}
+	return &ctypes.ResponseGetStorage{key, value.([]byte)}, nil
 }
 
-//-----------------------------------------------------------------------------
-
-func ListAccounts() (uint, []*account.Account) {
+func ListAccounts() (*ctypes.ResponseListAccounts, error) {
 	var blockHeight uint
-	var accounts []*account.Account
+	var accounts []*acm.Account
 	state := consensusState.GetState()
 	blockHeight = state.LastBlockHeight
 	state.GetAccounts().Iterate(func(key interface{}, value interface{}) bool {
-		accounts = append(accounts, value.(*account.Account))
+		accounts = append(accounts, value.(*acm.Account))
 		return false
 	})
-	return blockHeight, accounts
+	return &ctypes.ResponseListAccounts{blockHeight, accounts}, nil
+}
+
+func DumpStorage(address []byte) (*ctypes.ResponseDumpStorage, error) {
+	state := consensusState.GetState()
+	account := state.GetAccount(address)
+	if account == nil {
+		return nil, fmt.Errorf("Unknown address: %X", address)
+	}
+	storageRoot := account.StorageRoot
+	storageTree := state.LoadStorage(storageRoot)
+	storageItems := []ctypes.StorageItem{}
+	storageTree.Iterate(func(key interface{}, value interface{}) bool {
+		storageItems = append(storageItems, ctypes.StorageItem{
+			key.([]byte), value.([]byte)})
+		return false
+	})
+	return &ctypes.ResponseDumpStorage{storageRoot, storageItems}, nil
 }

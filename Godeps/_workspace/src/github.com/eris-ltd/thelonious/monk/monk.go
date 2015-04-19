@@ -25,7 +25,7 @@ import (
 )
 
 var logger *monklog.Logger = monklog. // figure to remove this ...
-NewLogger("MONK")
+					NewLogger("MONK")
 
 func init() {
 	utils.InitDecerverDir()

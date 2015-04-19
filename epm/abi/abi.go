@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/crypto/sha3"
 )
 
 var NullABI = ABI{}
@@ -49,8 +49,15 @@ func (m Method) String() (out string) {
 	return
 }
 
+func Sha3(data []byte) []byte {
+	d := sha3.NewKeccak256()
+	d.Write(data)
+
+	return d.Sum(nil)
+}
+
 func (m Method) Id() []byte {
-	return crypto.Sha3([]byte(m.String()))[:4]
+	return Sha3([]byte(m.String()))[:4]
 }
 
 // Argument holds the name of the argument and the corresponding type.
