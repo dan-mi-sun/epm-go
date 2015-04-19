@@ -163,4 +163,10 @@ var (
 		Name:  "compiler",
 		Usage: "specify <host>:<port> to use for compile server",
 	}
+
+	keyTypeFlag = cli.StringFlag{
+		Name:  "type",
+		Value: "secp256k1",
+		Usage: "set the type of the key to generate (secp256k1 by default | ed25519 | ...)",
+	}
 )

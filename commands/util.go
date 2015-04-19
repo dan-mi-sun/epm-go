@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monklog"
+	mintconfig "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/config"
 	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/epm"
 	"github.com/eris-ltd/epm-go/utils"
@@ -228,8 +229,26 @@ func DeployChain(chain epm.Blockchain, root, config, deployGen string, novi bool
 	// TODO: nice way to handle multiple gen blocks on other chains
 	// set genesis config file
 	if th, ok := isThelonious(chain); ok {
-		tempGen := copyEditGenesisConfig(deployGen, root, novi)
-		setGenesisConfig(th, tempGen)
+		tempGen := copyEditGenesisConfig(deployGen, root, "thelonious", novi)
+		setGenesisConfigThel(th, tempGen)
+	} else if tmint, ok := isTendermint(chain); ok {
+		tempGen := path.Join(root, "genesis.json")
+		utils.InitDataDir(root)
+
+		if deployGen == "" {
+			deployGen = path.Join(utils.Blockchains, "tendermint", "genesis.json")
+		}
+		if _, err := os.Stat(deployGen); err != nil {
+			err := ioutil.WriteFile(deployGen, []byte(mintconfig.DefaultGenesis), 0600)
+			ifExit(err)
+		}
+		ifExit(utils.Copy(deployGen, tempGen))
+		if !novi {
+			ifExit(editor(tempGen))
+		}
+
+		setGenesisConfigMint(tmint, tempGen)
+
 	} else if deployGen != "" {
 		logger.Warnln("Genesis configuration only possible with thelonious (for now - https://github.com/eris-ltd/epm-go/issues/53)")
 	}

@@ -12,9 +12,11 @@ import (
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/eth"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/genblock"
+	//	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/mint"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/modules/monkrpc"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monk"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkdoug"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkdoug" //"github.com/eris-ltd/modules/mint"
+	"github.com/eris-ltd/modules/mint"
 )
 
 func newChain(chainType string, rpc bool) epm. // modules
@@ -40,6 +42,8 @@ func newChain(chainType string, rpc bool) epm. // modules
 		}
 	case "gen", "genesis":
 		return genblock.NewGenBlockModule(nil)
+	case "tendermint", "mint":
+		return mint.NewMint()
 	}
 	return nil
 
@@ -135,7 +139,12 @@ func isThelonious(chain epm.Blockchain) (*monk.MonkModule, bool) {
 	return th, ok
 }
 
-func setGenesisConfig(m *monk.MonkModule, genesis string) {
+func isTendermint(chain epm.Blockchain) (*mint.MintModule, bool) {
+	th, ok := chain.(*mint.MintModule)
+	return th, ok
+}
+
+func setGenesisConfigThel(m *monk.MonkModule, genesis string) {
 	if strings.HasSuffix(genesis, ".pdx") || strings.HasSuffix(genesis, ".gdx") {
 		m.GenesisConfig = &monkdoug.GenesisConfig{Address: "0000000000THISISDOUG", NoGenDoug: false, Pdx: genesis}
 		m.GenesisConfig.Init()
@@ -144,12 +153,21 @@ func setGenesisConfig(m *monk.MonkModule, genesis string) {
 	}
 }
 
-func copyEditGenesisConfig(deployGen, tmpRoot string, novi bool) string {
+func setGenesisConfigMint(m *mint.MintModule, genesis string) {
+	if strings.HasSuffix(genesis, ".pdx") || strings.HasSuffix(genesis, ".gdx") {
+		//m.GenesisConfig = &monkdoug.GenesisConfig{Address: "0000000000THISISDOUG", NoGenDoug: false, Pdx: genesis}
+		//m.GenesisConfig.Init()
+	} else {
+		m.Config.GenesisConfig = genesis
+	}
+}
+
+func copyEditGenesisConfig(deployGen, tmpRoot, chainType string, novi bool) string {
 	tempGen := path.Join(tmpRoot, "genesis.json")
 	utils.InitDataDir(tmpRoot)
 
 	if deployGen == "" {
-		deployGen = path.Join(utils.Blockchains, "thelonious", "genesis.json")
+		deployGen = path.Join(utils.Blockchains, chainType, "genesis.json")
 	}
 	if _, err := os.Stat(deployGen); err != nil {
 		err := utils.WriteJson(monkdoug.DefaultGenesis, deployGen)

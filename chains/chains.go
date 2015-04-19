@@ -74,6 +74,8 @@ func ResolveChainType(chainType string) (string, error) {
 		return "ethereum", nil
 	case "gen", "genesis":
 		return "thelonious", nil
+	case "mint", "tendermint":
+		return "tendermint", nil
 	}
 	return "", fmt.Errorf("Unknown chain type: %s", chainType)
 }

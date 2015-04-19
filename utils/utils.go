@@ -160,7 +160,12 @@ func ReadJson(config interface{}, config_file string) error {
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(b, config)
+	err = json.Unmarshal(b, config)
+	if err != nil {
+		fmt.Println("error unmarshalling config from file:", err)
+		return err
+	}
+	return nil
 }
 
 // keeps N bytes of the conversion
