@@ -33,7 +33,7 @@ import (
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/kardianos/osext"
 	"github.com/eris-ltd/epm-go/chains" // this is basically go-etheruem/utils
 	// TODO: use the interupts...
-	"github.com/eris-ltd/epm-go/epm" //"github.com/eris-ltd/modules/genblock"
+	"github.com/eris-ltd/epm-go/epm" //"github.com/eris-ltd/thelonious/Godeps/_workspace/src/github.com/eris-ltd/modules/genblock"
 	"github.com/eris-ltd/epm-go/utils"
 )
 

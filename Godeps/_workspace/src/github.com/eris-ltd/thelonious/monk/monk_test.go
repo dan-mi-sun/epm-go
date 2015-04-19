@@ -74,13 +74,13 @@ func TestSimpleStorage(t *testing.T) {
 		fmt.Println("Code:\n", code)
 		// write code to file and deploy
 		c := "tests/simple-storage.lll"
-		p := path.Join(mod.monk.config.ContractPath, c)
+		p := path.Join(mod.Config.ContractPath, c)
 		err := ioutil.WriteFile(p, []byte(code), 0644)
 		if err != nil {
 			fmt.Println("write file failed", err)
 			os.Exit(0)
 		}
-		bytecode, err := lllcserver.Compile(p)
+		bytecode, _, err := lllcserver.Compile(p)
 		if err != nil {
 			t.Error("Error compiling:", err)
 		}
@@ -105,7 +105,7 @@ func TestMsgStorage(t *testing.T) {
 		mod.Init()
 		p := path.Join(mod.Config.ContractPath, "tests/keyval.lll")
 		// compile
-		bytecode, err := lllcserver.Compile(p)
+		bytecode, _, err := lllcserver.Compile(p)
 		if err != nil {
 			t.Error("Error compiling", err)
 		}
@@ -144,7 +144,7 @@ func TestTx(t *testing.T) {
 		addr := "b9398794cafb108622b07d9a01ecbed3857592d5"
 		addr_bytes := monkutil.Hex2Bytes(addr)
 		amount := "567890"
-		old_balance := mod.monk.pipe.Balance(addr_bytes)
+		old_balance := mod.pipe.Balance(addr_bytes)
 		start := time.Now()
 		mod.Tx(addr, amount)
 		dif := time.Since(start)
@@ -152,7 +152,7 @@ func TestTx(t *testing.T) {
 		mod.Start()
 		mod.Commit()
 
-		new_balance := mod.monk.pipe.Balance(addr_bytes)
+		new_balance := mod.pipe.Balance(addr_bytes)
 		old := old_balance.BigInt()
 		am := monkutil.Big(amount)
 		n := new(big.Int)
@@ -184,7 +184,7 @@ func TestManyTx(t *testing.T) {
 		addr := "b9398794cafb108622b07d9a01ecbed3857592d5"
 		addr_bytes := monkutil.Hex2Bytes(addr)
 		amount := "567890"
-		old_balance := mod.monk.pipe.Balance(addr_bytes)
+		old_balance := mod.pipe.Balance(addr_bytes)
 		N := 1000
 		//mod.SetCursor(0)
 		start := time.Now()
@@ -196,7 +196,7 @@ func TestManyTx(t *testing.T) {
 		mod.Start()
 		mod.Commit()
 
-		new_balance := mod.monk.pipe.Balance(addr_bytes)
+		new_balance := mod.pipe.Balance(addr_bytes)
 		old := old_balance.BigInt()
 		am := monkutil.Big(amount)
 		mult := big.NewInt(int64(N))
@@ -234,7 +234,6 @@ func TestModule(t *testing.T) {
 	tester("module satisfaction", func(mod *MonkModule) {
 		receiveModule(mod)
 		receiveBlockchain(mod)
-		receiveBlockchain(mod.monk)
 	}, 0)
 }
 
