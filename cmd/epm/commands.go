@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/codegangsta/cli"
+	"github.com/eris-ltd/epm-go/chains"
 	"github.com/eris-ltd/epm-go/commands"
 	"github.com/eris-ltd/epm-go/utils"
 )
@@ -31,12 +32,20 @@ func cliCall(f func(*commands.Context)) func(*cli.Context) {
 		if _, ok := standAlones[c.Command.Name]; ok {
 			f(c2)
 		} else {
+			var err error
+			var typ string
+			if c.Command.Name == "new" {
+				typ, err = chains.ResolveChainType(c2.String("type"))
+				ifExit(err)
+			} else {
 
-			// ensure we are using the correct binary
-			_, typ, _, err := commands.ResolveRootFlag(c2)
-			if err != nil {
-				exit(err)
+				// ensure we are using the correct binary
+				_, typ, _, err = commands.ResolveRootFlag(c2)
+				if err != nil {
+					exit(err)
+				}
 			}
+			fmt.Println("Chain type:", typ)
 			if commands.CHAIN == "" {
 				// run the proper binary
 				// if it does not exist, install it
