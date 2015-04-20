@@ -23,7 +23,7 @@ import (
 	"time"
 
 	//epm-binary-generator:IMPORT
-	mod "github.com/eris-ltd/epm-go/commands/modules/thelonious"
+	mod "github.com/eris-ltd/epm-go/commands/modules/tendermint"
 )
 
 func Clean(c *Context) {
@@ -454,6 +454,9 @@ func Config(c *Context) {
 		ifExit(utils.Editor(configPath))
 	} else {
 		m := mod.NewChain(chainType, rpc)
+		if m == nil {
+			ifExit(fmt.Errorf("Got nil chain. Is this the correct type: %s", chainType))
+		}
 		err = m.ReadConfig(configPath)
 		ifExit(err)
 

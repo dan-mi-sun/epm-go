@@ -44,6 +44,7 @@ type ChainConfig struct {
 
 	// Local Node
 	Mining           bool   `json:"mining"`
+	FastSync         bool   `json:"fast_sync"`
 	MaxPeers         int    `json:"max_peers"`
 	ClientIdentifier string `json:"client"`
 	Version          string `json:"version"`

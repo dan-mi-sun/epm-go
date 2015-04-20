@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 
 	//epm-binary-generator:IMPORT
-	mod "github.com/eris-ltd/epm-go/commands/modules/thelonious"
+	mod "github.com/eris-ltd/epm-go/commands/modules/tendermint"
 )
 
 // this needs to match the type of the chain we're trying to run
 // it should be blank for the base epm (even though it includes thel ...)
 //epm-binary-generator:CHAIN
-const CHAIN = ""
+const CHAIN = "tendermint"
 
 // chainroot is a full path to the dir
 func LoadChain(c *Context, chainType, chainRoot string) epm.Blockchain {

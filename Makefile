@@ -4,4 +4,17 @@
 #
 all:
 	go install ./cmd/epm-binary-generator
+	epm-binary-generator ./cmd/epm ./commands thelonious tendermint ethereum
+
+binary:
+	go install ./cmd/epm-binary-generator
+
+tendermint:
+	epm-binary-generator ./cmd/epm ./commands tendermint
+
+ethereum:
+	epm-binary-generator ./cmd/epm ./commands ethereum
+
+thelonious:
 	epm-binary-generator ./cmd/epm ./commands thelonious
+

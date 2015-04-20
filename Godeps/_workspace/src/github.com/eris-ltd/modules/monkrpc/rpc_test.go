@@ -22,8 +22,12 @@ func init() {
 	Monk = monk.NewMonk(nil)
 	Monk.GenesisConfig = monkdoug.DefaultGenesis
 	setConfig()
-	Monk.Init()
-	Monk.Start()
+	if err := Monk.Init(); err != nil {
+		log.Fatal(err)
+	}
+	if err := Monk.Start(); err != nil {
+		log.Fatal(err)
+	}
 	time.Sleep(2 * time.Second)
 }
 

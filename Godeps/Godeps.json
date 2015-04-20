@@ -177,23 +177,23 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/eth",
-			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
+			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/mint",
-			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
+			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkrpc",
-			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
+			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkutils",
-			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
+			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/types",
-			"Rev": "aa02ade4b020d7ebd91ad05bcc8841c0242fa562"
+			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
@@ -325,75 +325,75 @@
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/account",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/alert",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/binary",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/blockchain",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/common",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/config",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/consensus",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/db",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/events",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/logger",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/mempool",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/merkle",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/node",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/p2p",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/rpc",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/state",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/types",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/tendermint/tendermint/vm",
-			"Rev": "8057fb7125e809222d3570071e44fafc96e9c20f"
+			"Rev": "882a82bad4ff538a7f7d4a50a1f301ce66a7a0e8"
 		},
 		{
 			"ImportPath": "github.com/yvasiyarov/go-metrics",

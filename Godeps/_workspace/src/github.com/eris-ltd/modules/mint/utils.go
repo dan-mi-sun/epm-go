@@ -125,6 +125,7 @@ func (mod *MintModule) Config2Config() {
 	app.SetDefault("GenesisFile", path.Join(c.RootDir, "genesis.json"))
 	app.SetDefault("AddrBookFile", path.Join(c.RootDir, "addrbook.json"))
 	app.SetDefault("PrivValidatorfile", path.Join(c.RootDir, "priv_validator.json"))
+	app.SetDefault("FastSync", c.FastSync)
 	config.SetApp(app)
 }
 

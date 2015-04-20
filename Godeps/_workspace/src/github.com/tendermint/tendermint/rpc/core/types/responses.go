@@ -70,10 +70,18 @@ type ResponseStatus struct {
 }
 
 type ResponseNetInfo struct {
+	Moniker   string
 	Network   string
 	Listening bool
 	Listeners []string
-	Peers     []string
+	Peers     []Peer
+}
+
+type Peer struct {
+	Host       string // ip
+	P2PPort    uint16
+	RPCPort    uint16
+	IsOutbound bool
 }
 
 type ResponseSignTx struct {

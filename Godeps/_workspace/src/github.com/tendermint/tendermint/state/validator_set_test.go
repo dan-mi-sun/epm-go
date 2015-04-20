@@ -2,6 +2,7 @@ package state
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/account"
 	. "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/tendermint/tendermint/common"
 	"testing"
@@ -40,6 +41,15 @@ func TestCopy(t *testing.T) {
 	}
 }
 
+func TestProposerSelection(t *testing.T) {
+	vset := randValidatorSet(10)
+	for i := 0; i < 100; i++ {
+		val := vset.Proposer()
+		fmt.Printf("Proposer: %v\n", val)
+		vset.IncrementAccum(1)
+	}
+}
+
 func BenchmarkValidatorSetCopy(b *testing.B) {
 	b.StopTimer()
 	vset := NewValidatorSet([]*Validator{})
@@ -50,7 +60,7 @@ func BenchmarkValidatorSetCopy(b *testing.B) {
 			PubKey:  privAccount.PubKey.(account.PubKeyEd25519),
 		}
 		if !vset.Add(val) {
-			panic("Failde to add validator")
+			panic("Failed to add validator")
 		}
 	}
 	b.StartTimer()

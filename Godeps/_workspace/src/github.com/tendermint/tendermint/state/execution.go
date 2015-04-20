@@ -152,7 +152,6 @@ func execBlock(s *State, block *types.Block, blockPartsHeader types.PartSetHeade
 
 	// Increment validator AccumPowers
 	s.BondedValidators.IncrementAccum(1)
-
 	s.LastBlockHeight = block.Height
 	s.LastBlockHash = block.Hash()
 	s.LastBlockParts = blockPartsHeader
