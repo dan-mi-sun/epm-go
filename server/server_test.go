@@ -7,6 +7,8 @@ import (
 	// "github.com/eris-ltd/epm-go/Godeps/_workspace/src/golang.org/x/net/websocket"
 	"io/ioutil"
 	"net/http"
+	// "os"
+	// "os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -30,6 +32,14 @@ func init() {
 	go func() {
 		srvr.Start()
 	}()
+
+	// Can run tests with the below (instead of the above) for debugging purposes.
+	// go func() {
+	// 	cmd := exec.Command("epm", "--log", "5", "serve")
+	// 	cmd.Stdout = os.Stdout
+	// 	cmd.Stderr = os.Stderr
+	// 	cmd.Run()
+	// }()
 	time.Sleep(1 * time.Second)
 }
 

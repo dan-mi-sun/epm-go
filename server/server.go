@@ -173,6 +173,18 @@ match the local keyname.
 Will save the POSTed key to the keychain and then import the key
 into the config.json for the checked out blockchain.
 
+--------------------------------------------------------------
+
+RPC handlers
+
+--------------------------------------------------------------
+
+	POST http://IP:PORT/eris/rpc
+
+Will reverse proxy the body of the incoming call to a running
+blockchain's RPC IP:PORT.
+
+
 */
 package server
 
@@ -271,6 +283,9 @@ func (this *Server) Start() error {
 
 	// Keys handlers
 	cm.Post("/eris/importkey/:keyName", this.httpService.handleKeyImport)
+
+	// RPC handlers
+	cm.Post("/rpc", this.httpService.handleRPC)
 
 	// Handle websocket negotiation requests.
 	cm.Get("/ws", this.wsService.handleWs)

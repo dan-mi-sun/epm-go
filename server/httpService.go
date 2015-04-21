@@ -431,6 +431,45 @@ func (this *HttpService) handleKeyImport(params martini.Params, w http.ResponseW
 }
 
 // -----------------------------------------------------------------
+// ------------------- RPC FUNCTIONS -------------------------------
+// -----------------------------------------------------------------
+
+func (this *HttpService) handleRPC(params martini.Params, w http.ResponseWriter, r *http.Request) {
+	this.logIncoming("RPC Request")
+
+	// define the client to send outbound
+	client := &http.Client{}
+	compiledEndPoint := "http://" + this.ChainRunningRPC.RPCIp + ":" + strconv.Itoa(this.ChainRunningRPC.RPCPort) + "/"
+
+	// grab inbound. route to outbound
+	var resp *http.Response
+	outbound, err := http.NewRequest("POST", compiledEndPoint, r.Body)
+	if err != nil {
+		this.logError(w, 500, err)
+		return
+	}
+	defer r.Body.Close()
+
+	resp, err = client.Do(outbound)
+	if err != nil {
+		this.logError(w, 500, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	var ret []byte
+	ret, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		this.logError(w, 500, err)
+		return
+	}
+
+	w.WriteHeader(200)
+	w.Header().Set("Content-Type", "application/json-rpc")
+	w.Write(ret)
+}
+
+// -----------------------------------------------------------------
 // ------------------- HELPER FUNCTIONS ----------------------------
 // -----------------------------------------------------------------
 
