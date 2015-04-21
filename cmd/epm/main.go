@@ -116,7 +116,7 @@ func ifExit(err error) {
 
 // this is here to resolve circular dependencies between commands and server packages
 func serve(c *cli.Context) {
-	srvr := server.NewServer("localhost", 4000, 1000, ".")
+	srvr := server.NewServer("localhost", 3000, 1000, ".")
 	srvr.Start()
 }
 

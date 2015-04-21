@@ -170,9 +170,10 @@ var (
 		Name:  "type",
 		Value: "secp256k1",
 		Usage: "set the type of the key to generate (secp256k1 by default | ed25519 | ...)",
+	}
 
 	forceRmFlag = cli.BoolFlag{
-		Name:   "force",
-		Usage:  "delete directories without confirming (dangerous)",
+		Name:  "force",
+		Usage: "delete directories without confirming (dangerous)",
 	}
 )

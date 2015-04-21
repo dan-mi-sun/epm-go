@@ -15,7 +15,7 @@ import (
 // this needs to match the type of the chain we're trying to run
 // it should be blank for the base epm (even though it includes thel ...)
 //epm-binary-generator:CHAIN
-const CHAIN = ""
+const CHAIN = "thelonious"
 
 // chainroot is a full path to the dir
 func LoadChain(c *Context, chainType, chainRoot string) epm.Blockchain {
