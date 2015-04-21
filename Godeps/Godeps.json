@@ -50,6 +50,11 @@
 			"Rev": "d2b94fd789ea21d12fac1a4443dd3a3f79cda72c"
 		},
 		{
+			"ImportPath": "github.com/braintree/manners",
+			"Comment": "0.3.1-2-g5280e25",
+			"Rev": "5280e250f2795914acbeb2bf3b55dd5a2d1fba52"
+		},
+		{
 			"ImportPath": "github.com/codegangsta/cli",
 			"Comment": "1.2.0-50-ga14c5b4",
 			"Rev": "a14c5b47c7efa4ff80cc42e1079a34b4756f2311"
@@ -416,10 +421,6 @@
 		{
 			"ImportPath": "golang.org/x/crypto/pbkdf2",
 			"Rev": "4ed45ec682102c643324fae5dff8dab085b6c300"
-		},
-		{
-			"ImportPath": "golang.org/x/net/websocket",
-			"Rev": "84ba27dd5b2d8135e9da1395277f2c9333a2ffda"
 		},
 		{
 			"ImportPath": "gopkg.in/fatih/set.v0",
