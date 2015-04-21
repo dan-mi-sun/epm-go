@@ -23,7 +23,7 @@ import (
 	"time"
 
 	//epm-binary-generator:IMPORT
-	mod "github.com/eris-ltd/epm-go/commands/modules/tendermint"
+	mod "github.com/eris-ltd/epm-go/commands/modules/thelonious"
 )
 
 func Clean(c *Context) {

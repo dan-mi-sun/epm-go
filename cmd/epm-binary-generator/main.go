@@ -102,6 +102,25 @@ func installChains(commandsPkg string, chainDecl *ast.BasicLit, imports []*Impor
 			return fmt.Errorf(fmt.Sprintln("Error moving binary to GoBin", err))
 		}
 	}
+
+	// now clean up by reseting to thelonious imports
+	// and setting CHAIN to ""
+	for _, imp := range imports {
+		// update the import path
+		imp.importSpec.Path.Value = stringImport("thelonious")
+
+		// update the chain var
+		chainDecl.Value = "\"\""
+
+		// write to file
+		f, err := os.Create(path.Join(commandsPkg, imp.fileName))
+		if err != nil {
+			return fmt.Errorf(fmt.Sprintln("Could not create file", imp.fileName, err))
+		}
+		gofmt.Node(f, fset, imp.file)
+		f.Close()
+	}
+
 	return nil
 }
 
