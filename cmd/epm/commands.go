@@ -45,7 +45,7 @@ func cliCall(f func(*commands.Context)) func(*cli.Context) {
 			}
 
 			fmt.Println("Chain type:", typ)
-			if commands.CHAIN == "" {
+			if typ != commands.CHAIN {
 				// run the proper binary
 				// if it does not exist, install it
 				bin := path.Join(utils.GoPath, "bin", "epm-"+typ)
@@ -70,8 +70,6 @@ func cliCall(f func(*commands.Context)) func(*cli.Context) {
 				cmd.Stdout = os.Stdout
 				cmd.Stderr = os.Stderr
 				cmd.Run()
-			} else if typ != commands.CHAIN {
-				exit(fmt.Errorf("Wrong binary (%s) for chain type (%s)", commands.CHAIN, typ))
 			} else {
 				// go for it
 				f(c2)

@@ -93,6 +93,9 @@ func installChains(commandsPkg string, chainDecl *ast.BasicLit, imports []*Impor
 
 		// install the binary locally and move to go bin
 		cmd := exec.Command("go", "build", "-o", "epm-"+chain, "./cmd/epm")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
 		err := cmd.Run()
 		if err != nil {
 			return fmt.Errorf(fmt.Sprintln("Error building", chain, err))
@@ -119,6 +122,15 @@ func installChains(commandsPkg string, chainDecl *ast.BasicLit, imports []*Impor
 		}
 		gofmt.Node(f, fset, imp.file)
 		f.Close()
+	}
+
+	// finally, install plain ole epm
+	cmd := exec.Command("go", "install", "./cmd/epm")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("Error installing plain epm %v", err)
 	}
 
 	return nil
