@@ -108,14 +108,15 @@ func Refs(c *Context) {
 		ifExit(e)
 		chainDir, er := chains.ResolveChainDir(chainType, rk, chainId)
 		ifExit(er)
-		rpc := c.Bool("rpc")
-		m := mod.NewChain(chainType, rpc)
 		configPath := path.Join(chainDir, "config.json")
-		err := m.ReadConfig(configPath)
+		cfg := struct {
+			KeySession string `json:"key_session"`
+		}{}
+		err := utils.ReadJson(&cfg, configPath)
 		ifExit(err)
 
 		// now find the keysession and addresses
-		keyname := m.Property("KeySession").(string)
+		keyname := cfg.KeySession
 		var key []byte
 		var kn string
 		key, err = ioutil.ReadFile(path.Join(chainDir, keyname+".addr"))

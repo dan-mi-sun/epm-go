@@ -15,13 +15,11 @@ import (
 var standAlones = map[string]struct{}{
 	"checkout": struct{}{},
 	"clean":    struct{}{},
-	"config":   struct{}{},
 	"head":     struct{}{},
 	"init":     struct{}{},
 	"keys":     struct{}{},
-	"plop":     struct{}{},
-	"refs":     struct{}{},
 	"rm":       struct{}{},
+	"refs":     struct{}{},
 }
 
 // wraps a epm-go/commands function in a closure that accepts cli.Context
