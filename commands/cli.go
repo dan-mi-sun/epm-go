@@ -516,12 +516,12 @@ func Remove(c *Context) {
 	}
 }
 
-// run a single epm on-chain command (endow, deploy)
+// run a single epm on-chain command (endow, deploy, etc.)
 func Command(c *Context) {
 	root, chainType, _, err := ResolveRootFlag(c)
 	ifExit(err)
 
-	chain := LoadChain(c, chainType, root)
+	chain := mod.NewChain(chainType, c.Bool("rpc"))
 
 	args := c.Args()
 	if len(args) < 3 {
@@ -551,12 +551,18 @@ func Command(c *Context) {
 	ifExit(err)
 	e.ReadVars(path.Join(root, EPMVars))
 
+	// we don't need to turn anything on for "set"
+	if cmd != "set" {
+		setupModule(c, chain, root)
+	}
+
 	// run job
 	e.AddJob(job)
 	err = e.ExecuteJobs()
 	ifExit(err)
 	e.WriteVars(path.Join(root, EPMVars))
-	if cmd != "call" && cmd != "assert" {
+	// not everything needs a new block
+	if cmd != "call" && cmd != "assert" && cmd != "set" {
 		e.Commit()
 	}
 }

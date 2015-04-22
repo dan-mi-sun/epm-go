@@ -43,6 +43,7 @@ func cliCall(f func(*commands.Context)) func(*cli.Context) {
 					exit(err)
 				}
 			}
+
 			fmt.Println("Chain type:", typ)
 			if commands.CHAIN == "" {
 				// run the proper binary
@@ -63,6 +64,7 @@ func cliCall(f func(*commands.Context)) func(*cli.Context) {
 					ifExit(cmd.Run())
 					ifExit(os.Chdir(cur))
 				}
+
 				cmd := exec.Command(bin, os.Args[1:]...)
 				cmd.Stdin = os.Stdin
 				cmd.Stdout = os.Stdout
