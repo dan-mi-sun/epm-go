@@ -46,18 +46,18 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/epm-go/chains",
-			"Comment": "v0.8-190-g839435a",
-			"Rev": "839435af3993ea1db84d9f805fd600a228ff1295"
+			"Comment": "v0.8-228-g4861421",
+			"Rev": "4861421fc3826e6ae086d96dda70399d4dc923ac"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/epm-go/epm",
-			"Comment": "v0.8-190-g839435a",
-			"Rev": "839435af3993ea1db84d9f805fd600a228ff1295"
+			"Comment": "v0.8-228-g4861421",
+			"Rev": "4861421fc3826e6ae086d96dda70399d4dc923ac"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/epm-go/utils",
-			"Comment": "v0.8-190-g839435a",
-			"Rev": "839435af3993ea1db84d9f805fd600a228ff1295"
+			"Comment": "v0.8-228-g4861421",
+			"Rev": "4861421fc3826e6ae086d96dda70399d4dc923ac"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/eris-std-lib/go-tests",
@@ -80,7 +80,7 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/lllc-server",
-			"Rev": "805beea3b72a97aa7ad2f59e1aaa4b7300abceaa"
+			"Rev": "50b14826a781b98d2825d2010a73ebab2406abe3"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkutils",

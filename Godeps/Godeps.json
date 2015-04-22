@@ -78,98 +78,98 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/cmd/utils",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/compression/rle",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/core",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/crypto",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/eth",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/ethdb",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/ethutil",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/event",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/logger",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/miner",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/p2p",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/pow",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/rlp",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/rpc",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/state",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/trie",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/vm",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/whisper",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/go-ethereum/xeth",
-			"Comment": "v0.6.8-2210-g5a2d3b7",
-			"Rev": "5a2d3b77aa05965f8695fbce4f17b01ebb0b09db"
+			"Comment": "v0.6.8-2211-g24ec30d",
+			"Rev": "24ec30dfe0e7d8755dba0924dcce951d98b1ee44"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/lllc-server",
@@ -177,28 +177,28 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/eth",
-			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
+			"Rev": "66d0f47d491e324af5ab823e6b45f30292050c93"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/mint",
-			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
+			"Rev": "66d0f47d491e324af5ab823e6b45f30292050c93"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkrpc",
-			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
+			"Rev": "66d0f47d491e324af5ab823e6b45f30292050c93"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/monkutils",
-			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
+			"Rev": "66d0f47d491e324af5ab823e6b45f30292050c93"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/modules/types",
-			"Rev": "a6e8c33b88fed6d3e9fa2321b534e8e5b28c04f8"
+			"Rev": "66d0f47d491e324af5ab823e6b45f30292050c93"
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
-			"Comment": "v0.8-74-gb700001",
-			"Rev": "b700001be08e7f7e59b20252e9c9e8a7d8f4d153"
+			"Comment": "v0.8-82-g141c2f9",
+			"Rev": "141c2f9d81faed1dee194441f7f01a4758c996a5"
 		},
 		{
 			"ImportPath": "github.com/ethereum/go-ethereum/crypto/randentropy",

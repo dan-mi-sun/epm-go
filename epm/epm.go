@@ -65,7 +65,7 @@ type Blockchain interface {
 	Tx(addr, amt string) (string, error)
 	Msg(addr string, data []string) (string, error)
 	Call(addr string, data []string) (string, error)
-	Script(code string) (string, error)
+	Script(code string) (string, string, error)
 	Subscribe(name, event, target string) chan types.Event
 	UnSubscribe(name string)
 	Commit()

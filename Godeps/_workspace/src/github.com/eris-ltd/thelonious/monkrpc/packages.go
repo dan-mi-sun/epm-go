@@ -93,6 +93,11 @@ type TxResponse struct {
 	Hash string
 }
 
+type CreateResponse struct {
+	Hash    string
+	Address string
+}
+
 func (a *NewTxArgs) requirements() error {
 	if a.Recipient == "" {
 		return NewErrorResponse("Transact requires a 'recipient' address as argument")

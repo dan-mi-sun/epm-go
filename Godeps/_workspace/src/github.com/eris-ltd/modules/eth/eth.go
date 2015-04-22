@@ -17,7 +17,7 @@ import (
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/eth"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/ethutil"
 	ethevent "github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/event"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/logger" //"github.com/eris-ltd/go-ethereum/chain"
+	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/logger" //"github.com/eris-ltd/modules/Godeps/_workspace/src/github.com/eris-ltd/modules/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/chain"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/miner"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/state"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/go-ethereum/xeth"
@@ -319,31 +319,12 @@ func (eth *EthModule) Call(addr string, data []string) (string, error) {
 	return tx, nil
 }
 
-// TODO: implement CompileLLL
-func (eth *EthModule) Script(script string) (string, error) {
-	/*var script string
-	if lang == "lll-literal" {
-		script = CompileLLL(file, true)
-	}
-	if lang == "lll" {
-		script = CompileLLL(file, false) // if lll, compile and pass along
-	} else if lang == "mutan" {
-		s, _ := ioutil.ReadFile(file) // if mutan, pass along and pipe will compile
-		script = string(s)
-	} else if lang == "serpent" {
-
-	} else {
-		script = file
-	}*/
-	// messy key system...
-	// chain should have an 'active key'
-	//keys := eth.fetchKeyPair()
-
-	addr, err := eth.pipe.Transact("", "0", GAS, GASPRICE, script)
+func (eth *EthModule) Script(script string) (string, string, error) {
+	txid, addr, err := eth.pipe.Create("0", GAS, GASPRICE, script)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return addr, nil
+	return txid, addr, nil
 }
 
 // returns a chanel that will fire when address is updated

@@ -252,6 +252,8 @@ func (mint *MintModule) IsScript(target string) bool {
 	return false
 }
 
+// TODO: move these to use rpccore!
+
 // send a tx
 func (mint *MintModule) Tx(addr, amt string) (string, error) {
 	addr = utils.StripHex(addr)
@@ -347,11 +349,11 @@ func (mint *MintModule) Call(addr string, data []string) (string, error) {
 	return hex.EncodeToString(resp.Return), err
 }
 
-func (mint *MintModule) Script(script string) (string, error) {
+func (mint *MintModule) Script(script string) (string, string, error) {
 	script = utils.StripHex(script)
 	code, err := hex.DecodeString(script)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	acc := mint.MempoolReactor.Mempool.GetCache().GetAccount(mint.priv.Address)
 	nonce := 0
@@ -374,7 +376,7 @@ func (mint *MintModule) Script(script string) (string, error) {
 	}
 	tx.Input.Signature = mint.priv.PrivKey.Sign(account.SignBytes(tx))
 	err = mint.MempoolReactor.BroadcastTx(tx)
-	return hex.EncodeToString(state.NewContractAddress(mint.priv.Address, uint64(nonce))), err
+	return hex.EncodeToString(account.HashSignBytes(tx)), hex.EncodeToString(state.NewContractAddress(mint.priv.Address, uint64(nonce))), err
 }
 
 // returns a chanel that will fire when address is updated

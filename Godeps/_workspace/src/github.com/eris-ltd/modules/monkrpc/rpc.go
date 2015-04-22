@@ -197,31 +197,17 @@ func (mod *MonkRpcModule) Call(addr string, data []string) (string, error) {
 }
 
 // Deploy a new contract.
-func (mod *MonkRpcModule) Script(scriptHex string) (string, error) {
-	//logger.Debugln("Deploying script: ", file)
-
-	/*var scriptHex string
-	if lang == "lll-literal" {
-		scriptHex = mutils.Compile(file)
-	}
-	if lang == "lll" {
-		scriptHex = mutils.Compile(file, false) // if lll, compile and pass along
-	} else if lang == "mutan" {
-		s, _ := ioutil.ReadFile(file) // if mutan, pass along and pipe will compile
-		scriptHex = string(s)
-	} else if lang == "serpent" {
-
-	} else {
-		scriptHex = file
-	}*/
-
+// TODO: txid (first return)
+func (mod *MonkRpcModule) Script(scriptHex string) (string, string, error) {
 	if mod.Config.Local {
 		args := mod.newLocalTx("", VALUE, GAS, GASPRICE, scriptHex)
-		return mod.rpcLocalCreateCall(args)
+		addr, err := mod.rpcLocalCreateCall(args)
+		return "", addr, err
 	}
 	keys := mod.keyManager.KeyPair()
 	args := mod.newRemoteTx(keys, "", VALUE, GAS, GASPRICE, scriptHex)
-	return mod.rpcRemoteTxCall(args)
+	addr, err := mod.rpcRemoteTxCall(args)
+	return "", addr, err
 }
 
 // There is nothing to subscribe to

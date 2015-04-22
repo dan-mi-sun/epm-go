@@ -25,7 +25,7 @@ import (
 )
 
 var logger *monklog.Logger = monklog. // figure to remove this ...
-					NewLogger("MONK")
+NewLogger("MONK")
 
 func init() {
 	utils.InitDecerverDir()
@@ -82,7 +82,7 @@ func NewMonk(th *thelonious.Thelonious) *MonkModule {
 // If the chain already exists, use the provided genesis config
 // TODO: move genconfig into db (safer than a config file)
 //          but really we should reconstruct it from the genesis block
-func (mod *MonkModule) ConfigureGenesis() {
+func (mod *MonkModule) ConfigureGenesis() error {
 	// first check if this chain already exists (and load genesis config from there)
 	// (only if not working from a mem db)
 	if !mod.Config.DbMem {
@@ -90,9 +90,9 @@ func (mod *MonkModule) ConfigureGenesis() {
 			p := path.Join(mod.Config.RootDir, "genesis.json")
 			if _, err = os.Stat(p); err == nil {
 				mod.Config.GenesisConfig = p
-			} else {
-				//			exit(fmt.Errorf("Blockchain exists but missing genesis.json!"))
-				utils.Copy(DefaultGenesisConfig, path.Join(mod.Config.RootDir, "genesis.json"))
+			} else if mod.GenesisConfig == nil {
+				return fmt.Errorf("Missing genesis.json!")
+				// utils.Copy(DefaultGenesisConfig, path.Join(mod.Config.RootDir, "genesis.json"))
 			}
 		}
 	}
@@ -109,6 +109,7 @@ func (mod *MonkModule) ConfigureGenesis() {
 			return epmDeploy(block, mod.GenesisConfig.Pdx)
 		})
 	}
+	return nil
 }
 
 // Initialize a monkchain
@@ -122,7 +123,9 @@ func (mod *MonkModule) Init() error {
 	// name > chainId > rootDir > default
 	mod.setRootDir()
 	logger.Infoln("Root directory ", mod.Config.RootDir)
-	mod.ConfigureGenesis()
+	if err := mod.ConfigureGenesis(); err != nil {
+		return err
+	}
 	logger.Infoln("Loaded genesis configuration from: ", mod.Config.GenesisConfig)
 
 	if !mod.Config.UseCheckpoint {
@@ -403,17 +406,17 @@ func (monk *MonkModule) Call(addr string, data []string) (string, error) {
 	return monkutil.Bytes2Hex(ret), nil
 }
 
-func (monk *MonkModule) Script(code string) (string, error) {
+func (monk *MonkModule) Script(code string) (string, string, error) {
 	code = monkutil.StripHex(code)
 
 	keys := monk.fetchKeyPair()
 
 	// well isn't this pretty! barf
-	contract_addr, err := monk.pipe.Transact(keys, nil, monkutil.NewValue(monkutil.Big("0")), monkutil.NewValue(monkutil.Big("200000000000000")), monkutil.NewValue(monkutil.Big("0")), code)
+	txid, contract_addr, err := monk.pipe.Create(keys, monkutil.NewValue(monkutil.Big("0")), monkutil.NewValue(monkutil.Big("200000000000000")), monkutil.NewValue(monkutil.Big("0")), code)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return monkutil.Bytes2Hex(contract_addr), nil
+	return monkutil.Bytes2Hex(txid), monkutil.Bytes2Hex(contract_addr), nil
 }
 
 func (monk *MonkModule) Transact(addr, amt, gas, gasprice, data string) (string, error) {

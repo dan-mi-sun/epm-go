@@ -205,7 +205,7 @@ func (e *EPM) Deploy(args []string) error {
 	}
 	logger.Debugln("Abi spec:", string(abiSpec))
 	// send transaction
-	addr, err := e.chain.Script(hex.EncodeToString(bytecode))
+	_, addr, err := e.chain.Script(hex.EncodeToString(bytecode))
 	if err != nil {
 		err = fmt.Errorf("Error deploying contract %s: %s", p, err.Error())
 		logger.Infoln(err.Error())

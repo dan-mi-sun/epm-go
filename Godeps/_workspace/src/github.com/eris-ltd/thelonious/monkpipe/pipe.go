@@ -2,6 +2,7 @@ package monkpipe
 
 import (
 	//"strings"
+	"fmt"
 
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkchain"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkcrypto"
@@ -171,6 +172,31 @@ func (self *Pipe) Transact(key *monkcrypto.KeyPair, rec []byte, value, gas, pric
 	return tx.Hash(), nil
 }
 
+func (self *Pipe) Create(key *monkcrypto.KeyPair, value, gas, price *monkutil.Value, data string) ([]byte, []byte, error) {
+
+	var tx *monkchain.Transaction
+	// Compile and assemble the given data
+	if monkutil.IsHex(data) {
+		script := monkutil.Hex2Bytes(data[2:])
+		tx = monkchain.NewContractCreationTx(value.BigInt(), gas.BigInt(), price.BigInt(), script)
+	} else {
+		script := monkutil.Hex2Bytes(data)
+		tx = monkchain.NewContractCreationTx(value.BigInt(), gas.BigInt(), price.BigInt(), script)
+	}
+
+	acc := self.stateManager.TransState().GetOrNewStateObject(key.Address())
+	tx.Nonce = acc.Nonce
+	acc.Nonce += 1
+	self.stateManager.TransState().UpdateStateObject(acc)
+	tx.Sign(key.PrivateKey)
+	self.obj.TxPool().QueueTransaction(tx)
+
+	logger.Infof("Contract addr %x", tx.CreationAddress())
+	//logger.Infoln(tx.String())
+	return tx.Hash(), tx.CreationAddress(), nil
+
+}
+
 func (self *Pipe) PushTx(tx *monkchain.Transaction) ([]byte, error) {
 	self.obj.TxPool().QueueTransaction(tx)
 	if tx.Recipient == nil {
@@ -178,4 +204,12 @@ func (self *Pipe) PushTx(tx *monkchain.Transaction) ([]byte, error) {
 		return tx.CreationAddress(), nil
 	}
 	return tx.Hash(), nil
+}
+
+func (self *Pipe) PushCreate(tx *monkchain.Transaction) ([]byte, []byte, error) {
+	if tx.Recipient != nil {
+		return nil, nil, fmt.Errorf("PushCreate is only for creating contracts (nil address). Address=%x", tx.Recipient)
+	}
+	self.obj.TxPool().QueueTransaction(tx)
+	return tx.Hash(), tx.CreationAddress(), nil
 }

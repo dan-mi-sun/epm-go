@@ -301,3 +301,41 @@ func (self *XEth) Transact(toStr, valueStr, gasStr, gasPriceStr, codeStr string)
 
 	return toHex(tx.Hash()), nil
 }
+
+func (self *XEth) Create(valueStr, gasStr, gasPriceStr, codeStr string) (string, string, error) {
+
+	var (
+		value = ethutil.NewValue(valueStr)
+		gas   = ethutil.NewValue(gasStr)
+		price = ethutil.NewValue(gasPriceStr)
+		data  []byte
+		key   = self.eth.KeyManager().KeyPair()
+	)
+
+	data = fromHex(codeStr)
+
+	var tx *types.Transaction
+	tx = types.NewContractCreationTx(value.BigInt(), gas.BigInt(), price.BigInt(), data)
+
+	state := self.chainManager.TransState()
+	nonce := state.GetNonce(key.Address())
+
+	tx.SetNonce(nonce)
+	tx.Sign(key.PrivateKey)
+
+	// Do some pre processing for our "pre" events  and hooks
+	block := self.chainManager.NewBlock(key.Address())
+	coinbase := state.GetOrNewStateObject(key.Address())
+	coinbase.SetGasPool(block.GasLimit())
+	self.blockProcessor.ApplyTransactions(coinbase, state, block, types.Transactions{tx}, true)
+
+	err := self.eth.TxPool().Add(tx)
+	if err != nil {
+		return "", "", err
+	}
+	state.SetNonce(key.Address(), nonce+1)
+
+	addr := core.AddressFromMessage(tx)
+	pipelogger.Infof("Contract addr %x\n", addr)
+	return toHex(tx.Hash()), toHex(core.AddressFromMessage(tx)), nil
+}
