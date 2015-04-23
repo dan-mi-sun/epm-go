@@ -3,9 +3,14 @@ package epm
 // This lexer is heavily inspired by Rob Pike's "Lexical Scanning in Go"
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
+)
+
+const (
+	EOFSTRING = "EOFSTRING"
 )
 
 // when in a state, do an action, which brings us to another state
@@ -26,6 +31,8 @@ type lexer struct {
 	tokens chan token // channel to emit tokens over
 
 	temp string // a place to hold eg. commands
+
+	err error // if it erred
 }
 
 // a token
@@ -58,7 +65,8 @@ func Lex(input string) *lexer {
 func (l *lexer) Error(s string) lexStateFunc {
 	return func(l *lexer) lexStateFunc {
 		// TODO: print location data too
-		log.Println(s)
+		l.err = errors.New(s)
+		log.Println(l.err)
 		return nil
 	}
 }
@@ -82,7 +90,7 @@ func (l *lexer) run() {
 // To hell with utf8 :p
 func (l *lexer) next() string {
 	if l.pos >= l.length {
-		return ""
+		return EOFSTRING
 	}
 	b := l.input[l.pos : l.pos+1]
 	l.pos += 1
@@ -280,8 +288,10 @@ func lexStateSpace(l *lexer) lexStateFunc {
 
 // At an opening quotes, parse until the closing quote
 func lexStateQuote(l *lexer) lexStateFunc {
-	// BUG: This could hang forever
 	for s := ""; s != tokenQuote; s = l.next() {
+		if s == EOFSTRING {
+			return l.Error("Missing ending quote!")
+		}
 	}
 	l.backup()
 	l.emit(tokenStringTy)

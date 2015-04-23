@@ -88,7 +88,7 @@ func (p *parser) run() error {
 	if p.last.typ == tokenErrTy {
 		// return  err
 	}
-	return nil
+	return p.l.err
 }
 
 // return a parseStateFunc that prints the error and triggers exit (returns nil)
