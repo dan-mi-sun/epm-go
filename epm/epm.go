@@ -23,7 +23,7 @@ var (
 var GOPATH = os.Getenv("GOPATH")
 
 var (
-	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "contracts")
+	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "test_eris_lll")
 	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests")
 
 	EpmDir  = utils.Epm
@@ -216,6 +216,13 @@ func (e *EPM) Vars() map[string]string {
 	return e.vars
 }
 
+func IsVar(v string) bool {
+	if strings.HasPrefix(v, "{{") && strings.HasSuffix(v, "}}") {
+		return true
+	}
+	return false
+}
+
 // Return list of jobs
 func (e *EPM) Jobs() []Job {
 	return e.jobs
@@ -247,6 +254,9 @@ func CopyContractPath() error {
 	// we might miss changed otherwise
 	if _, err := os.Stat(p); err != nil {
 		cmd := exec.Command("cp", "-r", ContractPath, p)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		cmd.Stdin = os.Stdin
 		err = cmd.Run()
 		if err != nil {
 			return fmt.Errorf("error copying working dir into tmp: %s", err.Error())

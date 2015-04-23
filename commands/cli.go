@@ -91,6 +91,21 @@ func Plop(c *Context) {
 		}
 		ifExit(err)
 		fmt.Println(string(b))
+	case "abi":
+		if len(c.Args()) == 1 {
+			ifExit(fmt.Errorf("Specify a contract to see its abi"))
+		}
+		e, err := epm.NewEPM(nil, epm.LogFile)
+		ifExit(err)
+		e.ReadVars(path.Join(root, EPMVars))
+		addr := c.Args()[1]
+		if epm.IsVar(addr) {
+			addr, err = e.VarSub(addr)
+			ifExit(err)
+		}
+		b, err := ioutil.ReadFile(path.Join(root, "abi", utils.StripHex(addr)))
+		ifExit(err)
+		fmt.Println(string(b))
 	default:
 		logger.Errorln("Plop options: addr, chainid, config, genesis, key, pid, vars")
 	}
