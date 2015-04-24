@@ -209,9 +209,9 @@ func (e *EPM) ReadVars(file string) error {
 //		return err
 //	}
 //	e.vars["ADDR"] = string(b)
-//	fmt.Println("HELLLLLOOOOO")
-//	fmt.Println(e.chain.ActiveAddress())
-//	e.vars["ADDR"] = e.chain.ActiveAddress()
+	fmt.Println("HELLLLLOOOOO")
+	fmt.Println(e.chain.ActiveAddress())
+	e.vars["ADDR"] = e.chain.ActiveAddress()
 	return nil
 }
 
