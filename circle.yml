@@ -8,5 +8,6 @@ dependencies:
 
 test:
   override:
-    - docker-compose up --no-color --no-recreate > $CIRCLE_ARTIFACTS/output.log
-    - test -e /tmp/success
+    - "docker-compose up --no-color --no-recreate > $CIRCLE_ARTIFACTS/output.log":
+        timeout: 1200        
+    - "test -e /tmp/success"
