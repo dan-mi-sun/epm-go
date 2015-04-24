@@ -196,21 +196,12 @@ func (e *EPM) ReadVars(file string) error {
 
 	//Add some simple reading from chain configuration
 
-//	configPath := path.Join(root, "config.json")
-//	err = e.chain.ReadConfig(configpath)
-//	if err != nil {
-//		return err
-//	}
-
 	keyname := e.chain.Property("KeySession").(string)
 	fmt.Println(keyname)
 	var b []byte
-//	fmt.Println(path.Join(e.chain.Property("RootDir").(string), keyname+".addr"))
 	b, err = ioutil.ReadFile(path.Join(e.chain.Property("RootDir").(string), keyname+".addr"))
 
-	fmt.Println(string(b))
-
-	e.vars["ADDR"] = string(b)
+	e.vars["ADDR"] = "0x" + string(b)
 	return nil
 }
 
