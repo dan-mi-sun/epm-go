@@ -105,6 +105,7 @@ func NewEPM(chain Blockchain, log string) (*EPM, error) {
 		states:    make(map[string]types.State),
 		diffSched: make(map[int][]string),
 	}
+
 	// temp dir
 	err := CopyContractPath()
 	return e, err
@@ -193,7 +194,7 @@ func (e *EPM) ReadVars(file string) error {
 		e.vars[k] = v
 	}
 
-	//Add some simple reading from chain config
+	//Add some simple reading from chain configuration
 
 //	configPath := path.Join(root, "config.json")
 //	err = e.chain.ReadConfig(configpath)
@@ -201,17 +202,15 @@ func (e *EPM) ReadVars(file string) error {
 //		return err
 //	}
 
-//	keyname := e.chain.Property("KeySession").(string)
-//	var b []byte
-//	b, err = ioutil.ReadFile(path.Join(root, keyname+".addr"))
+	keyname := e.chain.Property("KeySession").(string)
+	fmt.Println(keyname)
+	var b []byte
+//	fmt.Println(path.Join(e.chain.Property("RootDir").(string), keyname+".addr"))
+	b, err = ioutil.ReadFile(path.Join(e.chain.Property("RootDir").(string), keyname+".addr"))
 
-//	if err != nil {
-//		return err
-//	}
-//	e.vars["ADDR"] = string(b)
-	fmt.Println("HELLLLLOOOOO")
-	fmt.Println(e.chain.ActiveAddress())
-	e.vars["ADDR"] = e.chain.ActiveAddress()
+	fmt.Println(string(b))
+
+	e.vars["ADDR"] = string(b)
 	return nil
 }
 
