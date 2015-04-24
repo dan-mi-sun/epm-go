@@ -559,6 +559,7 @@ func Command(c *Context) {
 	}
 	epm.ContractPath, err = filepath.Abs(contractPath)
 	ifExit(err)
+	logger.Infoln("Contract path:", epm.ContractPath)
 
 	epm.ErrMode = epm.ReturnOnErr
 	// load epm

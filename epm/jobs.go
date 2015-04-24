@@ -39,6 +39,12 @@ func (e *EPM) ExecuteJobs() error {
 	if e.Diff {
 		e.checkTakeStateDiff(0)
 	}
+	if e.existsModifyJob() {
+		// temp dir
+		if err := CopyContractPath(); err != nil {
+			return err
+		}
+	}
 
 	for i, j := range e.jobs {
 		err := e.ExecuteJob(j)
@@ -198,6 +204,7 @@ func (e *EPM) Deploy(args []string) error {
 	} else {
 		p = path.Join(ContractPath, contract)
 	}
+	logger.Debugln("Contract path:", p)
 	// compile
 	bytecode, abiSpec, err := lllcserver.Compile(p)
 	if err != nil {
@@ -488,4 +495,14 @@ func SetCompilerServer(hostPort string) {
 		lllcserver.SetLanguageURL(lang, hostPort)
 		lllcserver.SetLanguageNet(lang, true)
 	}
+}
+
+// TODO: we should really only every copy what and when we need to
+func (e *EPM) existsModifyJob() bool {
+	for _, j := range e.jobs {
+		if strings.Contains(j.cmd, "modify") {
+			return true
+		}
+	}
+	return false
 }

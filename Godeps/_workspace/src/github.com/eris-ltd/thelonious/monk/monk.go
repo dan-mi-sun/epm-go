@@ -118,7 +118,7 @@ func (mod *MonkModule) ConfigureGenesis() error {
 // NewMonk must have been called first
 func (mod *MonkModule) Init() error {
 	// set epm contract path
-	setEpmContractPath(mod.Config.ContractPath)
+	// setEpmContractPath(mod.Config.ContractPath)
 	// set the root
 	// name > chainId > rootDir > default
 	mod.setRootDir()

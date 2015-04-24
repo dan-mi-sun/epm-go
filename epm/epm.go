@@ -23,6 +23,9 @@ var (
 var GOPATH = os.Getenv("GOPATH")
 
 var (
+	// XXX: this typically gets overwritten
+	// TODO: safer/more explicit?
+	// Default is "."
 	ContractPath = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests", "test_eris_lll")
 	TestPath     = path.Join(utils.ErisLtd, "epm-go", "cmd", "tests")
 
@@ -105,9 +108,7 @@ func NewEPM(chain Blockchain, log string) (*EPM, error) {
 		states:    make(map[string]types.State),
 		diffSched: make(map[int][]string),
 	}
-	// temp dir
-	err := CopyContractPath()
-	return e, err
+	return e, nil
 }
 
 func (e *EPM) Stop() {

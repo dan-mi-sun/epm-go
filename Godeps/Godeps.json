@@ -197,8 +197,8 @@
 		},
 		{
 			"ImportPath": "github.com/eris-ltd/thelonious",
-			"Comment": "v0.8-82-g141c2f9",
-			"Rev": "141c2f9d81faed1dee194441f7f01a4758c996a5"
+			"Comment": "v0.8-83-gdc8c8db",
+			"Rev": "dc8c8db2fda0adcf0e97197664dcf2ed1ed37e18"
 		},
 		{
 			"ImportPath": "github.com/ethereum/go-ethereum/crypto/randentropy",
