@@ -154,7 +154,7 @@ func lexStateStart(l *lexer) lexStateFunc {
 	// check the one character tokens
 	t := l.next()
 	switch t {
-	case "":
+	case "", EOFSTRING:
 		return nil
 	case tokenNewLine:
 		return lexStateNewLine
@@ -310,7 +310,7 @@ func lexStateCmd(l *lexer) lexStateFunc {
 
 // In a comment. Scan to new line
 func lexStateComment(l *lexer) lexStateFunc {
-	for r := ""; r != tokenNewLine; r = l.next() {
+	for r := ""; r != tokenNewLine && r != EOFSTRING; r = l.next() {
 	}
 	l.backup()
 	l.emit(tokenStringTy)
