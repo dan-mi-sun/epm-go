@@ -192,6 +192,26 @@ func (e *EPM) ReadVars(file string) error {
 		v := kvsp[1]
 		e.vars[k] = v
 	}
+
+	//Add some simple reading from chain config
+
+//	configPath := path.Join(root, "config.json")
+//	err = e.chain.ReadConfig(configpath)
+//	if err != nil {
+//		return err
+//	}
+
+//	keyname := e.chain.Property("KeySession").(string)
+//	var b []byte
+//	b, err = ioutil.ReadFile(path.Join(root, keyname+".addr"))
+
+//	if err != nil {
+//		return err
+//	}
+//	e.vars["ADDR"] = string(b)
+//	fmt.Println("HELLLLLOOOOO")
+//	fmt.Println(e.chain.ActiveAddress())
+//	e.vars["ADDR"] = e.chain.ActiveAddress()
 	return nil
 }
 
