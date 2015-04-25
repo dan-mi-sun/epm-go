@@ -91,12 +91,15 @@ func (mod *MonkModule) ConfigureGenesis() error {
 			if _, err = os.Stat(p); err == nil {
 				mod.Config.GenesisConfig = p
 			} else if mod.GenesisConfig == nil {
-				return fmt.Errorf("Missing genesis.json!")
-				// utils.Copy(DefaultGenesisConfig, path.Join(mod.Config.RootDir, "genesis.json"))
+				//	return fmt.Errorf("Missing genesis.json!")
+				p := path.Join(mod.Config.RootDir, "genesis.json")
+				utils.WriteJson(monkdoug.DefaultGenesis, p)
+				//utils.Copy(DefaultGenesisConfig, p)
+				mod.Config.GenesisConfig = p
 			}
 		}
 	}
-
+	fmt.Println(mod.GenesisConfig)
 	// setup genesis config and genesis deploy handler
 	if mod.GenesisConfig == nil {
 		// fails if can't read json

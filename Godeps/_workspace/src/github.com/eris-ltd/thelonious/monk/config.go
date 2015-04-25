@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkdoug"
 	"github.com/eris-ltd/epm-go/Godeps/_workspace/src/github.com/eris-ltd/thelonious/monkutil"
 	"github.com/eris-ltd/epm-go/utils"
 	"io/ioutil"
@@ -120,22 +119,6 @@ var DefaultConfig = &ChainConfig{
 	LogLevel:  2,
 }
 
-func InitChain() error {
-	err := utils.InitDecerverDir()
-	if err != nil {
-		return err
-	}
-	err = utils.InitDataDir(Thelonious)
-	if err != nil {
-		return err
-	}
-	err = utils.WriteJson(DefaultConfig, path.Join(utils.Blockchains, "config.json"))
-	if err != nil {
-		return err
-	}
-	return utils.WriteJson(monkdoug.DefaultGenesis, path.Join(utils.Blockchains, "genesis.json"))
-}
-
 // Marshal the current configuration to file in pretty json.
 func (mod *MonkModule) WriteConfig(config_file string) error {
 	b, err := json.Marshal(mod.Config)
@@ -206,7 +189,7 @@ func (mod *MonkModule) thConfig() {
 		utils.Copy(cfg.KeyFile, path.Join(cfg.RootDir, cfg.KeySession)+".prv")
 	}
 	// if the root dir is the default dir, make sure genesis.json's are available
-	mod.ConfigureGenesis()
+	//mod.ConfigureGenesis()
 
 	// TODO: handle this better
 	/*_, err = os.Stat(path.Join(cfg.RootDir, "genesis.json"))
