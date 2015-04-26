@@ -12,6 +12,7 @@ import (
 	"github.com/eris-ltd/epm-go/utils"
 )
 
+// these can run with just epm (no need for eg. epm-thel)
 var standAlones = map[string]struct{}{
 	"checkout": struct{}{},
 	"clean":    struct{}{},
@@ -32,12 +33,13 @@ func cliCall(f func(*commands.Context)) func(*cli.Context) {
 		} else {
 			var err error
 			var typ string
+			// get chain type to ensure we are using the correct binary
+			// `epm new` is a special case
 			if c.Command.Name == "new" {
 				typ, err = chains.ResolveChainType(c2.String("type"))
 				ifExit(err)
 			} else {
 
-				// ensure we are using the correct binary
 				_, typ, _, err = commands.ResolveRootFlag(c2)
 				if err != nil {
 					exit(err)
